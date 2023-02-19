@@ -1,6 +1,12 @@
-from lexer_parser import LexerParser
-from AST_printer import ASTTreePrinterVisitor
+import AST_printer
+import interfacing_program
+import lexer_parser
 
-ast = LexerParser().the_program
-pp = ASTTreePrinterVisitor()
-ast.accept(pp)
+
+lexer_parser.parser.parse(input(""), lexer=lexer_parser.lexer)
+
+pp = AST_printer.ASTTreePrinter()
+
+#pp.render('png')
+
+print(interfacing_program.the_program)

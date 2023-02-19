@@ -1,7 +1,7 @@
 import sys
 import ply.lex as lex
 import ply.yacc as yacc
-
+import interfacing_program
 import AST
 
 
@@ -31,6 +31,12 @@ t_LT = r'<'
 t_GT = r'>'
 t_LTE = r'<='
 t_GTE = r'>='
+
+precedence = (
+    ('right', 'EQ', 'NEQ', 'LT', 'GT', 'LTE', 'GTE'),
+    ('left', 'PLUS', 'MINUS'),
+    ('left', 'TIMES', 'DIVIDE'),
+)
 
 def t_IDENT(t):
     r'[a-zA-Z_][a-zA-Z_0-9]*'
@@ -77,20 +83,20 @@ def t_error(t):
 the_program = None
 def p_program(t):
     'program : body'
-    the_program = AST.function(
+    interfacing_program.the_program = AST.Function(
         "main", None, t[1], t.lexer.lineno)
-
+    
 def p_body(t):
     'body : statement_list'
-    t[0] = AST.body(None, None, t[1], t.lexer.lineno)
+    t[0] = AST.Body(None, None, t[1], t.lexer.lineno)
 
 def p_statement_list(t):
     '''statement_list : statement
                     | statement statement_list'''
     if len(t) == 2:
-        t[0] = AST.statement_list(t[1], None, t.lexer.lineno)
+        t[0] = AST.StatementList(t[1], None, t.lexer.lineno)
     else:
-        t[0] = AST.statement_list(t[1], t[2], t.lexer.lineno)
+        t[0] = AST.StatementList(t[1], t[2], t.lexer.lineno)
 
 def p_statement(t):
     '''statement : statement_assignment'''
@@ -98,7 +104,7 @@ def p_statement(t):
 
 def p_statement_assignment(t):
     'statement_assignment : IDENT ASSIGN expression SEMICOL'
-    t[0] = AST.statement_assignment(t[1], t[3], t.lexer.lineno)
+    t[0] = AST.StatementAssignment(t[1], t[3], t.lexer.lineno)
 
 def p_expression(t):
     '''expression : expression_integer
@@ -109,11 +115,11 @@ def p_expression(t):
 
 def p_expression_integer(t):
     'expression_integer : INT'
-    t[0] = AST.expression_integer(t[1], t.lexer.lineno)
+    t[0] = AST.ExpressionInteger(t[1], t.lexer.lineno)
 
 def p_expression_identifier(t):
     'expression_identifier : IDENT'
-    t[0] = AST.expression_identifier(t[1], t.lexer.lineno)
+    t[0] = AST.ExpressionIdentifier(t[1], t.lexer.lineno)
 
 def p_expression_binop(t):
     '''expression_binop : expression PLUS expression
@@ -126,7 +132,7 @@ def p_expression_binop(t):
                         | expression GT expression
                         | expression LTE expression
                         | expression GTE expression'''
-    t[0] = AST.expression_binop(t[2], t[1], t[3], t.lexer.lineno)
+    t[0] = AST.ExpressionBinop(t[2], t[1], t[3], t.lexer.lineno)
 
 def p_expression_group(t):
     'expression_group : LPAREN expression RPAREN'
@@ -143,15 +149,10 @@ def p_error(t):
     print("Syntax Analysis",
                   f"Problem detected{cause}.",
                   location)
+    sys.exit(1)
 
 # Build the lexer
 lexer = lex.lex()
 
 # Build the parser
 parser = yacc.yacc()
-    
-
-class LexerParser:
-    def __init__(self):
-        parser.parse(input("Write something: \n"), lexer=lexer)
-        self.the_program = the_program
