@@ -10,27 +10,12 @@ class ASTTreePrinter:
         self.nodes = 0
         self.graph = graphviz.Digraph()
 
-    def add_node(self, label: str) -> int:
-        """Add node to graph
-
-        Parameter
-        ---------
-        label : str
-        """
-
+    def _add_node(self, label: str) -> int:
         self.graph.node(str(self.nodes), label)
         self.nodes += 1
         return str(self.nodes - 1)
 
-    def add_edge(self, start: int, end: int) -> None:
-        """Add edge to graph
-
-        Parameters
-        ----------
-        start : int
-        end : int
-        """
-
+    def _add_edge(self, start: int, end: int) -> None:
         self.graph.edge(start, end)
 
     def build_graph(self, ast_node: AST.AstNode) -> None:
@@ -44,33 +29,33 @@ class ASTTreePrinter:
         match ast_node:
             case AST.Function(name, _, body):
                 self.build_graph(body)
-                ast_node.dotnum = self.add_node(name)
-                self.add_edge(ast_node.dotnum, body.dotnum)
+                ast_node.dotnum = self._add_node(name)
+                self._add_edge(ast_node.dotnum, body.dotnum)
             case AST.Body(_, _, stm_list):
                 self.build_graph(stm_list)
-                ast_node.dotnum = self.add_node("body")
-                self.add_edge(ast_node.dotnum, stm_list.dotnum)
+                ast_node.dotnum = self._add_node("body")
+                self._add_edge(ast_node.dotnum, stm_list.dotnum)
             case AST.StatementAssignment(lhs, rhs):
                 self.build_graph(rhs)
-                ast_node.dotnum = self.add_node(lhs)
-                self.add_edge(ast_node.dotnum, rhs.dotnum)
+                ast_node.dotnum = self._add_node(lhs)
+                self._add_edge(ast_node.dotnum, rhs.dotnum)
             case AST.StatementList(stm, next):
-                ast_node.dotnum = self.add_node("stm_list")
+                ast_node.dotnum = self._add_node("stm_list")
                 self.build_graph(stm)
-                self.add_edge(ast_node.dotnum, stm.dotnum)
+                self._add_edge(ast_node.dotnum, stm.dotnum)
                 if next:
                     self.build_graph(next)
-                    self.add_edge(ast_node.dotnum, next.dotnum)
+                    self._add_edge(ast_node.dotnum, next.dotnum)
             case AST.ExpressionInteger(integer):
-                ast_node.dotnum = self.add_node(str(integer))
+                ast_node.dotnum = self._add_node(str(integer))
             case AST.ExpressionIdentifier(identifier):
-                ast_node.dotnum = self.add_node(identifier)
+                ast_node.dotnum = self._add_node(identifier)
             case AST.ExpressionBinop(op, lhs, rhs):
                 self.build_graph(lhs)
                 self.build_graph(rhs)
-                ast_node.dotnum = self.add_node(op)
-                self.add_edge(ast_node.dotnum, lhs.dotnum)
-                self.add_edge(ast_node.dotnum, rhs.dotnum)
+                ast_node.dotnum = self._add_node(op)
+                self._add_edge(ast_node.dotnum, lhs.dotnum)
+                self._add_edge(ast_node.dotnum, rhs.dotnum)
             case _:
                 raise ValueError(f"Unrecognized node: {ast_node}")
 
