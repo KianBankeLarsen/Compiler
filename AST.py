@@ -13,7 +13,7 @@ class AstNode:
 class StatementList(AstNode):
     stm: StatementList
     next: StatementList
-    lineno: object
+    lineno: lex.LexToken
 
 
 @dataclass
@@ -21,7 +21,7 @@ class Body(AstNode):
     variables_decl: object
     functions_decl: object
     stm_list: StatementList
-    lineno: object
+    lineno: lex.LexToken
 
 
 @dataclass
