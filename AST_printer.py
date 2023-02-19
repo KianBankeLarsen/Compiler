@@ -24,6 +24,7 @@ class ASTTreePrinter:
         Parameter
         ---------
         ast_node : AstNode
+            Root of any AstNode subtree to perform post-order traversal.
         """
 
         match ast_node:
@@ -65,6 +66,7 @@ class ASTTreePrinter:
         Parameter
         ---------
         format : str
+            This could be png, pdf etc.
         """
 
         self.graph.format = format
