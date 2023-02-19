@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import graphviz
 
 import AST
@@ -10,11 +11,26 @@ class ASTTreePrinter:
         self.graph = graphviz.Digraph()
 
     def add_node(self, label: str) -> int:
+        """Add node to graph
+
+        Parameter
+        ---------
+        label : str
+        """
+
         self.graph.node(str(self.nodes), label)
         self.nodes += 1
         return str(self.nodes - 1)
 
     def add_edge(self, start: int, end: int) -> None:
+        """Add edge to graph
+
+        Parameters
+        ----------
+        start : int
+        end : int
+        """
+
         self.graph.edge(start, end)
 
     def build_graph(self, ast_node: AST.AstNode) -> None:
@@ -57,7 +73,7 @@ class ASTTreePrinter:
                 self.add_edge(ast_node.dotnum, rhs.dotnum)
             case _:
                 raise ValueError(f"Unrecognized node: {ast_node}")
-        
+
     def render(self, format: str) -> None:
         """Render Graphviz graph to any format.
 

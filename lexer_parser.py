@@ -1,9 +1,10 @@
 import sys
+
 import ply.lex as lex
 import ply.yacc as yacc
-import interfacing_program
-import AST
 
+import AST
+import interfacing_program
 
 ####################### LEXER #######################
 reserved = {
@@ -38,10 +39,12 @@ precedence = (
     ('left', 'TIMES', 'DIVIDE'),
 )
 
+
 def t_IDENT(t):
     r'[a-zA-Z_][a-zA-Z_0-9]*'
     t.type = reserved.get(t.value, 'IDENT')    # Check for reserved words
     return t
+
 
 def t_INT(t):
     r'\d+'
@@ -49,46 +52,55 @@ def t_INT(t):
         t.value = int(t.value)
     except ValueError:
         print("Lexical Analysis",
-                f"Integer value too large.",
-                t.lexer.lineno)
+              f"Integer value too large.",
+              t.lexer.lineno)
         t.value = 0
     if t.value > int('0x7FFFFFFFFFFFFFFF', base=16):
         print("Lexical Analysis",
-                f"Integer value too large.",
-                t.lexer.lineno)
+              f"Integer value too large.",
+              t.lexer.lineno)
         t.value = 0
     return t
+
 
 # A string containing ignored characters (spaces and tabs)
 t_ignore = " \t\r"  # \r included for the sake of windows users
 
+
 def t_newline(t):
     r'\n+'
     t.lexer.lineno += t.value.count("\n")
+
 
 def t_COMMENT(t):
     r'\#.*'
     pass
 
 # TODO do right
+
+
 def t_error(t):
     print("Lexical Analysis",
-        f"Illegal character '{t.value[0]}'.",
-        t.lexer.lineno)
+          f"Illegal character '{t.value[0]}'.",
+          t.lexer.lineno)
     sys.exit(1)
 
 
 ####################### PARSER #######################
 # First production identifies the start symbol
 the_program = None
+
+
 def p_program(t):
     'program : body'
     interfacing_program.the_program = AST.Function(
         "main", None, t[1], t.lexer.lineno)
-    
+
+
 def p_body(t):
     'body : statement_list'
     t[0] = AST.Body(None, None, t[1], t.lexer.lineno)
+
 
 def p_statement_list(t):
     '''statement_list : statement
@@ -98,13 +110,16 @@ def p_statement_list(t):
     else:
         t[0] = AST.StatementList(t[1], t[2], t.lexer.lineno)
 
+
 def p_statement(t):
     '''statement : statement_assignment'''
     t[0] = t[1]
 
+
 def p_statement_assignment(t):
     'statement_assignment : IDENT ASSIGN expression SEMICOL'
     t[0] = AST.StatementAssignment(t[1], t[3], t.lexer.lineno)
+
 
 def p_expression(t):
     '''expression : expression_integer
@@ -113,13 +128,16 @@ def p_expression(t):
                 | expression_group'''
     t[0] = t[1]
 
+
 def p_expression_integer(t):
     'expression_integer : INT'
     t[0] = AST.ExpressionInteger(t[1], t.lexer.lineno)
 
+
 def p_expression_identifier(t):
     'expression_identifier : IDENT'
     t[0] = AST.ExpressionIdentifier(t[1], t.lexer.lineno)
+
 
 def p_expression_binop(t):
     '''expression_binop : expression PLUS expression
@@ -134,6 +152,7 @@ def p_expression_binop(t):
                         | expression GTE expression'''
     t[0] = AST.ExpressionBinop(t[2], t[1], t[3], t.lexer.lineno)
 
+
 def p_expression_group(t):
     'expression_group : LPAREN expression RPAREN'
     t[0] = t[2]
@@ -147,9 +166,10 @@ def p_error(t):
         cause = " - check for missing closing braces"
         location = "unknown"
     print("Syntax Analysis",
-                  f"Problem detected{cause}.",
-                  location)
+          f"Problem detected{cause}.",
+          location)
     sys.exit(1)
+
 
 # Build the lexer
 lexer = lex.lex()
