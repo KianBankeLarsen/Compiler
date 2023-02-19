@@ -88,9 +88,6 @@ def t_error(t):
 
 ####################### PARSER #######################
 # First production identifies the start symbol
-the_program = None
-
-
 def p_program(t):
     'program : body'
     interfacing_program.the_program = AST.Function(
