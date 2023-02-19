@@ -5,15 +5,19 @@ from dataclasses import dataclass
 import ply.lex as lex
 
 
+class AstNode:
+    pass
+
+
 @dataclass
-class StatementList:
+class StatementList(AstNode):
     stm: StatementList
     next: StatementList
     lineno: object
 
 
 @dataclass
-class Body:
+class Body(AstNode):
     variables_decl: object
     functions_decl: object
     stm_list: StatementList
@@ -21,7 +25,7 @@ class Body:
 
 
 @dataclass
-class Function:
+class Function(AstNode):
     name: ExpressionIdentifier
     par_list: object
     body: Body
@@ -29,13 +33,13 @@ class Function:
 
 
 @dataclass
-class StatementAssignment:
+class StatementAssignment(AstNode):
     lhs: ExpressionIdentifier
     rhs: Expression
     lineno: lex.LexToken
 
 
-class Expression:
+class Expression(AstNode):
     pass
 
 
