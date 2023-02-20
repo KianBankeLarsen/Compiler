@@ -38,7 +38,9 @@ class ASTTreePrinter:
                 self._add_edge(ast_node.dotnum, stm_list.dotnum)
             case AST.StatementAssignment(lhs, rhs):
                 self.build_graph(rhs)
-                ast_node.dotnum = self._add_node(lhs)
+                self.build_graph(lhs)
+                ast_node.dotnum = self._add_node("=")
+                self._add_edge(ast_node.dotnum, lhs.dotnum)
                 self._add_edge(ast_node.dotnum, rhs.dotnum)
             case AST.StatementList(stm, next):
                 ast_node.dotnum = self._add_node("stm_list")
@@ -47,6 +49,29 @@ class ASTTreePrinter:
                 if next:
                     self.build_graph(next)
                     self._add_edge(ast_node.dotnum, next.dotnum)
+            case AST.StatementPrint(exp):
+                self.build_graph(exp)
+                ast_node.dotnum = self._add_node("print")
+                self._add_edge(ast_node.dotnum, exp.dotnum)
+            case AST.StatementReturn(exp):
+                self.build_graph(exp)
+                ast_node.dotnum = self._add_node("return")
+                self._add_edge(ast_node.dotnum, exp.dotnum)
+            case AST.StatementIfthenelse(exp, stm_list1, stm_list2):
+                self.build_graph(exp)
+                self.build_graph(stm_list1)
+                ast_node.dotnum = self._add_node("if")
+                if stm_list2:
+                    self.build_graph(stm_list2)
+                    self._add_edge(ast_node.dotnum, stm_list2.dotnum)
+                self._add_edge(ast_node.dotnum, exp.dotnum)
+                self._add_edge(ast_node.dotnum, stm_list1.dotnum)
+            case AST.StatementWhile(exp, stm_list):
+                self.build_graph(exp)
+                self.build_graph(stm_list)
+                ast_node.dotnum = self._add_node("while")
+                self._add_edge(ast_node.dotnum, exp.dotnum)
+                self._add_edge(ast_node.dotnum, stm_list.dotnum)
             case AST.ExpressionInteger(integer):
                 ast_node.dotnum = self._add_node(str(integer))
             case AST.ExpressionIdentifier(identifier):

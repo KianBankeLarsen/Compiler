@@ -8,12 +8,17 @@ import interfacing_program
 
 ####################### LEXER #######################
 reserved = {
+    'print': 'PRINT',
+    'return': 'RETURN',
+    'if': 'IF',
+    'else': 'ELSE',
+    'while': 'WHILE'
 }
 
 tokens = (
     'IDENT', 'INT',
     'PLUS', 'MINUS', 'TIMES', 'DIVIDE',
-    'LPAREN', 'RPAREN',
+    'LPAREN', 'RPAREN', 'LCURL', 'RCURL',
     'EQ', 'NEQ', 'LT', 'GT', 'LTE', 'GTE',
     'ASSIGN', 'SEMICOL',
 ) + tuple(reserved.values())
@@ -26,6 +31,8 @@ t_ASSIGN = r'='
 t_SEMICOL = r';'
 t_LPAREN = r'\('
 t_RPAREN = r'\)'
+t_LCURL = r'{'
+t_RCURL = r'}'
 t_EQ = r'=='
 t_NEQ = r'!='
 t_LT = r'<'
@@ -77,8 +84,6 @@ def t_COMMENT(t):
     pass
 
 # TODO do right
-
-
 def t_error(t):
     print("Lexical Analysis",
           f"Illegal character '{t.value[0]}'.",
@@ -109,13 +114,51 @@ def p_statement_list(t):
 
 
 def p_statement(t):
-    '''statement : statement_assignment'''
+    '''statement : statement_return  
+                | statement_assignment
+                | statement_ifthenelse
+                | statement_print
+                | statement_while
+                | statement_compound'''
     t[0] = t[1]
 
 
+def p_statement_return(t):
+    'statement_return : RETURN expression SEMICOL'
+    t[0] = AST.StatementReturn(t[2], t.lexer.lineno)
+
+
+def p_statement_print(t):
+    'statement_print : PRINT LPAREN expression RPAREN SEMICOL'
+    t[0] = AST.StatementPrint(t[3], t.lexer.lineno)
+
+
 def p_statement_assignment(t):
-    'statement_assignment : IDENT ASSIGN expression SEMICOL'
+    'statement_assignment : expression_identifier ASSIGN expression SEMICOL'
     t[0] = AST.StatementAssignment(t[1], t[3], t.lexer.lineno)
+
+
+def p_statement_ifthenelse(t):
+    '''statement_ifthenelse : IF LPAREN expression RPAREN statement_compound
+                            | IF LPAREN expression RPAREN statement_compound ELSE statement_compound'''
+    if len(t) == 6:
+        t[0] = AST.StatementIfthenelse(t[3], t[5], None, t.lexer.lineno)
+    else:
+        t[0] = AST.StatementIfthenelse(t[3], t[5], t[7], t.lexer.lineno)
+
+
+def p_statement_while(t):
+    'statement_while :  WHILE LPAREN expression RPAREN statement_compound'
+    t[0] = AST.StatementWhile(t[3], t[5], t.lexer.lineno)
+
+# def p_statement_for(t):
+#     'statement_for :  FOR LPAREN statement_assignment expression expression RPAREN LCURL statement_list RCURL'
+#     t[0] = AST.StatementFor(t[3], t[6], t.lexer.lineno)
+
+
+def p_statement_compound(t):
+    'statement_compound : LCURL statement_list RCURL'
+    t[0] = t[2]
 
 
 def p_expression(t):

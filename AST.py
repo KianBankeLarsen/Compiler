@@ -13,7 +13,7 @@ class AstNode:
 class StatementList(AstNode):
     stm: StatementList
     next: StatementList
-    lineno: lex.LexToken
+    lineno: int
 
 
 @dataclass
@@ -21,7 +21,7 @@ class Body(AstNode):
     variables_decl: object
     functions_decl: object
     stm_list: StatementList
-    lineno: lex.LexToken
+    lineno: int
 
 
 @dataclass
@@ -29,14 +29,48 @@ class Function(AstNode):
     name: ExpressionIdentifier
     par_list: object
     body: Body
-    lineno: lex.LexToken
+    lineno: int
 
 
 @dataclass
 class StatementAssignment(AstNode):
     lhs: ExpressionIdentifier
     rhs: Expression
-    lineno: lex.LexToken
+    lineno: int
+
+
+@dataclass
+class StatementIfthenelse:
+    exp: Expression
+    then_part: StatementList
+    else_part: StatementList
+    lineno: int
+
+
+@dataclass
+class StatementWhile:
+    exp: Expression
+    while_part: StatementList
+    lineno: int
+
+
+# @dataclass
+# class StatementFor:
+#     assign: StatementAssignment
+#     exp: Expression
+#     do: StatementList
+
+
+@dataclass
+class StatementPrint:
+    exp: Expression
+    lineno: int
+
+
+@dataclass
+class StatementReturn:
+    exp: Expression
+    lineno: int
 
 
 class Expression(AstNode):
@@ -46,13 +80,13 @@ class Expression(AstNode):
 @dataclass
 class ExpressionIdentifier(Expression):
     identifier: lex.LexToken
-    lineno: lex.LexToken
+    lineno: int
 
 
 @dataclass
 class ExpressionInteger(Expression):
     integer: lex.LexToken
-    lineno: lex.LexToken
+    lineno: int
 
 
 @dataclass
@@ -60,4 +94,4 @@ class ExpressionBinop(Expression):
     op: lex.LexToken
     lhs: Expression
     rhs: Expression
-    lineno: lex.LexToken
+    lineno: int
