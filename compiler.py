@@ -1,10 +1,15 @@
-import AST_printer
-import interfacing_program
+import interfacing_parser
 import lexer_parser
+import printers.AST_printer as AST_printer
+import symbols
 
 lexer_parser.parser.parse(input(""), lexer=lexer_parser.lexer)
 
-pp = AST_printer.ASTTreePrinter()
+the_program_AST = interfacing_parser.the_program
 
-pp.build_graph(interfacing_program.the_program)
-pp.render('png')
+AST_pretty_printer = AST_printer.ASTTreePrinter()
+AST_pretty_printer.build_graph(the_program_AST)
+AST_pretty_printer.render('png')
+
+#symbol_table_incorporator = symbols.ASTSymbolIncorporator()
+#symbol_table_incorporator.incorporate_symbols(the_program_AST)

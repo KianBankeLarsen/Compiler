@@ -1,3 +1,3 @@
 # Compiler
 
-![](images/Digraph.gv.png)
+![](./printers/images/Digraph.gv.png)

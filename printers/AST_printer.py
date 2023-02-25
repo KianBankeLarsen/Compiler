@@ -95,5 +95,5 @@ class ASTTreePrinter:
         """
 
         self.graph.format = format
-        self.graph.directory = "images"
+        self.graph.directory = "./printers/images"
         self.graph.render()

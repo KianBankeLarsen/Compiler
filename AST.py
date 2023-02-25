@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-import ply.lex as lex
-
 
 class AstNode:
     pass
@@ -79,19 +77,19 @@ class Expression(AstNode):
 
 @dataclass
 class ExpressionIdentifier(Expression):
-    identifier: lex.LexToken
+    identifier: str
     lineno: int
 
 
 @dataclass
 class ExpressionInteger(Expression):
-    integer: lex.LexToken
+    integer: int
     lineno: int
 
 
 @dataclass
 class ExpressionBinop(Expression):
-    op: lex.LexToken
+    op: str
     lhs: Expression
     rhs: Expression
     lineno: int

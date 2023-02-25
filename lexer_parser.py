@@ -4,7 +4,7 @@ import ply.lex as lex
 import ply.yacc as yacc
 
 import AST
-import interfacing_program
+import interfacing_parser
 
 ####################### LEXER #######################
 reserved = {
@@ -83,7 +83,6 @@ def t_COMMENT(t):
     r'\#.*'
     pass
 
-# TODO do right
 def t_error(t):
     print("Lexical Analysis",
           f"Illegal character '{t.value[0]}'.",
@@ -95,8 +94,8 @@ def t_error(t):
 # First production identifies the start symbol
 def p_program(t):
     'program : body'
-    interfacing_program.the_program = AST.Function(
-        "main", None, t[1], t.lexer.lineno)
+    interfacing_parser.the_program = AST.Function(
+        ".main", None, t[1], t.lexer.lineno)
 
 
 def p_body(t):
