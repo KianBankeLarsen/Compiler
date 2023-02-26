@@ -7,9 +7,9 @@ lexer_parser.parser.parse(input(""), lexer=lexer_parser.lexer)
 
 the_program_AST = interfacing_parser.the_program
 
-#AST_pretty_printer = AST_printer.ASTTreePrinter()
-#AST_pretty_printer.build_graph(the_program_AST)
-#AST_pretty_printer.render('png')
+AST_pretty_printer = AST_printer.ASTTreePrinter()
+AST_pretty_printer.build_graph(the_program_AST)
+AST_pretty_printer.render('png')
 
 #symbol_table_incorporator = symbols.ASTSymbolIncorporator()
 #symbol_table_incorporator.incorporate_symbols(the_program_AST)

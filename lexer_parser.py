@@ -32,6 +32,7 @@ t_MINUS = r'-'
 t_TIMES = r'\*'
 t_DIVIDE = r'/'
 t_ASSIGN = r'='
+t_COMMA = r','
 t_SEMICOL = r';'
 t_LPAREN = r'\('
 t_RPAREN = r'\)'
@@ -92,7 +93,7 @@ def t_error(t):
 def p_program(t):
     'program : body'
     interfacing_parser.the_program = AST.Function(
-        "int", ".main", None, t[1], t.lexer.lineno)
+        ".main", None, t[1], t.lexer.lineno)
 
 
 def p_empty(t):
@@ -137,7 +138,7 @@ def p_variables_list(t):
 
 def p_function(t):
     'function : IDENT LPAREN optional_parameter_list RPAREN LCURL body RCURL'
-    t[0] = AST.Function(t[1], t[2], t[4], t[7], t.lexer.lineno)
+    t[0] = AST.Function(t[1], t[3], t[6], t.lexer.lineno)
 
 
 def p_optional_parameter_list(t):
@@ -147,13 +148,16 @@ def p_optional_parameter_list(t):
 
 
 def p_parameter_list(t):
-    '''parameter_list : type IDENT
-                      | type IDENT COMMA parameter_list'''
-    if len(t) == 3:
-        t[0] = AST.ParameterList(t[1], t[2], None, t.lexer.lineno)
+    '''parameter_list : param
+                      | param COMMA parameter_list'''
+    if len(t) == 2:
+        t[0] = AST.ParameterList(t[1], None, t.lexer.lineno)
     else:
-        t[0] = AST.ParameterList(t[1], t[2], t[4], t.lexer.lineno)
+        t[0] = AST.ParameterList(t[1], t[3], t.lexer.lineno)
 
+def p_param(t):
+    '''param : type IDENT'''
+    t[0] = AST.Parameter(t[1], t[2], t.lexer.lineno)
 
 def p_type(t):
     '''type : INT_TYPE
@@ -222,7 +226,7 @@ def p_statement_while(t):
     'statement_while :  WHILE LPAREN expression RPAREN statement_compound'
     t[0] = AST.StatementWhile(t[3], t[5], t.lexer.lineno)
 
-
+# TODO for-loop
 def p_statement_for(t):
     '''statement_for :  FOR LPAREN type IDENT ASSIGN expression SEMICOL expression SEMICOL IDENT ASSIGN expression RPAREN statement_compound'''
     t[0] = AST.StatementFor(t[3], t[4], t[5], t[7], t.lexer.lineno)

@@ -41,7 +41,6 @@ class VariableList(Symbol):
 
 @dataclass
 class Function(Symbol):
-    type: str
     name: ExpressionIdentifier
     par_list: ParameterList
     body: Body
@@ -49,9 +48,15 @@ class Function(Symbol):
 
 
 @dataclass
-class ParameterList(Symbol):
+class Parameter(Symbol):
     type: str
-    parameter: str
+    name: str
+    lineno: int
+
+
+@dataclass
+class ParameterList(AstNode):
+    param: Parameter
     next: ParameterList
     lineno: int
 
@@ -89,6 +94,7 @@ class StatementWhile(Statement):
     lineno: int
 
 
+# TODO for-loop
 @dataclass
 class StatementFor(Statement):
     assign: StatementAssignment
