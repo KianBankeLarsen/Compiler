@@ -155,9 +155,11 @@ def p_parameter_list(t):
     else:
         t[0] = AST.ParameterList(t[1], t[3], t.lexer.lineno)
 
+
 def p_param(t):
     '''param : type IDENT'''
     t[0] = AST.Parameter(t[1], t[2], t.lexer.lineno)
+
 
 def p_type(t):
     '''type : INT_TYPE
@@ -225,6 +227,7 @@ def p_statement_call(t):
 def p_statement_while(t):
     'statement_while :  WHILE LPAREN expression RPAREN statement_compound'
     t[0] = AST.StatementWhile(t[3], t[5], t.lexer.lineno)
+
 
 # TODO for-loop
 def p_statement_for(t):
