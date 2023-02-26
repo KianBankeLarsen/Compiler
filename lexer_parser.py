@@ -6,13 +6,17 @@ import ply.yacc as yacc
 import AST
 import interfacing_parser
 
-####################### LEXER #######################
+############################################## LEXER ##############################################
 reserved = {
     'print': 'PRINT',
     'return': 'RETURN',
     'if': 'IF',
     'else': 'ELSE',
-    'while': 'WHILE'
+    'while': 'WHILE',
+    'int': 'INT_TYPE',
+    'float': 'FLOAT_TYPE',
+    'bool': 'BOOL_TYPE',
+    'for': 'FOR'
 }
 
 tokens = (
@@ -20,7 +24,7 @@ tokens = (
     'PLUS', 'MINUS', 'TIMES', 'DIVIDE',
     'LPAREN', 'RPAREN', 'LCURL', 'RCURL',
     'EQ', 'NEQ', 'LT', 'GT', 'LTE', 'GTE',
-    'ASSIGN', 'SEMICOL',
+    'ASSIGN', 'COMMA', 'SEMICOL'
 ) + tuple(reserved.values())
 
 t_PLUS = r'\+'
@@ -39,6 +43,7 @@ t_LT = r'<'
 t_GT = r'>'
 t_LTE = r'<='
 t_GTE = r'>='
+t_ignore = " \t\r"
 
 precedence = (
     ('right', 'EQ', 'NEQ', 'LT', 'GT', 'LTE', 'GTE'),
@@ -61,17 +66,8 @@ def t_INT(t):
         print("Lexical Analysis",
               f"Integer value too large.",
               t.lexer.lineno)
-        t.value = 0
-    if t.value > int('0x7FFFFFFFFFFFFFFF', base=16):
-        print("Lexical Analysis",
-              f"Integer value too large.",
-              t.lexer.lineno)
-        t.value = 0
+        sys.exit(1)
     return t
-
-
-# A string containing ignored characters (spaces and tabs)
-t_ignore = " \t\r"  # \r included for the sake of windows users
 
 
 def t_newline(t):
@@ -83,6 +79,7 @@ def t_COMMENT(t):
     r'\#.*'
     pass
 
+
 def t_error(t):
     print("Lexical Analysis",
           f"Illegal character '{t.value[0]}'.",
@@ -90,17 +87,85 @@ def t_error(t):
     sys.exit(1)
 
 
-####################### PARSER #######################
+############################################## PARSER ##############################################
 # First production identifies the start symbol
 def p_program(t):
     'program : body'
     interfacing_parser.the_program = AST.Function(
-        ".main", None, t[1], t.lexer.lineno)
+        "int", ".main", None, t[1], t.lexer.lineno)
+
+
+def p_empty(t):
+    'empty :'
+    t[0] = None
 
 
 def p_body(t):
-    'body : statement_list'
-    t[0] = AST.Body(None, None, t[1], t.lexer.lineno)
+    'body : optional_declarations optional_statement_list'
+    t[0] = AST.Body(t[1], t[2], t.lexer.lineno)
+
+
+def p_optional_declaration(t):
+    '''optional_declarations : empty
+                            | declaration_list'''
+    t[0] = t[1]
+
+
+def p_declaration_list(t):
+    '''declaration_list : declaration
+                        | declaration declaration_list'''
+    if len(t) == 2:
+        t[0] = AST.DeclarationList(t[1], None, t.lexer.lineno)
+    else:
+        t[0] = AST.DeclarationList(t[1], t[2], t.lexer.lineno)
+
+
+def p_declaration(t):
+    '''declaration : type function
+                | type variables_list SEMICOL'''
+    t[0] = AST.Declaration(t[1], t[2], t.lexer.lineno)
+
+
+def p_variables_list(t):
+    '''variables_list : IDENT
+                      | IDENT COMMA variables_list'''
+    if len(t) == 2:
+        t[0] = AST.VariableList(t[1], None, t.lexer.lineno)
+    else:
+        t[0] = AST.VariableList(t[1], t[3], t.lexer.lineno)
+
+
+def p_function(t):
+    'function : IDENT LPAREN optional_parameter_list RPAREN LCURL body RCURL'
+    t[0] = AST.Function(t[1], t[2], t[4], t[7], t.lexer.lineno)
+
+
+def p_optional_parameter_list(t):
+    '''optional_parameter_list : empty
+                               | parameter_list'''
+    t[0] = t[1]
+
+
+def p_parameter_list(t):
+    '''parameter_list : type IDENT
+                      | type IDENT COMMA parameter_list'''
+    if len(t) == 3:
+        t[0] = AST.ParameterList(t[1], t[2], None, t.lexer.lineno)
+    else:
+        t[0] = AST.ParameterList(t[1], t[2], t[4], t.lexer.lineno)
+
+
+def p_type(t):
+    '''type : INT_TYPE
+            | FLOAT_TYPE
+            | BOOL_TYPE'''
+    t[0] = t[1]
+
+
+def p_optional_statement_list(t):
+    '''optional_statement_list : empty
+                            | statement_list'''
+    t[0] = t[1]
 
 
 def p_statement_list(t):
@@ -118,7 +183,9 @@ def p_statement(t):
                 | statement_ifthenelse
                 | statement_print
                 | statement_while
-                | statement_compound'''
+                | statement_for
+                | statement_compound
+                | statement_call'''
     t[0] = t[1]
 
 
@@ -133,7 +200,7 @@ def p_statement_print(t):
 
 
 def p_statement_assignment(t):
-    'statement_assignment : expression_identifier ASSIGN expression SEMICOL'
+    'statement_assignment : IDENT ASSIGN expression SEMICOL'
     t[0] = AST.StatementAssignment(t[1], t[3], t.lexer.lineno)
 
 
@@ -146,13 +213,19 @@ def p_statement_ifthenelse(t):
         t[0] = AST.StatementIfthenelse(t[3], t[5], t[7], t.lexer.lineno)
 
 
+def p_statement_call(t):
+    '''statement_call : expression_call SEMICOL'''
+    t[0] = t[1]
+
+
 def p_statement_while(t):
     'statement_while :  WHILE LPAREN expression RPAREN statement_compound'
     t[0] = AST.StatementWhile(t[3], t[5], t.lexer.lineno)
 
-# def p_statement_for(t):
-#     'statement_for :  FOR LPAREN statement_assignment expression expression RPAREN LCURL statement_list RCURL'
-#     t[0] = AST.StatementFor(t[3], t[6], t.lexer.lineno)
+
+def p_statement_for(t):
+    '''statement_for :  FOR LPAREN type IDENT ASSIGN expression SEMICOL expression SEMICOL IDENT ASSIGN expression RPAREN statement_compound'''
+    t[0] = AST.StatementFor(t[3], t[4], t[5], t[7], t.lexer.lineno)
 
 
 def p_statement_compound(t):
@@ -163,6 +236,7 @@ def p_statement_compound(t):
 def p_expression(t):
     '''expression : expression_integer
                 | expression_identifier
+                | expression_call
                 | expression_binop
                 | expression_group'''
     t[0] = t[1]
@@ -195,6 +269,26 @@ def p_expression_binop(t):
 def p_expression_group(t):
     'expression_group : LPAREN expression RPAREN'
     t[0] = t[2]
+
+
+def p_expression_call(t):
+    'expression_call : IDENT LPAREN optional_expression_list RPAREN'
+    t[0] = AST.ExpressionCall(t[1], t[3], t.lexer.lineno)
+
+
+def p_optional_expression_list(t):
+    '''optional_expression_list : empty
+                                | expression_list'''
+    t[0] = t[1]
+
+
+def p_expression_list(t):
+    '''expression_list : expression
+                       | expression COMMA expression_list'''
+    if len(t) == 2:
+        t[0] = AST.ExpressionList(t[1], None, t.lexer.lineno)
+    else:
+        t[0] = AST.ExpressionList(t[1], t[3], t.lexer.lineno)
 
 
 def p_error(t):

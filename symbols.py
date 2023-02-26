@@ -14,11 +14,11 @@ class NameCategory(Enum):
     FUNCTION = auto()
 
 
-class SymVal():
+class Symbol():
     """
     """
 
-    def __init__(self, cat: NameCategory, info: int) -> SymVal:
+    def __init__(self, cat: NameCategory, info: int) -> Symbol:
         self.cat = cat
         self.info = info
 
@@ -32,17 +32,17 @@ class SymbolTable:
         self.level = 0 if parent else parent.level + 1
         self.parent = parent
 
-    def insert(self, signature: tuple or str, value: SymVal):
+    def insert(self, signature: tuple or str, value: Symbol):
         self._tab[signature] = value
 
-    def lookup(self, signature: tuple or str) -> SymVal:
+    def lookup(self, signature: tuple or str) -> Symbol:
         if self.parent:
             return self._tab.get(
                 signature, self.lookup(self.parent.lookup(signature))
             )
         return self.lookup_this_scope(signature)
 
-    def lookup_this_scope(self, signature: tuple or str) -> SymVal:
+    def lookup_this_scope(self, signature: tuple or str) -> Symbol:
         return self._tab.get(signature, None)
 
 

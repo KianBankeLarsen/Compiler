@@ -8,37 +8,74 @@ class AstNode:
 
 
 @dataclass
-class StatementList(AstNode):
-    stm: StatementList
-    next: StatementList
-    lineno: int
-
-
-@dataclass
 class Body(AstNode):
-    variables_decl: object
-    functions_decl: object
+    decls: DeclarationList
     stm_list: StatementList
     lineno: int
 
 
 @dataclass
-class Function(AstNode):
+class DeclarationList:
+    decl: Declaration
+    next: DeclarationList
+    lineno: int
+
+
+@dataclass
+class Declaration(AstNode):
+    type: str
+    decl: Symbol
+    lineno: int
+
+
+class Symbol(AstNode):
+    pass
+
+
+@dataclass
+class VariableList(Symbol):
+    name: str
+    next: VariableList
+    lineno: int
+
+
+@dataclass
+class Function(Symbol):
+    type: str
     name: ExpressionIdentifier
-    par_list: object
+    par_list: ParameterList
     body: Body
     lineno: int
 
 
 @dataclass
-class StatementAssignment(AstNode):
+class ParameterList(Symbol):
+    type: str
+    parameter: str
+    next: ParameterList
+    lineno: int
+
+
+@dataclass
+class StatementList(AstNode):
+    stm: Statement
+    next: StatementList
+    lineno: int
+
+
+class Statement(AstNode):
+    pass
+
+
+@dataclass
+class StatementAssignment(Statement):
     lhs: ExpressionIdentifier
     rhs: Expression
     lineno: int
 
 
 @dataclass
-class StatementIfthenelse:
+class StatementIfthenelse(Statement):
     exp: Expression
     then_part: StatementList
     else_part: StatementList
@@ -46,27 +83,29 @@ class StatementIfthenelse:
 
 
 @dataclass
-class StatementWhile:
+class StatementWhile(Statement):
     exp: Expression
     while_part: StatementList
     lineno: int
 
 
-# @dataclass
-# class StatementFor:
-#     assign: StatementAssignment
-#     exp: Expression
-#     do: StatementList
+@dataclass
+class StatementFor(Statement):
+    assign: StatementAssignment
+    exp: Expression
+    assign2: StatementAssignment
+    do: StatementList
+    lineno: int
 
 
 @dataclass
-class StatementPrint:
+class StatementPrint(Statement):
     exp: Expression
     lineno: int
 
 
 @dataclass
-class StatementReturn:
+class StatementReturn(Statement):
     exp: Expression
     lineno: int
 
@@ -92,4 +131,18 @@ class ExpressionBinop(Expression):
     op: str
     lhs: Expression
     rhs: Expression
+    lineno: int
+
+
+@dataclass
+class ExpressionCall(Expression):
+    name: ExpressionIdentifier
+    exp_list: ExpressionList
+    lineno: int
+
+
+@dataclass
+class ExpressionList:
+    exp: Expression
+    next: ExpressionList
     lineno: int

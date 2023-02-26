@@ -38,9 +38,9 @@ class ASTTreePrinter:
                 self._add_edge(ast_node.dotnum, stm_list.dotnum)
             case AST.StatementAssignment(lhs, rhs):
                 self.build_graph(rhs)
-                self.build_graph(lhs)
                 ast_node.dotnum = self._add_node("=")
-                self._add_edge(ast_node.dotnum, lhs.dotnum)
+                tmp_dotnum = self._add_node(lhs)
+                self._add_edge(ast_node.dotnum, tmp_dotnum)
                 self._add_edge(ast_node.dotnum, rhs.dotnum)
             case AST.StatementList(stm, next):
                 ast_node.dotnum = self._add_node("stm_list")
