@@ -94,13 +94,20 @@ class StatementWhile(Statement):
     lineno: int
 
 
-# TODO for-loop
 @dataclass
 class StatementFor(Statement):
-    assign: StatementAssignment
+    iter: StatementForIter
     exp: Expression
-    assign2: StatementAssignment
-    do: StatementList
+    assign: StatementAssignment
+    exp_list: StatementList
+    lineno: int
+
+
+@dataclass
+class StatementForIter(Statement):
+    type: str
+    name: str
+    stm_list: Expression
     lineno: int
 
 
@@ -142,7 +149,7 @@ class ExpressionBinop(Expression):
 
 @dataclass
 class ExpressionCall(Expression):
-    name: ExpressionIdentifier
+    name: str
     exp_list: ExpressionList
     lineno: int
 

@@ -1,97 +1,103 @@
 digraph {
 	0 [label=".main"]
 	1 [label=body]
-	2 [label=b]
-	3 [label=fii]
-	4 [label=foo]
-	5 [label=faa]
-	4 -> 5
-	3 -> 4
-	2 -> 3
-	6 [label=int]
-	7 [label="var decl"]
-	7 -> 2
-	7 -> 6
-	8 [label=decl_list]
-	9 [label=asdf]
-	10 [label=int]
-	11 [label="var decl"]
-	11 -> 9
-	11 -> 10
-	12 [label=decl_list]
-	13 [label=a]
-	14 [label=param]
-	15 [label=int]
-	16 [label=b]
-	14 -> 15
-	14 -> 16
-	17 [label=param_list]
-	17 -> 14
-	18 [label=param]
-	19 [label=float]
-	20 [label=c]
-	18 -> 19
+	2 [label=a]
+	3 [label=int]
+	4 [label="var decl"]
+	4 -> 2
+	4 -> 3
+	5 [label=decl_list]
+	6 [label=b]
+	7 [label=c]
+	8 [label=d]
+	7 -> 8
+	6 -> 7
+	9 [label=float]
+	10 [label="var decl"]
+	10 -> 6
+	10 -> 9
+	11 [label=decl_list]
+	12 [label=main]
+	13 [label=param]
+	14 [label=int]
+	15 [label=test]
+	13 -> 14
+	13 -> 15
+	16 [label=param_list]
+	16 -> 13
+	12 -> 16
+	17 [label=body]
+	18 [label=stm_list]
+	19 [label=a]
+	20 [label=print]
+	20 -> 19
 	18 -> 20
-	21 [label=param_list]
-	21 -> 18
-	17 -> 21
-	13 -> 17
-	22 [label=body]
-	23 [label=stm_list]
-	24 [label=3]
-	25 [label=return]
-	25 -> 24
-	23 -> 25
-	22 -> 23
-	13 -> 22
-	26 [label=int]
-	27 [label="func decl"]
-	27 -> 13
-	27 -> 26
-	28 [label=decl_list]
-	28 -> 27
-	12 -> 28
-	12 -> 11
-	8 -> 12
-	8 -> 7
-	1 -> 8
-	29 [label=stm_list]
-	30 [label=3]
-	31 [label=10]
-	32 [label="<"]
-	32 -> 30
-	32 -> 31
-	33 [label=stm_list]
-	34 [label=b]
-	35 [label=7]
-	36 [label="*"]
-	36 -> 34
-	36 -> 35
-	37 [label=8]
-	38 [label="/"]
-	38 -> 36
-	38 -> 37
-	39 [label="="]
-	40 [label=a]
-	39 -> 40
+	17 -> 18
+	12 -> 17
+	21 [label=int]
+	22 [label="func decl"]
+	22 -> 12
+	22 -> 21
+	23 [label=decl_list]
+	23 -> 22
+	11 -> 23
+	11 -> 10
+	5 -> 11
+	5 -> 4
+	1 -> 5
+	24 [label=stm_list]
+	25 [label=1]
+	26 [label=iter]
+	27 [label=int]
+	28 [label=i]
+	26 -> 25
+	26 -> 27
+	26 -> 28
+	29 [label=i]
+	30 [label=10]
+	31 [label="<"]
+	31 -> 29
+	31 -> 30
+	32 [label=i]
+	33 [label=1]
+	34 [label="+"]
+	34 -> 32
+	34 -> 33
+	35 [label="="]
+	36 [label=i]
+	35 -> 36
+	35 -> 34
+	37 [label=stm_list]
+	38 [label=4]
+	39 [label=return]
 	39 -> 38
-	33 -> 39
+	37 -> 39
+	40 [label=for]
+	40 -> 26
+	40 -> 31
+	40 -> 35
+	40 -> 37
+	24 -> 40
 	41 [label=stm_list]
-	42 [label=7]
-	43 [label=print]
-	43 -> 42
-	41 -> 43
-	44 [label=stm_list]
-	45 [label=4]
-	46 [label=return]
-	46 -> 45
-	44 -> 46
-	41 -> 44
-	33 -> 41
-	47 [label=while]
-	47 -> 32
-	47 -> 33
-	29 -> 47
-	1 -> 29
+	42 [label="call main"]
+	43 [label=a]
+	44 [label=expr_list]
+	44 -> 43
+	42 -> 44
+	41 -> 42
+	45 [label=stm_list]
+	46 [label=3]
+	47 [label=stm_list]
+	48 [label=5]
+	49 [label=print]
+	49 -> 48
+	47 -> 49
+	50 [label=while]
+	50 -> 46
+	50 -> 47
+	45 -> 50
+	41 -> 45
+	24 -> 41
+	1 -> 24
 	0 -> 1
 }

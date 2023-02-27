@@ -190,7 +190,6 @@ def p_statement(t):
                 | statement_print
                 | statement_while
                 | statement_for
-                | statement_compound
                 | statement_call'''
     t[0] = t[1]
 
@@ -229,10 +228,19 @@ def p_statement_while(t):
     t[0] = AST.StatementWhile(t[3], t[5], t.lexer.lineno)
 
 
-# TODO for-loop
 def p_statement_for(t):
-    '''statement_for :  FOR LPAREN type IDENT ASSIGN expression SEMICOL expression SEMICOL IDENT ASSIGN expression RPAREN statement_compound'''
-    t[0] = AST.StatementFor(t[3], t[4], t[5], t[7], t.lexer.lineno)
+    '''statement_for : FOR LPAREN statement_for_iter SEMICOL expression SEMICOL statement_assignment_for RPAREN statement_compound'''
+    t[0] = AST.StatementFor(t[3], t[5], t[7], t[9], t.lexer.lineno)
+
+
+def p_statement_for_assign(t):
+    '''statement_assignment_for : IDENT ASSIGN expression'''
+    t[0] = AST.StatementAssignment(t[1], t[3], t.lexer.lineno)
+
+
+def p_statement_for_start_val(t):
+    '''statement_for_iter : type IDENT ASSIGN expression'''
+    t[0] = AST.StatementForIter(t[1], t[2], t[4], t.lexer.lineno)
 
 
 def p_statement_compound(t):
