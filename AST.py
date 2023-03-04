@@ -23,8 +23,28 @@ class DeclarationList:
 
 @dataclass
 class Declaration(AstNode):
+    pass
+
+
+@dataclass
+class DeclarationFunction(Declaration):
     type: str
-    decl: Symbol
+    func: Function
+    lineno: int
+
+
+@dataclass
+class DeclarationVariableList(Declaration):
+    type: str
+    var_lst: VariableList
+    lineno: int
+
+
+@dataclass
+class DeclarationVariableInit(Declaration):
+    type: str
+    name: str
+    exp: Expression
     lineno: int
 
 
@@ -96,20 +116,11 @@ class StatementWhile(Statement):
 
 @dataclass
 class StatementFor(Statement):
-    iter: StatementForIter
+    iter: DeclarationVariableInit
     exp: Expression
     assign: StatementAssignment
     exp_list: StatementList
     lineno: int
-
-
-@dataclass
-class StatementForIter(Statement):
-    type: str
-    name: str
-    stm_list: Expression
-    lineno: int
-
 
 @dataclass
 class StatementPrint(Statement):

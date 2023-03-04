@@ -16,6 +16,7 @@ reserved = {
     'int': 'INT_TYPE',
     'float': 'FLOAT_TYPE',
     'bool': 'BOOL_TYPE',
+    'void': 'VOID_TYPE',
     'for': 'FOR'
 }
 
@@ -93,7 +94,7 @@ def t_error(t):
 def p_program(t):
     'program : body'
     interfacing_parser.the_program = AST.Function(
-        ".main", None, t[1], t.lexer.lineno)
+        "?main", None, t[1], t.lexer.lineno)
 
 
 def p_empty(t):
@@ -122,14 +123,31 @@ def p_declaration_list(t):
 
 
 def p_declaration(t):
-    '''declaration : type function
-                | type variables_list SEMICOL'''
-    t[0] = AST.Declaration(t[1], t[2], t.lexer.lineno)
+    '''declaration : function_declaration
+                    | variable_list_declaration
+                    | variable_init_declaration'''
+    t[0] = t[1]
+
+
+def p_function_declaration(t):
+    '''function_declaration : type function
+                            | VOID_TYPE function'''
+    t[0] = AST.DeclarationFunction(t[1], t[2], t.lexer.lineno)
+
+
+def p_variable_list_declaration(t):
+    '''variable_list_declaration : type variable_list SEMICOL'''
+    t[0] = AST.DeclarationVariableList(t[1], t[2], t.lexer.lineno)
+
+
+def p_variable_init_declaration(t):
+    '''variable_init_declaration : type IDENT ASSIGN expression SEMICOL'''
+    t[0] = AST.DeclarationVariableInit(t[1], t[2], t[4], t.lexer.lineno)
 
 
 def p_variables_list(t):
-    '''variables_list : IDENT
-                      | IDENT COMMA variables_list'''
+    '''variable_list : IDENT
+                      | IDENT COMMA variable_list'''
     if len(t) == 2:
         t[0] = AST.VariableList(t[1], None, t.lexer.lineno)
     else:
@@ -137,8 +155,13 @@ def p_variables_list(t):
 
 
 def p_function(t):
-    'function : IDENT LPAREN optional_parameter_list RPAREN LCURL body RCURL'
-    t[0] = AST.Function(t[1], t[3], t[6], t.lexer.lineno)
+    'function : IDENT LPAREN optional_parameter_list RPAREN new_scope'
+    t[0] = AST.Function(t[1], t[3], t[5], t.lexer.lineno)
+
+
+def p_new_scope(t):
+    'new_scope : LCURL body RCURL'
+    t[0] = t[2]
 
 
 def p_optional_parameter_list(t):
@@ -210,8 +233,8 @@ def p_statement_assignment(t):
 
 
 def p_statement_ifthenelse(t):
-    '''statement_ifthenelse : IF LPAREN expression RPAREN statement_compound
-                            | IF LPAREN expression RPAREN statement_compound ELSE statement_compound'''
+    '''statement_ifthenelse : IF LPAREN expression RPAREN new_scope
+                            | IF LPAREN expression RPAREN new_scope ELSE new_scope'''
     if len(t) == 6:
         t[0] = AST.StatementIfthenelse(t[3], t[5], None, t.lexer.lineno)
     else:
@@ -224,28 +247,18 @@ def p_statement_call(t):
 
 
 def p_statement_while(t):
-    'statement_while :  WHILE LPAREN expression RPAREN statement_compound'
+    'statement_while :  WHILE LPAREN expression RPAREN new_scope'
     t[0] = AST.StatementWhile(t[3], t[5], t.lexer.lineno)
 
 
 def p_statement_for(t):
-    '''statement_for : FOR LPAREN statement_for_iter SEMICOL expression SEMICOL statement_assignment_for RPAREN statement_compound'''
-    t[0] = AST.StatementFor(t[3], t[5], t[7], t[9], t.lexer.lineno)
+    '''statement_for : FOR LPAREN variable_init_declaration expression SEMICOL statement_assignment_for RPAREN new_scope'''
+    t[0] = AST.StatementFor(t[3], t[4], t[6], t[8], t.lexer.lineno)
 
 
 def p_statement_for_assign(t):
     '''statement_assignment_for : IDENT ASSIGN expression'''
     t[0] = AST.StatementAssignment(t[1], t[3], t.lexer.lineno)
-
-
-def p_statement_for_start_val(t):
-    '''statement_for_iter : type IDENT ASSIGN expression'''
-    t[0] = AST.StatementForIter(t[1], t[2], t[4], t.lexer.lineno)
-
-
-def p_statement_compound(t):
-    'statement_compound : LCURL statement_list RCURL'
-    t[0] = t[2]
 
 
 def p_expression(t):

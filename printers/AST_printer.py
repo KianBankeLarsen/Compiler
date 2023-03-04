@@ -43,18 +43,26 @@ class ASTTreePrinter:
                     self.build_graph(next)
                     self._add_edge(ast_node.dotnum, next.dotnum)
                 self._add_edge(ast_node.dotnum, decl.dotnum)
-            case AST.Declaration(type, decl):
-                self.build_graph(decl)
+            case AST.DeclarationFunction(type, func):
+                ast_node.dotnum = self._add_node("func_decl")
+                self.build_graph(func)
                 tmp_dotnum = self._add_node(type)
-                match decl:
-                    case AST.VariableList():
-                        ast_node.dotnum = self._add_node("var decl")
-                    case AST.Function():
-                        ast_node.dotnum = self._add_node("func decl")
-                    case _:
-                        raise ValueError(f"Unrecognized type: {decl}")
-                self._add_edge(ast_node.dotnum, decl.dotnum)
+                self._add_edge(ast_node.dotnum, func.dotnum)
                 self._add_edge(ast_node.dotnum, tmp_dotnum)
+            case AST.DeclarationVariableList(type, var_lst):
+                ast_node.dotnum = self._add_node("var_decl")
+                self.build_graph(var_lst)
+                tmp_dotnum = self._add_node(type)
+                self._add_edge(ast_node.dotnum, var_lst.dotnum)
+                self._add_edge(ast_node.dotnum, tmp_dotnum)
+            case AST.DeclarationVariableInit(type, name, exp):
+                ast_node.dotnum = self._add_node("init_var_decl")
+                self.build_graph(exp)
+                tmp_dotnum = self._add_node(type)
+                tmp_dotnum2 = self._add_node(name)
+                self._add_edge(ast_node.dotnum, tmp_dotnum)
+                self._add_edge(ast_node.dotnum, tmp_dotnum2)
+                self._add_edge(ast_node.dotnum, exp.dotnum)
             case AST.VariableList(name, next):
                 ast_node.dotnum = self._add_node(name)
                 if next:
@@ -119,14 +127,6 @@ class ASTTreePrinter:
                 self._add_edge(ast_node.dotnum, exp.dotnum)
                 self._add_edge(ast_node.dotnum, assign.dotnum)
                 self._add_edge(ast_node.dotnum, exp_list.dotnum)
-            case AST.StatementForIter(type, name, stm_list):
-                self.build_graph(stm_list)
-                ast_node.dotnum = self._add_node("iter")
-                tmp_dotnum = self._add_node(type)
-                tmp_dotnum2 = self._add_node(name)
-                self._add_edge(ast_node.dotnum, stm_list.dotnum)
-                self._add_edge(ast_node.dotnum, tmp_dotnum)
-                self._add_edge(ast_node.dotnum, tmp_dotnum2)
             case AST.StatementPrint(exp):
                 self.build_graph(exp)
                 ast_node.dotnum = self._add_node("print")
