@@ -21,7 +21,7 @@ reserved = {
 }
 
 tokens = (
-    'IDENT', 'INT',
+    'IDENT', 'INT', 'FLOAT',
     'PLUS', 'MINUS', 'TIMES', 'DIVIDE',
     'LPAREN', 'RPAREN', 'LCURL', 'RCURL',
     'EQ', 'NEQ', 'LT', 'GT', 'LTE', 'GTE',
@@ -57,6 +57,18 @@ precedence = (
 def t_IDENT(t):
     r'[a-zA-Z_][a-zA-Z_0-9]*'
     t.type = reserved.get(t.value, 'IDENT')    # Check for reserved words
+    return t
+
+
+def t_FLOAT(t):
+    r'(0|[1-9][0-9]*)\.[0-9]+'
+    try:
+        t.value = float(t.value)
+    except ValueError:
+        print("Lexical Analysis",
+              f"Float value too large.",
+              t.lexer.lineno)
+        sys.exit(1)
     return t
 
 
@@ -263,6 +275,7 @@ def p_statement_for_assign(t):
 
 def p_expression(t):
     '''expression : expression_integer
+                | expression_float
                 | expression_identifier
                 | expression_call
                 | expression_binop
@@ -274,6 +287,10 @@ def p_expression_integer(t):
     'expression_integer : INT'
     t[0] = AST.ExpressionInteger(t[1], t.lexer.lineno)
 
+
+def p_expression_float(t):
+    '''expression_float : FLOAT'''
+    t[0] = AST.ExpressionFloat(t[1], t.lexer.lineno)
 
 def p_expression_identifier(t):
     'expression_identifier : IDENT'

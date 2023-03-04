@@ -102,15 +102,15 @@ class StatementAssignment(Statement):
 @dataclass
 class StatementIfthenelse(Statement):
     exp: Expression
-    then_part: StatementList
-    else_part: StatementList
+    then_part: Body
+    else_part: Body
     lineno: int
 
 
 @dataclass
 class StatementWhile(Statement):
     exp: Expression
-    while_part: StatementList
+    body: Body
     lineno: int
 
 
@@ -119,7 +119,7 @@ class StatementFor(Statement):
     iter: DeclarationVariableInit
     exp: Expression
     assign: StatementAssignment
-    exp_list: StatementList
+    body: Body
     lineno: int
 
 @dataclass
@@ -147,6 +147,12 @@ class ExpressionIdentifier(Expression):
 @dataclass
 class ExpressionInteger(Expression):
     integer: int
+    lineno: int
+
+
+@dataclass
+class ExpressionFloat(Expression):
+    float: float
     lineno: int
 
 

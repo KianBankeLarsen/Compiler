@@ -102,15 +102,15 @@ class ASTTreePrinter:
                 tmp_dotnum = self._add_node(lhs)
                 self._add_edge(ast_node.dotnum, tmp_dotnum)
                 self._add_edge(ast_node.dotnum, rhs.dotnum)
-            case AST.StatementIfthenelse(exp, stm_list1, stm_list2):
+            case AST.StatementIfthenelse(exp, then_part, else_part):
                 self.build_graph(exp)
-                self.build_graph(stm_list1)
+                self.build_graph(then_part)
                 ast_node.dotnum = self._add_node("if")
-                if stm_list2:
-                    self.build_graph(stm_list2)
-                    self._add_edge(ast_node.dotnum, stm_list2.dotnum)
+                if else_part:
+                    self.build_graph(else_part)
+                    self._add_edge(ast_node.dotnum, else_part.dotnum)
                 self._add_edge(ast_node.dotnum, exp.dotnum)
-                self._add_edge(ast_node.dotnum, stm_list1.dotnum)
+                self._add_edge(ast_node.dotnum, then_part.dotnum)
             case AST.StatementWhile(exp, stm_list):
                 self.build_graph(exp)
                 self.build_graph(stm_list)
@@ -139,6 +139,8 @@ class ASTTreePrinter:
                 ast_node.dotnum = self._add_node(identifier)
             case AST.ExpressionInteger(integer):
                 ast_node.dotnum = self._add_node(str(integer))
+            case AST.ExpressionFloat(float):
+                ast_node.dotnum = self._add_node(str(float))
             case AST.ExpressionBinop(op, lhs, rhs):
                 self.build_graph(lhs)
                 self.build_graph(rhs)
