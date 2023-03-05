@@ -1,7 +1,7 @@
 import interfacing_parser
 import lexer_parser
 import printers.AST_printer as AST_printer
-import printers.symbol_table_printer as Symbol_printer
+import printers.symbol_printer as Symbol_printer
 import symbols
 
 lexer_parser.parser.parse(
