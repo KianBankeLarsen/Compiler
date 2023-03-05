@@ -11,5 +11,5 @@ AST_pretty_printer = AST_printer.ASTTreePrinter()
 AST_pretty_printer.build_graph(the_program_AST)
 AST_pretty_printer.render('png')
 
-#symbol_table_incorporator = symbols.ASTSymbolIncorporator()
-#symbol_table_incorporator.incorporate_symbols(the_program_AST)
+symbol_table_incorporator = symbols.ASTSymbolIncorporator()
+symbol_table_incorporator.build_symbol_table(the_program_AST)

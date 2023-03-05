@@ -1,9 +1,8 @@
-import sys
-
 import ply.lex as lex
 import ply.yacc as yacc
 
 import AST
+import error
 import interfacing_parser
 
 ############################################## LEXER ##############################################
@@ -65,10 +64,10 @@ def t_FLOAT(t):
     try:
         t.value = float(t.value)
     except ValueError:
-        print("Lexical Analysis",
-              f"Float value too large.",
-              t.lexer.lineno)
-        sys.exit(1)
+        error.error_message(
+            "Lexical Analysis",
+            "Float value too large.",
+            t.lexer.lineno)
     return t
 
 
@@ -77,10 +76,10 @@ def t_INT(t):
     try:
         t.value = int(t.value)
     except ValueError:
-        print("Lexical Analysis",
-              f"Integer value too large.",
-              t.lexer.lineno)
-        sys.exit(1)
+        error.error_message(
+            "Lexical Analysis",
+            "Integer value too large.",
+            t.lexer.lineno)
     return t
 
 
@@ -95,10 +94,10 @@ def t_COMMENT(t):
 
 
 def t_error(t):
-    print("Lexical Analysis",
-          f"Illegal character '{t.value[0]}'.",
-          t.lexer.lineno)
-    sys.exit(1)
+    error.error_message(
+        "Lexical Analysis",
+        f"Illegal character '{t.value[0]}'.",
+        t.lexer.lineno)
 
 
 ############################################## PARSER ##############################################
@@ -292,6 +291,7 @@ def p_expression_float(t):
     '''expression_float : FLOAT'''
     t[0] = AST.ExpressionFloat(t[1], t.lexer.lineno)
 
+
 def p_expression_identifier(t):
     'expression_identifier : IDENT'
     t[0] = AST.ExpressionIdentifier(t[1], t.lexer.lineno)
@@ -343,11 +343,10 @@ def p_error(t):
     except AttributeError:
         cause = " - check for missing closing braces"
         location = "unknown"
-    print("Syntax Analysis",
-          f"Problem detected{cause}.",
-          location)
-    sys.exit(1)
-
+    error.error_message(
+        "Syntax Analysis", 
+        f"Problem detected{cause}.",
+        location)
 
 # Build the lexer
 lexer = lex.lex()
