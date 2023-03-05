@@ -12,11 +12,17 @@ class GenericPrinter:
         self.graph = graphviz.Digraph(name)
 
     def add_node(self, label: str) -> int:
+        """
+        """
+
         self.graph.node(str(self.nodes), label)
         self.nodes += 1
         return str(self.nodes - 1)
 
     def add_edge(self, start: int, end: int) -> None:
+        """
+        """
+        
         self.graph.edge(start, end)
 
     def render(self, format: str) -> None:
