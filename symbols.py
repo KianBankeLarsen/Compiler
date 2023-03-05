@@ -85,8 +85,7 @@ class ASTSymbolIncorporator:
                 self.build_symbol_table(stm_list)
             case AST.DeclarationList(decl, next):
                 self.build_symbol_table(decl)
-                if next:
-                    self.build_symbol_table(next)
+                self.build_symbol_table(next)
             case AST.DeclarationFunction(type, func, lineno):
                 if self._current_scope.lookup_this_scope(func.name)[0]:
                     self._error_message(func.name, lineno)
@@ -112,8 +111,7 @@ class ASTSymbolIncorporator:
             case AST.Function(name, par_list, body):
                 ast_node.symbol_table = self._current_scope
                 self.parameter_offset = 0
-                if par_list:
-                    self.build_symbol_table(par_list)
+                self.build_symbol_table(par_list)
                 ast_node.number_of_parameters = self.parameter_offset
                 self.build_symbol_table(body)
                 self._current_scope = self._current_scope.parent
@@ -126,12 +124,10 @@ class ASTSymbolIncorporator:
                 self.parameter_offset += 1
             case AST.ParameterList(param, next):
                 self.build_symbol_table(param)
-                if next:
-                    self.build_symbol_table(next)
+                self.build_symbol_table(next)
             case AST.StatementList(stm, next):
                 self.build_symbol_table(stm)
-                if next:
-                    self.build_symbol_table(stm)
+                self.build_symbol_table(next)
             case AST.StatementIfthenelse(_, then_part, else_part):
                 self._current_scope = SymbolTable(self._current_scope)
                 ast_node.symbol_table_then = self._current_scope

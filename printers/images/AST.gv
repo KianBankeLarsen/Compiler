@@ -1,0 +1,31 @@
+digraph AST {
+	0 [label="?main"]
+	1 [label=body]
+	2 [label=func_decl]
+	3 [label=main]
+	4 [label=param]
+	5 [label=float]
+	6 [label=b]
+	4 -> 5
+	4 -> 6
+	7 [label=param_list]
+	7 -> 4
+	3 -> 7
+	8 [label=body]
+	9 [label=var_decl]
+	10 [label=a]
+	11 [label=int]
+	9 -> 10
+	9 -> 11
+	12 [label=decl_list]
+	12 -> 9
+	8 -> 12
+	3 -> 8
+	13 [label=int]
+	2 -> 3
+	2 -> 13
+	14 [label=decl_list]
+	14 -> 2
+	1 -> 14
+	0 -> 1
+}

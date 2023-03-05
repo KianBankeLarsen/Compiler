@@ -10,13 +10,13 @@ lexer_parser.parser.parse(
 
 the_program_AST = interfacing_parser.the_program
 
-AST_pretty_printer = AST_printer.ASTTreePrinter()
+AST_pretty_printer = AST_printer.ASTTreePrinter("AST")
 AST_pretty_printer.build_graph(the_program_AST)
 AST_pretty_printer.render('png')
 
 symbol_table_incorporator = symbols.ASTSymbolIncorporator()
 symbol_table_incorporator.build_symbol_table(the_program_AST)
 
-symbol_table_printer = Symbol_printer.SymbolPrinter()
+symbol_table_printer = Symbol_printer.SymbolPrinter("Symbol")
 symbol_table_printer.build_graph(the_program_AST)
 symbol_table_printer.render('png')

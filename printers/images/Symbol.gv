@@ -1,0 +1,4 @@
+digraph Symbol {
+	0 [label="b, a"]
+	1 [label=main]
+}

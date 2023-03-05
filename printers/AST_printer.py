@@ -8,8 +8,8 @@ class ASTTreePrinter(GenericPrinter):
     """
     """
 
-    def __init__(self) -> GenericPrinter:
-        super().__init__()
+    def __init__(self, name) -> GenericPrinter:
+        super().__init__(name)
 
     def build_graph(self, ast_node: AST.AstNode) -> None:
         """Create Graphviz graph of AST.
