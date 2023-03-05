@@ -3,8 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum, auto
 
-import error
 import AST
+import error
 
 
 class NameCategory(Enum):
@@ -18,6 +18,7 @@ class Symbol:
     type: str
     kind: NameCategory
     info: int
+
 
 class SymbolTable:
     """
@@ -68,8 +69,8 @@ class ASTSymbolIncorporator:
 
     def _error_message(self, name: str, lineno: int) -> None:
         error.error_message(
-            "Symbol Collection", 
-            f"Redeclaration of function '{name}' in the same scope.", 
+            "Symbol Collection",
+            f"Redeclaration of function '{name}' in the same scope.",
             lineno)
 
     def build_symbol_table(self, ast_node: AST.AstNode) -> None:
