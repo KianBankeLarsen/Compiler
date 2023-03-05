@@ -1,3 +1,5 @@
 # Compiler
 
-![](./printers/images/Digraph.gv.png)
+![](./printers/images/AST.gv.png)
+
+![](./printers/images/Symbol.gv.png)
