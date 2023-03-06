@@ -25,7 +25,7 @@ class GenericPrinter:
         
         self.graph.edge(start, end)
 
-    def render(self, format: str) -> None:
+    def render(self, format: str, attr: dict = {}) -> None:
         """Render Graphviz graph to any format.
 
         Parameter
@@ -36,4 +36,5 @@ class GenericPrinter:
 
         self.graph.format = format
         self.graph.directory = "./printers/images"
+        self.graph.graph_attr.update(attr)
         self.graph.render()

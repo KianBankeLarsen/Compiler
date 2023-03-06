@@ -1,4 +1,24 @@
 digraph Symbol {
-	0 [label="b, a"]
-	1 [label=main]
+	graph [rankdir=BT]
+	0 [label="main, skumfidus"]
+	1 [label="a, foo"]
+	1 -> 0
+	2 [label="b, meeeh"]
+	2 -> 1
+	3 [label="myscope, anotherVariable"]
+	3 -> 0
+	4 [label=reeee]
+	4 -> 0
+	5 [label="yeah, i"]
+	5 -> 0
+	6 [label=teeest]
+	6 -> 0
+	7 [label="another, foo"]
+	7 -> 0
+	8 [label="param, jubii"]
+	8 -> 7
+	9 [label=""]
+	9 -> 8
+	10 [label=yoo]
+	10 -> 8
 }

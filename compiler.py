@@ -19,4 +19,4 @@ symbol_table_incorporator.build_symbol_table(the_program_AST)
 
 symbol_table_printer = Symbol_printer.SymbolPrinter("Symbol")
 symbol_table_printer.build_graph(the_program_AST)
-symbol_table_printer.render('png')
+symbol_table_printer.render('png', {'rankdir': 'BT'})

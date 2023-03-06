@@ -40,10 +40,11 @@ class SymbolTable:
 
     def lookup(self, signature: tuple or str) -> tuple(Symbol, int):
         if self.parent:
-            return tuple(
+            return (
                 self._tab.get(
-                    signature, self.lookup(self.parent.lookup(signature))
-                ), self.level)
+                    signature, 
+                    self.lookup(self.parent.lookup(signature))), 
+                self.level)
         return self.lookup_this_scope(signature)
 
     def lookup_this_scope(self, signature: tuple or str) -> tuple(Symbol, int):
