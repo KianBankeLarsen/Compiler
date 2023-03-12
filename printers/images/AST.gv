@@ -4,196 +4,24 @@ digraph AST {
 	2 [label=func_decl]
 	3 [label=main]
 	4 [label=body]
-	5 [label=var_decl]
-	6 [label=a]
-	7 [label=int]
-	5 -> 6
-	5 -> 7
-	8 [label=decl_list]
-	9 [label=func_decl]
-	10 [label=foo]
-	11 [label=param]
-	12 [label=float]
-	13 [label=b]
-	11 -> 12
-	11 -> 13
-	14 [label=param_list]
-	14 -> 11
-	10 -> 14
-	15 [label=body]
-	16 [label=var_decl]
-	17 [label=meeeh]
-	18 [label=int]
-	16 -> 17
-	16 -> 18
-	19 [label=decl_list]
-	19 -> 16
-	15 -> 19
-	10 -> 15
-	20 [label=int]
-	9 -> 10
-	9 -> 20
-	21 [label=decl_list]
-	21 -> 9
-	8 -> 21
-	8 -> 5
-	4 -> 8
 	3 -> 4
-	22 [label=int]
+	5 [label=void]
 	2 -> 3
-	2 -> 22
-	23 [label=decl_list]
-	24 [label=func_decl]
-	25 [label=skumfidus]
-	26 [label=param]
-	27 [label=float]
-	28 [label=myscope]
-	26 -> 27
-	26 -> 28
-	29 [label=param_list]
-	29 -> 26
-	25 -> 29
-	30 [label=body]
-	31 [label=var_decl]
-	32 [label=anotherVariable]
-	33 [label=float]
-	31 -> 32
-	31 -> 33
-	34 [label=decl_list]
-	34 -> 31
-	30 -> 34
-	25 -> 30
-	35 [label=int]
-	24 -> 25
-	24 -> 35
-	36 [label=decl_list]
-	36 -> 24
-	23 -> 36
-	23 -> 2
-	1 -> 23
-	37 [label=stm_list]
-	38 [label=5]
-	39 [label=body]
-	40 [label=var_decl]
-	41 [label=reeee]
-	42 [label=int]
-	40 -> 41
-	40 -> 42
-	43 [label=decl_list]
-	43 -> 40
-	39 -> 43
-	44 [label=while]
-	44 -> 38
-	44 -> 39
-	37 -> 44
-	45 [label=stm_list]
-	46 [label=init_var_decl]
-	47 [label=1]
-	48 [label=int]
-	49 [label=i]
-	46 -> 48
-	46 -> 49
-	46 -> 47
-	50 [label=5]
-	51 [label=7]
-	52 [label="<"]
-	52 -> 50
-	52 -> 51
-	53 [label=i]
-	54 [label=1]
-	55 [label="+"]
-	55 -> 53
-	55 -> 54
-	56 [label="="]
-	57 [label=i]
-	56 -> 57
-	56 -> 55
-	58 [label=body]
-	59 [label=var_decl]
-	60 [label=yeah]
-	61 [label=int]
-	59 -> 60
-	59 -> 61
-	62 [label=decl_list]
-	62 -> 59
-	58 -> 62
-	63 [label=for]
-	63 -> 46
-	63 -> 52
-	63 -> 56
-	63 -> 58
-	45 -> 63
-	64 [label=stm_list]
-	65 [label=5]
-	66 [label=body]
-	67 [label=var_decl]
-	68 [label=teeest]
-	69 [label=int]
-	67 -> 68
-	67 -> 69
-	70 [label=decl_list]
-	70 -> 67
-	66 -> 70
-	71 [label=if]
-	72 [label=body]
-	73 [label=var_decl]
-	74 [label=another]
-	75 [label=float]
-	73 -> 74
-	73 -> 75
-	76 [label=decl_list]
-	77 [label=func_decl]
-	78 [label=foo]
-	79 [label=param]
-	80 [label=bool]
-	81 [label=param]
-	79 -> 80
-	79 -> 81
-	82 [label=param_list]
-	82 -> 79
-	78 -> 82
-	83 [label=body]
-	84 [label=var_decl]
-	85 [label=jubii]
-	86 [label=int]
-	84 -> 85
-	84 -> 86
-	87 [label=decl_list]
-	87 -> 84
-	83 -> 87
-	88 [label=stm_list]
-	89 [label=4]
-	90 [label=body]
-	91 [label=if]
-	92 [label=body]
-	93 [label=var_decl]
-	94 [label=yoo]
-	95 [label=int]
-	93 -> 94
-	93 -> 95
-	96 [label=decl_list]
-	96 -> 93
-	92 -> 96
-	91 -> 92
-	91 -> 89
-	91 -> 90
-	88 -> 91
-	83 -> 88
-	78 -> 83
-	97 [label=int]
-	77 -> 78
-	77 -> 97
-	98 [label=decl_list]
-	98 -> 77
-	76 -> 98
-	76 -> 73
-	72 -> 76
-	71 -> 72
-	71 -> 65
-	71 -> 66
-	64 -> 71
-	45 -> 64
-	37 -> 45
-	1 -> 37
+	2 -> 5
+	6 [label=decl_list]
+	6 -> 2
+	1 -> 6
+	7 [label=stm_list]
+	8 [label=2]
+	9 [label=6]
+	10 [label="+"]
+	10 -> 8
+	10 -> 9
+	11 [label="="]
+	12 [label=a]
+	11 -> 12
+	11 -> 10
+	7 -> 11
+	1 -> 7
 	0 -> 1
 }

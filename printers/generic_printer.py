@@ -7,7 +7,7 @@ class GenericPrinter:
     """
     """
     
-    def __init__(self, name) -> GenericPrinter:
+    def __init__(self, name: str) -> GenericPrinter:
         self.nodes = 0
         self.graph = graphviz.Digraph(name)
 

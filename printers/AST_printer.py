@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import AST
+import utils.AST as AST
 from printers.generic_printer import GenericPrinter
 
 
@@ -8,7 +8,7 @@ class ASTTreePrinter(GenericPrinter):
     """
     """
 
-    def __init__(self, name) -> GenericPrinter:
+    def __init__(self, name: str) -> GenericPrinter:
         super().__init__(name)
 
     def build_graph(self, ast_node: AST.AstNode) -> None:

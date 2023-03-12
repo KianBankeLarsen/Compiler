@@ -1,9 +1,9 @@
 import ply.lex as lex
 import ply.yacc as yacc
 
-import AST
-import error
-import interfacing_parser
+import utils.AST as AST
+import utils.error as error
+import utils.interfacing_parser as interfacing_parser
 
 ############################################## LEXER ##############################################
 reserved = {

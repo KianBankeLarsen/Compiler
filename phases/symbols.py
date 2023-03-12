@@ -1,16 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import Enum, auto
 
-import AST
-import error
-
-
-class NameCategory(Enum):
-    VARIABLE = auto()
-    PARAMETER = auto()
-    FUNCTION = auto()
+import utils.AST as AST
+import utils.error as error
+from enums.symbols_enum import NameCategory
 
 
 @dataclass
@@ -42,8 +36,8 @@ class SymbolTable:
         if self.parent:
             return (
                 self._tab.get(
-                    signature, 
-                    self.lookup(self.parent.lookup(signature))), 
+                    signature,
+                    self.lookup(self.parent.lookup(signature))),
                 self.level)
         return self.lookup_this_scope(signature)
 
@@ -63,10 +57,13 @@ class ASTSymbolIncorporator:
     def _reduce_variable_list(self, var_lst, acc=None):
         if acc is None:
             acc = []
-        acc.append(var_lst.name)
-        if var_lst.next:
-            self._reduce_variable_list(var_lst.next, acc)
-        return acc
+
+        if var_lst is None:
+            return acc
+
+        return self._reduce_variable_list(
+            var_lst.next, acc + [var_lst.name]
+        )
 
     def _error_message(self, name: str, lineno: int) -> None:
         error.error_message(

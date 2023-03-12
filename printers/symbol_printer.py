@@ -1,4 +1,4 @@
-import AST
+import utils.AST as AST
 from printers.generic_printer import GenericPrinter
 
 
@@ -6,7 +6,7 @@ class SymbolPrinter(GenericPrinter):
     """
     """
 
-    def __init__(self, name) -> GenericPrinter:
+    def __init__(self, name: str) -> GenericPrinter:
         super().__init__(name)
 
     def _add_scope(self, ast_node: AST.AstNode, symbol_table_name: str):
