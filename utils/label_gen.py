@@ -6,5 +6,5 @@ class Labels:
     count: int = -1
 
     def next(self, s: str) -> str:
-        return str(self.count := self.count + 1) + "_" + s
-    
+        self.count += 1
+        return "custom" + str(self.count) + "_" + s

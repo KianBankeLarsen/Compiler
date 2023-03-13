@@ -1,8 +1,9 @@
 import utils.interfacing_parser as interfacing_parser
-import phases.lexer_parser as lexer_parser
-import printers.AST_printer as AST_printer
-import printers.symbol_printer as Symbol_printer
-import phases.symbols as symbols
+import phase.lexer_parser as lexer_parser
+import printer.AST_printer as AST_printer
+import printer.symbol_printer as Symbol_printer
+import phase.symbols as symbols
+
 
 lexer_parser.parser.parse(
     input("Write your input\n"), 
