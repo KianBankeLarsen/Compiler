@@ -1,51 +1,12 @@
-import ply.lex as lex
 import ply.yacc as yacc
 
 import dataclass.AST as AST
+import phase.lexer
 import utils.error as error
 import utils.interfacing_parser as interfacing_parser
 from enums.code_generation_enum import Op
 
-############################################## LEXER ##############################################
-reserved = {
-    'print': 'PRINT',
-    'return': 'RETURN',
-    'if': 'IF',
-    'else': 'ELSE',
-    'while': 'WHILE',
-    'int': 'INT_TYPE',
-    'float': 'FLOAT_TYPE',
-    'bool': 'BOOL_TYPE',
-    'void': 'VOID_TYPE',
-    'for': 'FOR'
-}
-
-tokens = (
-    'IDENT', 'INT', 'FLOAT',
-    'PLUS', 'MINUS', 'TIMES', 'DIVIDE',
-    'LPAREN', 'RPAREN', 'LCURL', 'RCURL',
-    'EQ', 'NEQ', 'LT', 'GT', 'LTE', 'GTE',
-    'ASSIGN', 'COMMA', 'SEMICOL'
-) + tuple(reserved.values())
-
-t_PLUS = r'\+'
-t_MINUS = r'-'
-t_TIMES = r'\*'
-t_DIVIDE = r'/'
-t_ASSIGN = r'='
-t_COMMA = r','
-t_SEMICOL = r';'
-t_LPAREN = r'\('
-t_RPAREN = r'\)'
-t_LCURL = r'{'
-t_RCURL = r'}'
-t_EQ = r'=='
-t_NEQ = r'!='
-t_LT = r'<'
-t_GT = r'>'
-t_LTE = r'<='
-t_GTE = r'>='
-t_ignore = " \t\r"
+tokens = phase.lexer.tokens
 
 precedence = (
     ('right', 'EQ', 'NEQ', 'LT', 'GT', 'LTE', 'GTE'),
@@ -54,55 +15,6 @@ precedence = (
 )
 
 
-def t_IDENT(t):
-    r'[a-zA-Z_][a-zA-Z_0-9]*'
-    t.type = reserved.get(t.value, 'IDENT')    # Check for reserved words
-    return t
-
-
-def t_FLOAT(t):
-    r'(0|[1-9][0-9]*)\.[0-9]+'
-    try:
-        t.value = float(t.value)
-    except ValueError:
-        error.error_message(
-            "Lexical Analysis",
-            "Float value too large.",
-            t.lexer.lineno)
-    return t
-
-
-def t_INT(t):
-    r'\d+'
-    try:
-        t.value = int(t.value)
-    except ValueError:
-        error.error_message(
-            "Lexical Analysis",
-            "Integer value too large.",
-            t.lexer.lineno)
-    return t
-
-
-def t_newline(t):
-    r'\n+'
-    t.lexer.lineno += t.value.count("\n")
-
-
-def t_COMMENT(t):
-    r'\#.*'
-    pass
-
-
-def t_error(t):
-    error.error_message(
-        "Lexical Analysis",
-        f"Illegal character '{t.value[0]}'.",
-        t.lexer.lineno)
-
-
-############################################## PARSER ##############################################
-# First production identifies the start symbol
 def p_program(t):
     'program : body'
     interfacing_parser.the_program = AST.Function(
@@ -311,7 +223,8 @@ def p_expression_binop(t):
                         | expression GTE expression'''
     # * Not recommended to use hidden methods because of backwards compatibility and semver,
     # *  but it is really usefull in some cases.
-    t[0] = AST.ExpressionBinop(Op._value2member_map_[t[2]], t[1], t[3], t.lexer.lineno)
+    t[0] = AST.ExpressionBinop(Op._value2member_map_[
+                               t[2]], t[1], t[3], t.lexer.lineno)
 
 
 def p_expression_group(t):
@@ -352,8 +265,4 @@ def p_error(t):
         location)
 
 
-# Build lexer
-lexer = lex.lex()
-
-# Build parser
 parser = yacc.yacc()
