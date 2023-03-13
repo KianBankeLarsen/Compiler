@@ -35,6 +35,6 @@ class GenericPrinter:
         """
 
         self.graph.format = format
-        self.graph.directory = "./printers/images"
+        self.graph.directory = "./printer/images"
         self.graph.graph_attr.update(attr)
         self.graph.render()

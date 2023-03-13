@@ -4,6 +4,7 @@ import ply.yacc as yacc
 import dataclass.AST as AST
 import utils.error as error
 import utils.interfacing_parser as interfacing_parser
+from enums.code_generation_enum import Op
 
 ############################################## LEXER ##############################################
 reserved = {
@@ -191,7 +192,7 @@ def p_parameter_list(t):
 
 
 def p_param(t):
-    '''param : type IDENT'''
+    'param : type IDENT'
     t[0] = AST.Parameter(t[1], t[2], t.lexer.lineno)
 
 
@@ -263,12 +264,12 @@ def p_statement_while(t):
 
 
 def p_statement_for(t):
-    '''statement_for : FOR LPAREN variable_init_declaration expression SEMICOL statement_assignment_for RPAREN new_scope'''
+    'statement_for : FOR LPAREN variable_init_declaration expression SEMICOL statement_assignment_for RPAREN new_scope'
     t[0] = AST.StatementFor(t[3], t[4], t[6], t[8], t.lexer.lineno)
 
 
 def p_statement_for_assign(t):
-    '''statement_assignment_for : IDENT ASSIGN expression'''
+    'statement_assignment_for : IDENT ASSIGN expression'
     t[0] = AST.StatementAssignment(t[1], t[3], t.lexer.lineno)
 
 
@@ -288,7 +289,7 @@ def p_expression_integer(t):
 
 
 def p_expression_float(t):
-    '''expression_float : FLOAT'''
+    'expression_float : FLOAT'
     t[0] = AST.ExpressionFloat(t[1], t.lexer.lineno)
 
 
@@ -308,7 +309,9 @@ def p_expression_binop(t):
                         | expression GT expression
                         | expression LTE expression
                         | expression GTE expression'''
-    t[0] = AST.ExpressionBinop(t[2], t[1], t[3], t.lexer.lineno)
+    # * Not recommended to use hidden methods because of backwards compatibility and semver,
+    # *  but it is really usefull in some cases.
+    t[0] = AST.ExpressionBinop(Op._value2member_map_[t[2]], t[1], t[3], t.lexer.lineno)
 
 
 def p_expression_group(t):
@@ -344,12 +347,13 @@ def p_error(t):
         cause = " - check for missing closing braces"
         location = "unknown"
     error.error_message(
-        "Syntax Analysis", 
+        "Syntax Analysis",
         f"Problem detected{cause}.",
         location)
 
-# Build the lexer
+
+# Build lexer
 lexer = lex.lex()
 
-# Build the parser
+# Build parser
 parser = yacc.yacc()

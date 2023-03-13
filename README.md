@@ -1,5 +1,5 @@
 # Compiler
 
-![](./printers/images/AST.gv.png)
+![](./printer/images/AST.gv.png)
 
-![](./printers/images/Symbol.gv.png)
+![](./printer/images/Symbol.gv.png)

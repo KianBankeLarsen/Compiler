@@ -2,6 +2,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from enums.code_generation_enum import Op
+
+"""
+Structural nodes of AST produced by the parser.
+"""
+
 
 class AstNode:
     pass
@@ -158,7 +164,7 @@ class ExpressionFloat(Expression):
 
 @dataclass
 class ExpressionBinop(Expression):
-    op: str
+    op: Op
     lhs: Expression
     rhs: Expression
     lineno: int
