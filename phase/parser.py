@@ -222,7 +222,7 @@ def p_expression_binop(t):
                         | expression LTE expression
                         | expression GTE expression'''
     # * Not recommended to use hidden methods because of backwards compatibility and semver,
-    # *  but it is really usefull in some cases.
+    # *  but it is really usefull in this cases.
     t[0] = AST.ExpressionBinop(Op._value2member_map_[
                                t[2]], t[1], t[3], t.lexer.lineno)
 
