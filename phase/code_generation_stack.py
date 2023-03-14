@@ -41,8 +41,7 @@ class GenerateCode:
                 self.generate_code(body)
             case AST.StatementList(stm, next):
                 self.generate_code(stm)
-                if next:
-                    self.generate_code(next)
+                self.generate_code(next)
             case AST.StatementAssignment(lhs, rhs):
                 self.generate_code(lhs)
                 self.generate_code(rhs)
@@ -258,6 +257,5 @@ class GenerateCode:
                 if exp_list:
                     pass
             case AST.ExpressionList(exp, next):
-                pass
-                if next:
-                    pass
+                self.generate_code(exp)
+                self.generate_code(next)
