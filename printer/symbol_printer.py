@@ -3,7 +3,7 @@ from printer.generic_printer import GenericPrinter
 
 
 class SymbolPrinter(GenericPrinter):
-    """
+    """Facilitating visualization of symbol tables.
     """
 
     def __init__(self, name: str) -> GenericPrinter:
@@ -16,7 +16,7 @@ class SymbolPrinter(GenericPrinter):
             self.add_edge(symbol_table.dotnum, symbol_table.parent.dotnum)
 
     def build_graph(self, ast_node: AST.AstNode) -> None:
-        """
+        """Build Dot digraph to visualize lexical scopes.
         """
 
         match ast_node:

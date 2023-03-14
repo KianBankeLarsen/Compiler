@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any, NoReturn
 
+import utils.error as error
 from enums.symbols_enum import NameCategory
 
 
@@ -14,7 +16,9 @@ class Symbol:
 
 @dataclass(init=False)
 class SymbolTable:
-    """
+    """Symbol table containing symbols.
+
+    The API exposes functionality to lookup and insert symbols.
     """
 
     level: int
@@ -29,10 +33,31 @@ class SymbolTable:
     def __str__(self):
         return ", ".join(map(str, self._tab.keys()))
 
-    def insert(self, signature: tuple or str, value: Symbol):
+    def _error_message(self, name: str, lineno: int) -> NoReturn:
+        error.error_message(
+            "Symbol Collection",
+            f"Redeclaration of function '{name}' in the same scope.",
+            lineno)
+
+    def insert(self, signature: Any, value: Symbol, lineno: int) -> None:
+        """Insert symbol as key-value pair.
+        """
+
+        if self._tab.get(signature):
+            self._error_message(signature, lineno)
+
         self._tab[signature] = value
 
-    def lookup(self, signature: tuple or str) -> tuple(Symbol, int):
+    def lookup(self, signature: Any) -> tuple(Symbol, int):
+        """Retrieves declared symbol from closest accessible lexical scope.
+
+        Returns
+        -------
+        (Symbol, level) : tuple(Symbol, int)
+            This method returns None if the symbol is not available,
+            otherwise the located symbol.
+        """
+
         if self.parent:
             return (
                 self._tab.get(
@@ -44,4 +69,13 @@ class SymbolTable:
         return self.lookup_this_scope(signature)
 
     def lookup_this_scope(self, signature: tuple or str) -> tuple(Symbol, int):
-        return (self._tab.get(signature, None), self.level)
+        """Lookup symbol in this lexical scope only.
+
+        Returns
+        -------
+        (Symbol, level) : tuple(Symbol, int)
+            This method returns None if the symbol is not available,
+            otherwise the located symbol.
+        """
+
+        return (self._tab.get(signature), self.level)

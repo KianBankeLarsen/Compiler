@@ -4,12 +4,11 @@ from dataclasses import dataclass
 
 from enums.code_generation_enum import Op
 
-"""
-Structural nodes of AST produced by the parser.
-"""
-
 
 class AstNode:
+    """Structural node of AST produced by the parser.
+    """
+
     pass
 
 
@@ -127,6 +126,7 @@ class StatementFor(Statement):
     assign: StatementAssignment
     body: Body
     lineno: int
+
 
 @dataclass
 class StatementPrint(Statement):

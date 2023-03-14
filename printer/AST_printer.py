@@ -5,7 +5,7 @@ from printer.generic_printer import GenericPrinter
 
 
 class ASTTreePrinter(GenericPrinter):
-    """
+    """Facilitating visualization of abstract syntax tree.
     """
 
     def __init__(self, name: str) -> GenericPrinter:

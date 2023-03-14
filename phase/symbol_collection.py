@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 import dataclass.AST as AST
-import utils.error as error
 from dataclass.symbol import Symbol, SymbolTable
 from enums.symbols_enum import NameCategory
 
 
 class ASTSymbolIncorporator:
-    """
+    """Functionality to incoporate symbol table into
+        the abstract syntax tree.
+
+    The API exposes build_symbol_table, which takes 
+        an AST as parameter.
     """
 
     def __init__(self) -> ASTSymbolIncorporator:
@@ -15,7 +18,7 @@ class ASTSymbolIncorporator:
         self.variable_offset = None
         self.parameter_offset = None
 
-    def _reduce_variable_list(self, var_lst, acc=None):
+    def _reduce_variable_list(self, var_lst: AST.DeclarationVariableList, acc: list = None) -> list(str):
         if acc is None:
             acc = []
 
@@ -26,14 +29,8 @@ class ASTSymbolIncorporator:
             var_lst.next, acc + [var_lst.name]
         )
 
-    def _error_message(self, name: str, lineno: int) -> None:
-        error.error_message(
-            "Symbol Collection",
-            f"Redeclaration of function '{name}' in the same scope.",
-            lineno)
-
     def build_symbol_table(self, ast_node: AST.AstNode) -> None:
-        """
+        """Incorporate symbol table into the provided AST.
         """
 
         match ast_node:
@@ -46,26 +43,20 @@ class ASTSymbolIncorporator:
                 self.build_symbol_table(decl)
                 self.build_symbol_table(next)
             case AST.DeclarationFunction(type, func, lineno):
-                if self._current_scope.lookup_this_scope(func.name)[0]:
-                    self._error_message(func.name, lineno)
                 symval = Symbol(type, NameCategory.FUNCTION, func)
-                self._current_scope.insert(func.name, symval)
+                self._current_scope.insert(func.name, symval, lineno)
                 self._current_scope = SymbolTable(self._current_scope)
                 self.build_symbol_table(func)
             case AST.DeclarationVariableList(type, var_lst, lineno):
                 for i in self._reduce_variable_list(var_lst):
-                    if self._current_scope.lookup_this_scope(i)[0]:
-                        self._error_message(i, lineno)
                     symval = Symbol(type, NameCategory.VARIABLE,
                                     self.variable_offset)
-                    self._current_scope.insert(i, symval)
+                    self._current_scope.insert(i, symval, lineno)
                     self.variable_offset += 1
             case AST.DeclarationVariableInit(type, name, _, lineno):
-                if self._current_scope.lookup_this_scope(name)[0]:
-                    self._error_message(name, lineno)
                 symval = Symbol(type, NameCategory.VARIABLE,
                                 self.variable_offset)
-                self._current_scope.insert(name, symval)
+                self._current_scope.insert(name, symval, lineno)
                 self.variable_offset += 1
             case AST.Function(name, par_list, body):
                 ast_node.symbol_table = self._current_scope
@@ -75,11 +66,9 @@ class ASTSymbolIncorporator:
                 self.build_symbol_table(body)
                 self._current_scope = self._current_scope.parent
             case AST.Parameter(type, name, lineno):
-                if self._current_scope.lookup_this_scope(name)[0]:
-                    self._error_message(name, lineno)
                 symval = Symbol(type, NameCategory.PARAMETER,
                                 self.parameter_offset)
-                self._current_scope.insert(name, symval)
+                self._current_scope.insert(name, symval, lineno)
                 self.parameter_offset += 1
             case AST.ParameterList(param, next):
                 self.build_symbol_table(param)
