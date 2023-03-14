@@ -4,7 +4,7 @@ from enum import Enum, auto
 class Op(str, Enum):
     """Non-system specific opcodes.
     """
-    
+
     MOVE = auto()
     PUSH = auto()
     POP = auto()
@@ -14,12 +14,14 @@ class Op(str, Enum):
     JMP = auto()
     LABEL = auto()
     META = auto()
+
     JE = "=="
     JNE = "!="
     JL = "<"
     JLE = "<="
     JG = ">"
     JGE = ">="
+
     ADD = "+"
     SUB = "-"
     MUL = "*"
@@ -32,7 +34,7 @@ class M(Enum):
     Several options are possible, but we only differentiate 
     whether the addressing is direct or not.
     """
-    
+
     DIR = auto()  # direct
     IRL = auto()  # indirect relative
 
@@ -40,7 +42,7 @@ class M(Enum):
 class T(Enum):
     """Non-system specific register classes.
     """
-    
+
     IMI = auto()  # immediate integer
     MEM = auto()  # memory (a label)
     RBP = auto()  # register: base (frame) pointer

@@ -1,9 +1,12 @@
 from dataclasses import dataclass
 
+from singleton_decorator import singleton
 
+
+@singleton
 @dataclass
 class Labels:
-    """Label generator to ensure uniqueness.
+    """Singleton label generator to ensure uniqueness.
     """
 
     count: int = -1

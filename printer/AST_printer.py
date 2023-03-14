@@ -104,22 +104,22 @@ class ASTTreePrinter(GenericPrinter):
                     self.add_edge(ast_node.dotnum, else_part.dotnum)
                 self.add_edge(ast_node.dotnum, exp.dotnum)
                 self.add_edge(ast_node.dotnum, then_part.dotnum)
-            case AST.StatementWhile(exp, stm_list):
+            case AST.StatementWhile(exp, body):
                 self.build_graph(exp)
-                self.build_graph(stm_list)
+                self.build_graph(body)
                 ast_node.dotnum = self.add_node("while")
                 self.add_edge(ast_node.dotnum, exp.dotnum)
-                self.add_edge(ast_node.dotnum, stm_list.dotnum)
-            case AST.StatementFor(iter, exp, assign, exp_list):
+                self.add_edge(ast_node.dotnum, body.dotnum)
+            case AST.StatementFor(iter, exp, assign, body):
                 self.build_graph(iter)
                 self.build_graph(exp)
                 self.build_graph(assign)
-                self.build_graph(exp_list)
+                self.build_graph(body)
                 ast_node.dotnum = self.add_node("for")
                 self.add_edge(ast_node.dotnum, iter.dotnum)
                 self.add_edge(ast_node.dotnum, exp.dotnum)
                 self.add_edge(ast_node.dotnum, assign.dotnum)
-                self.add_edge(ast_node.dotnum, exp_list.dotnum)
+                self.add_edge(ast_node.dotnum, body.dotnum)
             case AST.StatementPrint(exp):
                 self.build_graph(exp)
                 ast_node.dotnum = self.add_node("print")
@@ -140,11 +140,11 @@ class ASTTreePrinter(GenericPrinter):
                 ast_node.dotnum = self.add_node(op)
                 self.add_edge(ast_node.dotnum, lhs.dotnum)
                 self.add_edge(ast_node.dotnum, rhs.dotnum)
-            case AST.ExpressionCall(name, exp_list):
+            case AST.ExpressionCall(name, body):
                 ast_node.dotnum = self.add_node("call " + name)
-                if exp_list:
-                    self.build_graph(exp_list)
-                    self.add_edge(ast_node.dotnum, exp_list.dotnum)
+                if body:
+                    self.build_graph(body)
+                    self.add_edge(ast_node.dotnum, body.dotnum)
             case AST.ExpressionList(exp, next):
                 self.build_graph(exp)
                 ast_node.dotnum = self.add_node("expr_list")

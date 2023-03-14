@@ -1,4 +1,4 @@
 digraph Symbol {
 	graph [rankdir=BT]
-	0 [label="a, b, c"]
+	0 [label=""]
 }
