@@ -51,7 +51,7 @@ class T(Enum):
 
 
 class Meta(Enum):
-    """Meta operations for standard procedures.
+    """Meta operations for composite procedures.
     """
 
     MAIN_CALLEE_SAVE = auto()
