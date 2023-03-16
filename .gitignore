@@ -3,3 +3,5 @@ parser.out
 __pycache__/
 .vscode/
 .VSCodeCounter/
+report/main.synctex.gz
+report/svg-inkscape/
