@@ -5,3 +5,10 @@ __pycache__/
 .VSCodeCounter/
 report/main.synctex.gz
 report/svg-inkscape/
+report/main.toc
+report/main.aux
+report/main.fdb_latexmk
+report/main.fls
+report/main.log
+report/main.out
+report/.latexmkrc
