@@ -1,0 +1,59 @@
+%%%%%%%%%%%%%%%%%%%%%%%%% PREAMBLE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\input{misc/preamble}
+\usepackage{amssymb}
+%%%%%%%%%%%%%%%%%%%%%% TITLE PAGE OPTIONS %%%%%%%%%%%%%%%%%%%%%%%%%
+\pagestyle{fancy}
+\setlength{\headsep}{15pt}
+\setlength{\headheight}{15pt}
+\rhead{\datedate}
+\lhead{SDU, DM565}
+\chead{Kian B. L.}
+\cfoot{\thepage\ ud af \pageref{LastPage}}
+
+%%%%%%%%%%%%% ACTUAL VISIBLE CONTENT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+\begin{titlepage}
+\begin{centering}
+\vspace*{-20px}\large University of Southern Denmark $|$ IMADA \\
+\today \\
+
+\vspace{4CM}
+
+\huge{\bf  Compiler for Panda} \\
+\Large{\bf BADM500: Bachelor Project}
+
+\vspace{\fill}
+
+\fontsize{16}{19.2} {
+    \selectfont
+    KIAN BANKE LARSEN
+} \\
+
+\vspace{\fill}
+
+\includesvg[width=.4\textwidth]{misc/SDU.svg}\vspace*{-0.95cm} % Git does not have Inkscape
+%\includegraphics[width=.4\textwidth]{misc/SDU.pdf}\vspace*{-0.95cm}
+
+\end{centering}
+
+\begin{tikzpicture}[overlay,remember picture]
+\node[align=center] at ($(current page.center)+(0,-11.4)$) 
+{
+Kilar20, \formatdate{30}{07}{2001}
+};
+\end{tikzpicture}
+\thispagestyle{empty}
+\end{titlepage}
+
+\newpage
+\setcounter{page}{0}
+\thispagestyle{empty}
+
+\begin{abstract}
+    This is my very good abstract
+\end{abstract}
+
+{ \hypersetup{hidelinks} \tableofcontents }
+
+\chapter{Introduction}
+\end{document}

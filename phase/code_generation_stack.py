@@ -34,7 +34,7 @@ class GenerateCode:
         """
 
         match ast_node:
-            case AST.Body(decls, stm_list):
+            case AST.Body(_, stm_list):
                 self.generate_code(stm_list)
             case AST.Function(name, par_list, body):
                 self.generate_code(par_list)
@@ -165,6 +165,8 @@ class GenerateCode:
             case AST.ExpressionIdentifier(identifier):
                 pass
             case AST.ExpressionInteger(integer):
+                """ push integer
+                """
                 self._append_instruction(
                     Instruction(Op.PUSH,
                                 Operand(Target(T.IMI, integer), Mode(M.DIR)))
