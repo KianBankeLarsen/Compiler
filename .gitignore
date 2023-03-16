@@ -2,3 +2,4 @@ parsetab.py
 parser.out
 __pycache__/
 .vscode/
+.VSCodeCounter/
