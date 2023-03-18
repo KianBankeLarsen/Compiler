@@ -78,4 +78,4 @@ class SymbolTable:
             otherwise the located symbol.
         """
 
-        return (self._tab.get(signature), self.level)
+        return (self._tab[signature], self.level)

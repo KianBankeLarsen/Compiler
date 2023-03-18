@@ -9,9 +9,10 @@ from enums.code_generation_enum import Op
 tokens = phase.lexer.tokens
 
 precedence = (
-    ('right', 'EQ', 'NEQ', 'LT', 'GT', 'LTE', 'GTE'),
+    ('nonassoc', 'NEQ', 'LT', 'GT', 'LTE', 'GTE'), # Requires syntaxtic sugar
+    ('right', 'EQ'),
     ('left', 'PLUS', 'MINUS'),
-    ('left', 'TIMES', 'DIVIDE'),
+    ('left', 'TIMES', 'DIVIDE')
 )
 
 
