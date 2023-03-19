@@ -5,7 +5,7 @@ import printer.ast_printer as ast_printer
 import printer.symbol_printer as Symbol_printer
 import phase.symbol_collection as symbol_collection
 import phase.code_generation_stack as code_generation_stack
-
+import pprint
 
 parser.parser.parse(
     input("Write your input\n"), 
@@ -27,4 +27,5 @@ symbol_table_printer.render('png', {'rankdir': 'BT'})
 code_generation_stack = code_generation_stack.GenerateCode()
 code_generation_stack.generate_code(the_program_AST)
 stack_program_code = code_generation_stack.get_code()
-print(stack_program_code)
+pp = pprint.PrettyPrinter()
+pp.pprint(stack_program_code)
