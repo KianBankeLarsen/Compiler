@@ -99,7 +99,7 @@ class Statement(AstNode):
 
 @dataclass
 class StatementAssignment(Statement):
-    lhs: ExpressionIdentifier
+    lhs: str
     rhs: Expression
     lineno: int
 

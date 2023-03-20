@@ -66,16 +66,4 @@ class SymbolTable:
                 ),
                 self.level
             )
-        return self.lookup_this_scope(signature)
-
-    def lookup_this_scope(self, signature: tuple or str) -> tuple(Symbol, int):
-        """Lookup symbol in this lexical scope only.
-
-        Returns
-        -------
-        (Symbol, level) : tuple(Symbol, int)
-            This method returns None if the symbol is not available,
-            otherwise the located symbol.
-        """
-
-        return self._tab[signature]
+        return (self._tab.get(signature), self.level)

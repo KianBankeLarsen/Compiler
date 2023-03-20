@@ -91,9 +91,11 @@ class ASTSymbolIncorporator:
                 ast_node.symbol_table = self._current_scope
                 self.build_symbol_table(body)
                 self._current_scope = self._current_scope.parent
-            case AST.StatementFor(iter, _, _, body):
+            case AST.StatementFor(iter, _, _, body, lineno):
                 self._current_scope = SymbolTable(self._current_scope)
                 ast_node.symbol_table = self._current_scope
+                ast_node.number_of_parameters = 1
+                symval = Symbol(iter.type, NameCategory.PARAMETER, 0)
+                self._current_scope.insert(iter.name, symval, lineno)
                 self.build_symbol_table(body)
-                self.build_symbol_table(iter)
                 self._current_scope = self._current_scope.parent

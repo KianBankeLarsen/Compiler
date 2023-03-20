@@ -4,7 +4,7 @@ import copy
 from dataclasses import dataclass, field
 
 import dataclass.AST as AST
-import dataclass.symbol as symbol
+import dataclass.symbol as dataclass_symbol
 import utils.error
 import utils.label_generator as label
 from dataclass.iloc import Instruction, Mode, Operand, Target
@@ -16,9 +16,25 @@ from enums.symbols_enum import NameCategory
 class GenerateCode:
     """Orchestrating code generation. 
     The API exposes `generate_code` and `get_code`.
+
+    ----------------------
+    | Temporary saves    |
+    |--------------------|
+    | Local data area    | 
+    |--------------------| <-- Callee RBP
+    | Callee-save area   |
+    |--------------------|
+    | Return address     |
+    |--------------------|
+    | Callers ARP        |
+    |--------------------|
+    | Caller-save area   |
+    |--------------------|
+    | Parameter area     |
+    ----------------------
     """
 
-    _current_scope: symbol.SymbolTable = None
+    _current_scope: dataclass_symbol.SymbolTable = None
     _code: list(Instruction) = field(default_factory=list)
     _scope_stack: list(AST.AstNode) = field(default_factory=list)
     _labels: label.Labels = label.Labels()
@@ -42,6 +58,10 @@ class GenerateCode:
         )
 
     def _ensure_labels(self, ast_node: AST.AstNode) -> None:
+        if ast_node.name == "?main":
+            ast_node.start_label = "main"
+            ast_node.end_label = "end_main"
+    
         if not hasattr(ast_node, 'start_label'):
             ast_node.start_label = self._labels.next(ast_node.name)
             ast_node.end_label = self._labels.next(f"end_{ast_node.name}")
@@ -68,13 +88,45 @@ class GenerateCode:
             case AST.DeclarationFunction(_, function):
                 self.generate_code(function)
             case AST.Function(name, _, body):
+                """ start_label
+                    prolog
+                    allocate stack
+                    body
+                    end_label
+                    deallocate stack
+                    epilog
+                """
                 self._current_scope = ast_node.symbol_table
                 self._scope_stack.append(ast_node)
-                if ast_node.name == "?main":
-                    ast_node.start_label = "main"
-                    ast_node.end_label = "end_main"
+                self._ensure_labels(ast_node)
+
+                self._append_instruction(
+                    Instruction(Op.LABEL,
+                                Operand(Target(T.MEM, ast_node.start_label), Mode(M.DIR)))
+                )
+                self._append_instruction(
+                    Instruction(Op.META, Meta.PROLOG)
+                )
+                self._append_instruction(
+                    Instruction(Op.SUB,
+                                Operand(Target(T.IMI, 8*body.number_of_variables), Mode(M.DIR)),
+                                Operand(Target(T.RSP), Mode(M.DIR)))
+                )
 
                 self.generate_code(body)
+
+                self._append_instruction(
+                    Instruction(Op.LABEL, 
+                                Operand(Target(T.MEM, ast_node.end_label), Mode(M.DIR)))
+                )
+                self._append_instruction(
+                    Instruction(Op.ADD,
+                                Operand(Target(T.IMI, 8*body.number_of_variables), Mode(M.DIR)),
+                                Operand(Target(T.RSP), Mode(M.DIR)))
+                )
+                self._append_instruction(
+                    Instruction(Op.META, Meta.EPILOG)
+                )
 
                 self._scope_stack.pop()
                 self._current_scope = self._current_scope.parent
@@ -82,7 +134,6 @@ class GenerateCode:
                 self.generate_code(stm)
                 self.generate_code(next)
             case AST.StatementAssignment(lhs, rhs):
-                self.generate_code(lhs)
                 self.generate_code(rhs)
 
                 symbol, symbol_level = self._current_scope.lookup(lhs)
@@ -103,8 +154,8 @@ class GenerateCode:
                         *Possibly else_part*
                     esle_label:
                 """
-                ast_node.start_label = self._labels.next("else")
-                ast_node.end_label = self._labels.next("esle")
+                ast_node.else_label = self._labels.next("else")
+                ast_node.esle_label = self._labels.next("esle")
 
                 self._append_instruction(
                     Instruction(Op.POP,
@@ -125,7 +176,9 @@ class GenerateCode:
                                 Operand(Target(T.MEM, ast_node.else_label), Mode(M.DIR)))
                 )
 
+                self._current_scope = ast_node.symbol_table_then
                 self.generate_code(then_part)
+                self._current_scope = self._current_scope.parent
 
                 self._append_instruction(
                     Instruction(Op.JMP, Operand(
@@ -136,7 +189,9 @@ class GenerateCode:
                                 Operand(Target(T.MEM, ast_node.else_label), Mode(M.DIR)))
                 )
 
+                self._current_scope = ast_node.symbol_table_else
                 self.generate_code(else_part)
+                self._current_scope = self._current_scope.parent
 
                 self._append_instruction(
                     Instruction(Op.LABEL,
@@ -152,6 +207,7 @@ class GenerateCode:
                         jmp while_label
                     elihw_label:
                 """
+                self._current_scope = ast_node.symbol_table
                 ast_node.start_label = self._labels.next("while")
                 ast_node.end_label = self._labels.next("elihw")
 
@@ -191,6 +247,7 @@ class GenerateCode:
                     Instruction(Op.LABEL,
                                 Operand(Target(T.MEM, ast_node.elihw_label), Mode(M.DIR)))
                 )
+                self._current_scope = self._current_scope.parent
             case AST.StatementFor(iter, exp, assign, body):
                 """ for_label: 
                         pop reg1
@@ -202,17 +259,17 @@ class GenerateCode:
                         jmp for_label
                     rof_label:
                 """
+                self._current_scope = ast_node.symbol_table
+                ast_node.for_label = self._labels.next("for")
+                ast_node.rof_label = self._labels.next("rof")
 
-                ast_node.start_label = self._labels("for")
-                ast_node.end_label = self._labels("rof")
+                self.generate_code(AST.ExpressionList(iter.exp, None, iter.lineno))
 
                 self._append_instruction(
                     Instruction(Op.LABEL,
                                 Operand(Target(T.MEM, ast_node.for_label), Mode(M.DIR)))
                 )
 
-                self.generate_code(AST.StatementAssignment(
-                    iter.name, iter.exp, iter.lineno))
                 self.generate_code(exp)
 
                 self._append_instruction(
@@ -229,8 +286,10 @@ class GenerateCode:
                                 Operand(Target(T.REG, 1), Mode(M.DIR)),
                                 Operand(Target(T.REG, 2), Mode(M.DIR)))
                 )
-                self._append_instruction(Op.JE,
-                                         Operand(Target(T.MEM, ast_node.rof_label), Mode(M.DIR)))
+                self._append_instruction(
+                    Instruction(Op.JE,
+                                Operand(Target(T.MEM, ast_node.rof_label), Mode(M.DIR)))
+                )
 
                 self.generate_code(body)
                 self.generate_code(assign)
@@ -243,6 +302,7 @@ class GenerateCode:
                     Instruction(Op.LABEL,
                                 Operand(Target(T.MEM, ast_node.rof_label), Mode(M.DIR)))
                 )
+                self._current_scope = self._current_scope.parent
             case AST.StatementPrint(exp):
                 """ push argument
                     precall
@@ -263,8 +323,8 @@ class GenerateCode:
                 )
                 self._append_instruction(
                     Instruction(Op.ADD,
-                                Operand(Target(T.RSP), Mode(M.DIR)),
-                                Operand(T.IMI, 8), Mode(M.DIR))
+                                Operand(T.IMI, 8), Mode(M.DIR)),
+                                Operand(Target(T.RSP), Mode(M.DIR))
                 )
             case AST.StatementReturn(exp):
                 self.generate_code(exp)
@@ -285,12 +345,12 @@ class GenerateCode:
                 self._follow_static_link(symbol_level)
 
                 match symbol:
-                    case symbol.Symbol(_, kind=NameCategory.PARAMETER, info=info):
+                    case dataclass_symbol.Symbol(_, kind=NameCategory.PARAMETER, info=info):
                         self._append_instruction(
                             Instruction(Op.PUSH,
                                         Operand(Target(T.RSL), Mode(M.IRL, -(info + 3))))
                         )
-                    case symbol.Symbol(_, kind=NameCategory.VARIABLE, info=info):
+                    case dataclass_symbol.Symbol(_, kind=NameCategory.VARIABLE, info=info):
                         self._append_instruction(
                             Instruction(Op.PUSH,
                                         Operand(Target(T.RSL), Mode(M.IRL, info + 1)))
@@ -399,7 +459,6 @@ class GenerateCode:
                     remove arguments
                     push rrt
                 """
-
                 # Constant work
                 symbol, symbol_level = self._current_scope.lookup(name)
                 func = symbol.info
@@ -413,7 +472,7 @@ class GenerateCode:
                     Instruction(Op.META, Meta.PRECALL)
                 )
 
-                # Push ARP
+                # Push parents ARP
                 self._follow_static_link(symbol_level)
                 self._append_instruction(
                     Instruction(Op.PUSH,
@@ -429,9 +488,8 @@ class GenerateCode:
                 # Remove ARP
                 self._append_instruction(
                     Instruction(Op.ADD,
-                                Operand(Target(T.RSP), Mode(M.DIR)),
-                                Operand(Target(T.IMI, 8), Mode(M.DIR))
-                                )
+                                Operand(Target(T.IMI, 8), Mode(M.DIR)),
+                                Operand(Target(T.RSP), Mode(M.DIR)))
                 )
 
                 # End call
@@ -442,10 +500,8 @@ class GenerateCode:
                 # Remove arguments
                 self._append_instruction(
                     Instruction(Op.ADD,
-                                Operand(Target(T.RSP), Mode(M.DIR)),
-                                Operand(
-                                    Target(T.IMI, 8*func.number_of_parameters), Mode(M.DIR))
-                                )
+                                Operand(Target(T.IMI, 8*func.number_of_parameters), Mode(M.DIR)),
+                                Operand(Target(T.RSP), Mode(M.DIR)))
                 )
 
                 # Put return value on the stack (if any)
