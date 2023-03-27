@@ -13,3 +13,4 @@ report/main.log
 report/main.out
 report/.latexmkrc
 report/_minted-main
+test.py
