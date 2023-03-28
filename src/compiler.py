@@ -5,10 +5,13 @@ import printer.ast_printer as ast_printer
 import printer.symbol_printer as Symbol_printer
 import phase.symbol_collection as symbol_collection
 import phase.code_generation_stack as code_generation_stack
+import phase.emit as emit
 import pprint
 
+pp = pprint.PrettyPrinter()
+
 parser.parser.parse(
-    input("Write your input\n"), 
+    input(), 
     lexer=lexer.lexer)
 
 the_program_AST = interfacing_parser.the_program
@@ -25,7 +28,10 @@ symbol_table_printer.build_graph(symbol_collection_IR)
 symbol_table_printer.render('png', {'rankdir': 'BT'})
 
 code_generation_stack = code_generation_stack.GenerateCode()
-code_generationed_IR = code_generation_stack.generate_code(symbol_collection_IR)
+code_generated_IR = code_generation_stack.generate_code(symbol_collection_IR)
 stack_program_code = code_generation_stack.get_code()
-pp = pprint.PrettyPrinter()
-pp.pprint(stack_program_code)
+# pp.pprint(stack_program_code)
+
+code_emitter = emit.Emit()
+assembly_code = code_emitter.emit(stack_program_code)
+print(assembly_code)

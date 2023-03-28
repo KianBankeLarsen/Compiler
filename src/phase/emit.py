@@ -9,6 +9,9 @@ class Emit:
     """
 
     def __init__(self):
+        self._callee_save_reg = ["rbx", "r12", "r13", "r14", "r15"]
+        self._calleer_save_reg = ["rcx", "rdx", "rsi", "rdi", "r8", "r9", "r10", "r11"]
+        
         self._labels = Labels()
         self._instruction_indent = 16
         self._code = []
@@ -21,20 +24,20 @@ class Emit:
             Meta.POSTRETURN: self._postreturn
         }
 
-    def emit(self, iloc_ir: list(iloc.Instruction)) -> str:
+    def emit(self, iloc_ir: list[iloc.Instruction]) -> str:
         """
         """
 
         self._program_prologue()
-        map(self._dispatch, iloc_ir)
+        list(map(self._dispatch, iloc_ir))
         self._code.append("\n")
-        return "\n".join(self.code)
+        return "\n".join(self._code)
 
     def _append_label(self, lbl: str) -> None:
         self._code.append(lbl + ":")
 
     def _append_instruction(self, instr_str) -> None:
-        self._code.append(self.instruction_indent * " " + instr_str)
+        self._code.append(self._instruction_indent * " " + instr_str)
 
     def _append_newline(self) -> None:
         self._code.append("")
@@ -68,13 +71,15 @@ class Emit:
             case iloc.Instruction(opcode=Op.LABEL, args=args):
                 self._append_label(args[0].target.val)
             case iloc.Instruction(opcode=Op.META, args=method):
-                self._enum_to_method_map[method]()
+                self._enum_to_method_map[method[0]]()
             case _:
                 raise ValueError(f"Unknown instruction: {instruction}.")
 
     def _do_operand(self, operand: iloc.Operand) -> str:
         match operand.target:
-            case iloc.Target(spec, val) if spec is T.IMI or spec is T.MEM:
+            case iloc.Target(spec=T.IMI, val=val):
+                text = f"${val}"
+            case iloc.Target(spec=T.MEM, val=val):
                 text = str(val)
             case iloc.Target(spec=T.RBP):
                 text = "%rbp"
@@ -103,17 +108,30 @@ class Emit:
 
 ########################### META ########################### META ########################### META ###########################
 
+    def _save_retore_reg(self, mode: str, registers: list[str]):
+        self._append_newline()
+        for reg in registers:
+            self._append_instruction(f"{mode} %{reg}")
+        self._append_newline()
+
     def _prolog(self):
-        pass
+        self._save_retore_reg("pushq", self._callee_save_reg)
+        self._append_instruction("pushq %rbp")
+        self._append_instruction("movq %rsp, %rbp")
+        self._append_newline()
 
     def _epilog(self):
-        pass
+        self._append_instruction("movq %rbp, %rsp")
+        self._append_instruction("popq %rbp")
+        self._save_retore_reg("popq", reversed(self._callee_save_reg))
+        self._append_instruction("ret")
+        self._append_newline()
 
     def _precall(self):
-        pass
+        self._save_retore_reg("pushq", self._calleer_save_reg)
 
     def _postreturn(self):
-        pass
+        self._save_retore_reg("popq", reversed(self._calleer_save_reg))
 
     def _program_prologue(self):
         self._append_newline()
@@ -132,7 +150,7 @@ class Emit:
         self._append_instruction("leaq form(%rip), %rdi")
         # By-passing caller save values on the stack:
         # pass 2. argument in %rsi
-        self._append_instruction(f"movq {8*_caller_registers}(%rsp), %rsi")
+        self._append_instruction(f"movq {8*len(self._calleer_save_reg)}(%rsp), %rsi")
         # no floating point registers used
         self._append_instruction("movq $0, %rax")
         # saving stack pointer for change check
@@ -149,7 +167,7 @@ class Emit:
         self._append_label(lbl)
         self._append_instruction("pushq %rbx")  # pushing 0/1 on the stack
         self._append_instruction(f"subq $8, %rsp")  # aligning
-        self._append_instruction(f"callq 'printf@plt")  # call printf
+        self._append_instruction(f"callq printf@plt")  # call printf
         self._append_instruction(f"addq $8, %rsp")  # revert latest aligning
         self._append_instruction("popq %rbx")  # get alignment indicator
         # checking for alignment change

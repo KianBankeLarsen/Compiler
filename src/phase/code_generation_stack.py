@@ -186,13 +186,14 @@ class GenerateCode:
                 )
                 self._prolog(body)
 
-                self._generate_code(body)
+                self._generate_code(body.stm_list)
 
                 self._append_instruction(
                     Instruction(Op.LABEL,
                                 Operand(Target(T.MEM, ast_node.end_label), Mode(M.DIR)))
                 )
                 self._epilog(body)
+                self._generate_code(body.decls)
                 self._scope_stack.pop()
                 self._current_scope = self._current_scope.parent
             case AST.StatementList(stm, next):
@@ -208,7 +209,7 @@ class GenerateCode:
                     case dataclass_symbol.Symbol(_, kind=NameCategory.PARAMETER, info=info):
                         self._append_instruction(
                             Instruction(Op.POP,
-                                        Operand(Target(T.RSL), Mode(M.IRL, -(info + 3))))
+                                        Operand(Target(T.RSL), Mode(M.IRL, -(info + 16))))
                         )
                     case dataclass_symbol.Symbol(_, kind=NameCategory.VARIABLE, info=info):
                         self._append_instruction(
@@ -459,7 +460,7 @@ class GenerateCode:
                     case dataclass_symbol.Symbol(_, kind=NameCategory.PARAMETER, info=info):
                         self._append_instruction(
                             Instruction(Op.PUSH,
-                                        Operand(Target(T.RSL), Mode(M.IRL, -(info + 3))))
+                                        Operand(Target(T.RSL), Mode(M.IRL, -(info + 16))))
                         )
                     case dataclass_symbol.Symbol(_, kind=NameCategory.VARIABLE, info=info):
                         self._append_instruction(

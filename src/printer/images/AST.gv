@@ -1,43 +1,37 @@
 digraph AST {
 	0 [label="?main"]
 	1 [label=body]
-	2 [label=var_decl]
-	3 [label=a]
-	4 [label=b]
-	5 [label=c]
-	6 [label=d]
-	5 -> 6
+	2 [label=func_decl]
+	3 [label=main]
+	4 [label=param]
+	5 [label=int]
+	6 [label=a]
 	4 -> 5
-	3 -> 4
-	7 [label=int]
-	2 -> 3
-	2 -> 7
-	8 [label=decl_list]
-	9 [label=func_decl]
-	10 [label=main]
-	11 [label=param]
+	4 -> 6
+	7 [label=param_list]
+	7 -> 4
+	3 -> 7
+	8 [label=body]
+	9 [label=stm_list]
+	10 [label=a]
+	11 [label=print]
+	11 -> 10
+	9 -> 11
+	8 -> 9
+	3 -> 8
 	12 [label=int]
-	13 [label=b]
-	11 -> 12
-	11 -> 13
-	14 [label=param_list]
-	14 -> 11
-	10 -> 14
-	15 [label=body]
-	16 [label=stm_list]
-	17 [label=b]
-	18 [label=print]
-	18 -> 17
-	16 -> 18
-	15 -> 16
-	10 -> 15
-	19 [label=int]
-	9 -> 10
-	9 -> 19
-	20 [label=decl_list]
-	20 -> 9
-	8 -> 20
-	8 -> 2
-	1 -> 8
+	2 -> 3
+	2 -> 12
+	13 [label=decl_list]
+	13 -> 2
+	1 -> 13
+	14 [label=stm_list]
+	15 [label="call main"]
+	16 [label=34523452]
+	17 [label=expr_list]
+	17 -> 16
+	15 -> 17
+	14 -> 15
+	1 -> 14
 	0 -> 1
 }
