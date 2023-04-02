@@ -1,6 +1,8 @@
 digraph Symbol {
 	graph [rankdir=BT]
-	0 [label=main]
-	1 [label=a]
+	0 [label=a]
+	1 [label=b]
 	1 -> 0
+	2 [label=""]
+	2 -> 0
 }

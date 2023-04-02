@@ -62,3 +62,4 @@ class Meta(Enum):
     EPILOG = auto()
     PRECALL = auto()
     POSTRETURN = auto()
+    RET = auto()

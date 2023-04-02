@@ -52,7 +52,7 @@ class GenerateCode:
         )
         self._code.extend(
             [Instruction(Op.MOVE,
-                         Operand(Target(T.RSL), Mode(M.IRL, -2)),
+                         Operand(Target(T.RSL), Mode(M.IRL, -7)),
                          Operand(Target(T.RSL), Mode(M.DIR)))
              for _ in range(level_difference)]
         )
@@ -101,10 +101,19 @@ class GenerateCode:
 
         # Push parents ARP
         self._follow_static_link(symbol_level)
-        self._append_instruction(
-            Instruction(Op.PUSH,
-                        Operand(Target(T.RSL), Mode(M.IRL, -2)))
-        )
+        
+        level_difference = self._current_scope.level - symbol_level
+        if level_difference == 0:
+            self._append_instruction(
+                Instruction(Op.PUSH,
+                            Operand(Target(T.RSL), Mode(M.DIR)))
+            )
+        else:
+            self._append_instruction(
+                Instruction(Op.PUSH,
+                            Operand(Target(T.RSL), Mode(M.IRL, -7)))
+            )
+
 
     def _postreturn(self, number_of_parameters: int) -> None:
         # Remove ARP
@@ -193,6 +202,9 @@ class GenerateCode:
                                 Operand(Target(T.MEM, ast_node.end_label), Mode(M.DIR)))
                 )
                 self._epilog(body)
+                self._append_instruction(
+                    Instruction(Op.META, Meta.RET)
+                )
                 self._generate_code(body.decls)
                 self._scope_stack.pop()
                 self._current_scope = self._current_scope.parent
@@ -232,6 +244,8 @@ class GenerateCode:
                 """
                 ast_node.else_label = self._labels.next("else")
                 ast_node.esle_label = self._labels.next("esle")
+
+                self._generate_code(exp)
 
                 self._append_instruction(
                     Instruction(Op.POP,

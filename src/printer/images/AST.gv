@@ -1,37 +1,63 @@
 digraph AST {
 	0 [label="?main"]
 	1 [label=body]
-	2 [label=func_decl]
-	3 [label=main]
-	4 [label=param]
-	5 [label=int]
-	6 [label=a]
-	4 -> 5
-	4 -> 6
-	7 [label=param_list]
-	7 -> 4
-	3 -> 7
-	8 [label=body]
-	9 [label=stm_list]
-	10 [label=a]
-	11 [label=print]
-	11 -> 10
-	9 -> 11
-	8 -> 9
-	3 -> 8
-	12 [label=int]
+	2 [label=var_decl]
+	3 [label=a]
+	4 [label=int]
 	2 -> 3
-	2 -> 12
-	13 [label=decl_list]
-	13 -> 2
-	1 -> 13
-	14 [label=stm_list]
-	15 [label="call main"]
-	16 [label=34523452]
-	17 [label=expr_list]
-	17 -> 16
+	2 -> 4
+	5 [label=decl_list]
+	5 -> 2
+	1 -> 5
+	6 [label=stm_list]
+	7 [label=5]
+	8 [label="="]
+	9 [label=a]
+	8 -> 9
+	8 -> 7
+	6 -> 8
+	10 [label=stm_list]
+	11 [label=4]
+	12 [label=3]
+	13 [label=">"]
+	13 -> 11
+	13 -> 12
+	14 [label=body]
+	15 [label=var_decl]
+	16 [label=b]
+	17 [label=int]
+	15 -> 16
 	15 -> 17
-	14 -> 15
-	1 -> 14
+	18 [label=decl_list]
+	18 -> 15
+	14 -> 18
+	19 [label=stm_list]
+	20 [label=1]
+	21 [label="="]
+	22 [label=b]
+	21 -> 22
+	21 -> 20
+	19 -> 21
+	23 [label=stm_list]
+	24 [label=a]
+	25 [label=print]
+	25 -> 24
+	23 -> 25
+	19 -> 23
+	14 -> 19
+	26 [label=if]
+	27 [label=body]
+	28 [label=stm_list]
+	29 [label=5]
+	30 [label=print]
+	30 -> 29
+	28 -> 30
+	27 -> 28
+	26 -> 27
+	26 -> 13
+	26 -> 14
+	10 -> 26
+	6 -> 10
+	1 -> 6
 	0 -> 1
 }

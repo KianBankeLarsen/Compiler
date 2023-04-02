@@ -21,7 +21,8 @@ class Emit:
             Meta.PROLOG: self._prolog,
             Meta.EPILOG: self._epilog,
             Meta.PRECALL: self._precall,
-            Meta.POSTRETURN: self._postreturn
+            Meta.POSTRETURN: self._postreturn,
+            Meta.RET: self._ret
         }
 
     def emit(self, iloc_ir: list[iloc.Instruction]) -> str:
@@ -124,8 +125,10 @@ class Emit:
         self._append_instruction("movq %rbp, %rsp")
         self._append_instruction("popq %rbp")
         self._save_retore_reg("popq", reversed(self._callee_save_reg))
-        self._append_instruction("ret")
         self._append_newline()
+
+    def _ret(self):
+        self._append_instruction("ret")
 
     def _precall(self):
         self._save_retore_reg("pushq", self._calleer_save_reg)

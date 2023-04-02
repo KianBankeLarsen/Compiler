@@ -59,11 +59,17 @@ class SymbolTable:
         """
 
         if self.parent:
-            return (
+            symval = (
                 self._tab.get(
                     signature,
                     self.parent.lookup(signature)
                 ),
                 self.level
             )
+            
+            if isinstance(symval[0], Symbol):
+                return symval
+            else:
+                return symval[0]
+            
         return (self._tab.get(signature), self.level)
