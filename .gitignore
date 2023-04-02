@@ -10,9 +10,8 @@ report/main.aux
 report/main.fdb_latexmk
 report/main.fls
 report/main.log
-report/main.out
 report/.latexmkrc
 report/_minted-main
 test.py
 test*.s
-a.out
+*.out
