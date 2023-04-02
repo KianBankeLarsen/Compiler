@@ -14,5 +14,5 @@ report/main.out
 report/.latexmkrc
 report/_minted-main
 test.py
-test.s
+test*.s
 a.out
