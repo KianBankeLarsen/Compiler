@@ -12,6 +12,9 @@ report/main.fls
 report/main.log
 report/.latexmkrc
 report/_minted-main
-test.py
-test*.s
+output
 *.out
+!printer/images/AST.a.gv
+!printer/images/AST.a.png
+!printer/images/Symbol.a.gv
+!printer/images/Symbol.a.png
