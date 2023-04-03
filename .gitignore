@@ -1,7 +1,8 @@
 parsetab.py
 parser.out
 __pycache__/
-.vscode/
+.vscode/*
+!/.vscode/tasks.json
 .VSCodeCounter/
 report/main.synctex.gz
 report/svg-inkscape/
@@ -12,7 +13,9 @@ report/main.fls
 report/main.log
 report/.latexmkrc
 report/_minted-main
-output
+src/output/*
+!src/output/a.iloc
+!src/output/a.s
 *.out
 /src/printer/images/*
 !/src/printer/images/AST.a.gv.png

@@ -1,5 +1,6 @@
 import argparse
 import pprint
+import subprocess
 
 import phase.code_generation_stack as code_generation_stack
 import phase.emit as emit
@@ -40,10 +41,15 @@ argparser.add_argument(
     '--runTests',
     default=False,
     action='store_true',
-    help="Run tests"   
+    help="Run tests"
+)
+argparser.add_argument(
+    '-r', '--run',
+    default=False,
+    action='store_true',
+    help="Run compilled program"
 )
 args = argparser.parse_args()
-
 
 if args.file:
     with open(args.file, "r") as f:
@@ -69,12 +75,16 @@ stack_program_code = code_generation_stack.get_code()
 code_emitter = emit.Emit()
 assembly_code = code_emitter.emit(stack_program_code)
 
-if args.output:
-    with open(f"./output/{args.output}.s", "w") as f:
-        f.write(assembly_code)
+output = f"./output/{args.output}"
+
+with open(f"{output}.s", "w") as f:
+    f.write(assembly_code)
 
 if args.compile:
-    pass
+    subprocess.call(["gcc", f"{output}.s", "-o", f"{output}.out"])
+
+if args.run:
+    subprocess.call([f"./{output}.out"])
 
 if args.debug:
     AST_pretty_printer = ast_printer.ASTTreePrinter(f"AST.{args.output}")
@@ -90,5 +100,5 @@ if args.debug:
         pp = pprint.PrettyPrinter(stream=f)
         pp.pprint(stack_program_code)
 
-if args.runtests:
+if args.runTests:
     pass
