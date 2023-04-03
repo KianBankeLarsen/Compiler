@@ -15,7 +15,7 @@ class ASTSymbolIncorporator:
 
     def __init__(self) -> ASTSymbolIncorporator:
         self._current_scope = SymbolTable(None)
-        self.variable_offset = None
+        self._body_scope = []
         self.parameter_offset = None
 
     def _reduce_variable_list(self, var_lst: AST.DeclarationVariableList, acc: list = None) -> list(str):
@@ -41,9 +41,11 @@ class ASTSymbolIncorporator:
     def _build_symbol_table(self, ast_node: AST.AstNode) -> None:
         match ast_node:
             case AST.Body(decls, stm_list):
-                self.variable_offset = 0
+                ast_node.variable_offset = 0
+                self._body_scope.append(ast_node)
                 self._build_symbol_table(decls)
-                ast_node.number_of_variables = self.variable_offset
+                ast_node.number_of_variables = ast_node.variable_offset
+                self._body_scope.pop()
                 self._build_symbol_table(stm_list)
             case AST.DeclarationList(decl, next):
                 self._build_symbol_table(decl)
@@ -56,14 +58,14 @@ class ASTSymbolIncorporator:
             case AST.DeclarationVariableList(type, var_lst, lineno):
                 for i in self._reduce_variable_list(var_lst):
                     symval = Symbol(type, NameCategory.VARIABLE,
-                                    self.variable_offset)
+                                    self._body_scope[-1].variable_offset)
                     self._current_scope.insert(i, symval, lineno)
-                    self.variable_offset += 1
+                    self._body_scope[-1].variable_offset += 1
             case AST.DeclarationVariableInit(type, name, _, lineno):
                 symval = Symbol(type, NameCategory.VARIABLE,
-                                self.variable_offset)
+                                self._body_scope[-1].variable_offset)
                 self._current_scope.insert(name, symval, lineno)
-                self.variable_offset += 1
+                self._body_scope[-1].variable_offset += 1
             case AST.Function(name, par_list, body):
                 ast_node.symbol_table = self._current_scope
                 self.parameter_offset = 0

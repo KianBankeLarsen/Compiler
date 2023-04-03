@@ -92,7 +92,7 @@ class GenerateCode:
 
     def _precall(self, exp_list: AST.ExpressionList, symbol_level: int) -> None:
         # Push arguments
-        self.generate_code(exp_list)
+        self._generate_code(exp_list)
 
         # Begin call
         self._append_instruction(
@@ -172,8 +172,6 @@ class GenerateCode:
             case AST.DeclarationList(decl, next):
                 self._generate_code(decl)
                 self._generate_code(next)
-            case AST.DeclarationVariableInit(_, name, exp, lineno):
-                self._generate_code(AST.StatementAssignment(name, exp, lineno))
             case AST.DeclarationFunction(_, function):
                 self._generate_code(function)
             case AST.Function(name, _, body):
@@ -326,12 +324,13 @@ class GenerateCode:
                     Instruction(Op.LABEL,
                                 Operand(Target(T.MEM, ast_node.while_label), Mode(M.DIR)))
                 )
+
+                self._generate_code(exp)
+
                 self._append_instruction(
                     Instruction(Op.POP,
                                 Operand(Target(T.REG, 1), Mode(M.DIR)))
                 )
-
-                self._generate_code(exp)
 
                 self._append_instruction(
                     Instruction(Op.MOVE,
@@ -426,7 +425,7 @@ class GenerateCode:
 
                 self._epilog(body)
                 self._pop_pseudo_return_address
-                self._postreturn(1)
+                self._postreturn(ast_node.number_of_parameters)
 
                 self._current_scope = self._current_scope.parent
             case AST.StatementPrint(exp):
@@ -446,11 +445,6 @@ class GenerateCode:
                 )
                 self._append_instruction(
                     Instruction(Op.META, Meta.POSTRETURN)
-                )
-                self._append_instruction(
-                    Instruction(Op.ADD,
-                                Operand(Target(T.IMI, 8), Mode(M.DIR)),
-                                Operand(Target(T.RSP), Mode(M.DIR)))
                 )
             case AST.StatementReturn(exp):
                 self._generate_code(exp)
