@@ -6,7 +6,8 @@
         {
             "label": "Run compiler tests",
             "type": "shell",
-            "command": "wsl whoami"
+            "command": "wsl whoami",
+            "problemMatcher": []
         }
     ]
 }
