@@ -14,7 +14,6 @@ report/.latexmkrc
 report/_minted-main
 output
 *.out
-!printer/images/AST.a.gv
-!printer/images/AST.a.png
-!printer/images/Symbol.a.gv
-!printer/images/Symbol.a.png
+!/src/printer/images/AST.a.gv.png
+!/src/printer/images/Symbol.a.gv.png
+/src/printer/images/*

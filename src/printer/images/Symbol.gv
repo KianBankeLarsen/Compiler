@@ -1,8 +1,0 @@
-digraph Symbol {
-	graph [rankdir=BT]
-	0 [label=""]
-	1 [label=i]
-	1 -> 0
-	2 [label=i]
-	2 -> 1
-}

@@ -137,7 +137,6 @@ class Emit:
         self._save_retore_reg("popq", reversed(self._calleer_save_reg))
 
     def _program_prologue(self):
-        self._append_newline()
         self._append_section("data")
         self._append_newline()
         self._append_label("form")
