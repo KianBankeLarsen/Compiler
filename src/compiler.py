@@ -64,15 +64,15 @@ class PandaCompiler:
 
         if self.args.debug:
             AST_pretty_printer = ast_printer.ASTTreePrinter(
-                f"AST.{self.args.output}")
+                f"AST.{output}")
             AST_pretty_printer.build_graph(the_program_AST)
             AST_pretty_printer.render('png')
 
             symbol_table_printer = Symbol_printer.SymbolPrinter(
-                f"Symbol.{self.args.output}")
+                f"Symbol.{output}")
             symbol_table_printer.build_graph(symbol_collection_IR)
             symbol_table_printer.render('png', {'rankdir': 'BT'})
 
-            with open(f"./output/{self.args.output}.iloc", 'w') as f:
+            with open(f"{output}.iloc", 'w') as f:
                 pp = pprint.PrettyPrinter(stream=f)
                 pp.pprint(stack_program_code)

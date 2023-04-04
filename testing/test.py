@@ -44,12 +44,15 @@ class TestCase(unittest.TestCase):
         with open(output, "w") as f:
             subprocess.call([f"./{self.src}.out"], stdout=f)
 
-        os.remove(f"{self.src}.s")
-        os.remove(f"{self.src}.out")
-
         assert self._files_equal(self.res, output)
 
+        os.remove(f"{self.src}.s")
+        os.remove(f"{self.src}.out")
         os.remove(output)
+
+        if self.args.debug:
+            os.remove(f"{self.src}.iloc")
+
 
 
 def load_tests(args: argparse.Namespace) -> unittest.TestSuite:
