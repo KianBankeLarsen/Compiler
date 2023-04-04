@@ -1,0 +1,14 @@
+int i;
+
+int foo(){
+    return i;
+}
+
+int main(){
+    i = foo();
+    return i;
+}
+
+i = 10;
+i = main();
+print(i);

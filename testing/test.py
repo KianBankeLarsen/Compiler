@@ -36,22 +36,30 @@ class TestCase(unittest.TestCase):
     def runTest(self):
         """
         """
-        
-        src.compiler.PandaCompiler(self.args).compile()
 
         output = f"{self.src}.out.tmp"
 
         with open(output, "w") as f:
-            subprocess.call([f"./{self.src}.out"], stdout=f)
+            exit_code = subprocess.call(
+                ["python3.10", "main.py", "-o", f"{self.src}", "-f", f"{self.src}", "--testFlag", "-c"],
+                stderr=f
+            )
 
-        assert self._files_equal(self.res, output)
+        if exit_code:
+            assert self._files_equal(self.res, output)
+            os.remove(output)
+        else:
+            with open(output, "w") as f:
+                subprocess.call([f"./{self.src}.out"], stdout=f)
 
-        os.remove(f"{self.src}.s")
-        os.remove(f"{self.src}.out")
-        os.remove(output)
+            assert self._files_equal(self.res, output)
 
-        if self.args.debug:
-            os.remove(f"{self.src}.iloc")
+            os.remove(f"{self.src}.s")
+            os.remove(f"{self.src}.out")
+            os.remove(output)
+
+            if self.args.debug:
+                os.remove(f"{self.src}.iloc")
 
 
 

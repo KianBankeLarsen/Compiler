@@ -41,10 +41,17 @@ argparser.add_argument(
     action='store_true',
     help="Run compilled program"
 )
+argparser.add_argument(
+    '--testFlag',
+    default=False,
+    action='store_true',
+    help="Run compilled program"
+)
 args = argparser.parse_args()
 
 if args.runTests:
     runner = unittest.TextTestRunner(verbosity=2)
     runner.run(testing.test.load_tests(args))
 else:
+    args.runTests = args.testFlag
     PandaCompiler(args).compile()
