@@ -45,7 +45,13 @@ argparser.add_argument(
     '--testFlag',
     default=False,
     action='store_true',
-    help="Run compilled program"
+    help="Flag for internal use"
+)
+argparser.add_argument(
+    '--coverage',
+    default=False,
+    action='store_true',
+    help="Flag for internal use"
 )
 args = argparser.parse_args()
 

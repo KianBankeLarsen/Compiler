@@ -39,11 +39,16 @@ class TestCase(unittest.TestCase):
 
         output = f"{self.src}.out.tmp"
 
-        with open(output, "w") as f:
-            exit_code = subprocess.call(
-                ["python3.10", "main.py", "-o", f"{self.src}", "-f", f"{self.src}", "--testFlag", "-c"],
-                stderr=f
-            )
+        exit_code = None
+
+        if self.args.coverage:
+            src.compiler.PandaCompiler(self.args).compile()
+        else:
+            with open(output, "w") as f:
+                exit_code = subprocess.call(
+                    ["python3.10", "main.py", "-o", f"{self.src}", "-f", f"{self.src}", "--testFlag", "-c"],
+                    stderr=f
+                )
 
         if exit_code:
             assert self._files_equal(self.res, output)
