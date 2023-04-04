@@ -24,7 +24,19 @@ class TestCase(unittest.TestCase):
 
         self._testMethodDoc = f"Running test for {self.src}"
 
+    def _files_equal(self, file1, file2):
+        with open(file1, 'r') as f:
+            file1_content = f.readlines()
+
+        with open(file2, 'r') as f:
+            file2_content = f.readlines()
+
+        return file1_content == file2_content
+
     def runTest(self):
+        """
+        """
+        
         src.compiler.PandaCompiler(self.args).compile()
 
         output = f"{self.src}.out.tmp"
@@ -35,19 +47,9 @@ class TestCase(unittest.TestCase):
         os.remove(f"{self.src}.s")
         os.remove(f"{self.src}.out")
 
-        assert _files_equal(self.res, output)
+        assert self._files_equal(self.res, output)
 
         os.remove(output)
-
-
-def _files_equal(file1, file2):
-    with open(file1, 'r') as f:
-        file1_content = f.readlines()
-
-    with open(file2, 'r') as f:
-        file2_content = f.readlines()
-
-    return file1_content == file2_content
 
 
 def load_tests(args: argparse.Namespace) -> unittest.TestSuite:

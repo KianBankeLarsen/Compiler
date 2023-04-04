@@ -21,3 +21,4 @@ src/output/*
 !/src/printer/images/AST.a.gv.png
 !/src/printer/images/Symbol.a.gv.png
 testing/test-cases/*.s
+.coverage

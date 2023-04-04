@@ -6,7 +6,7 @@
         {
             "label": "Run compiler tests",
             "type": "shell",
-            "command": "wsl whoami",
+            "command": "wsl python3.10 -m coverage run main.py --runTests && wsl python3.10 -m coverage report && wsl python3.10 -m coverage html",
             "problemMatcher": []
         }
     ]
