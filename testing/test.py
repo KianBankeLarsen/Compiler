@@ -43,7 +43,7 @@ def load_tests(args: argparse.Namespace) -> unittest.TestSuite:
         for file_name in file_names:
             file = f"{dir_path}/{file_name}"
             name, ext = os.path.splitext(file)
-            
+
             if ext not in [".panda", ".eop"]:
                 continue
 
