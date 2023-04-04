@@ -1,4 +1,4 @@
-from enums.code_generation_enum import Op
+from src.enums.code_generation_enum import Op
 
 intermediate_to_x86: dict = {
     Op.MOVE: "movq",

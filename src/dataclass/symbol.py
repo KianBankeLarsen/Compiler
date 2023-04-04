@@ -3,8 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, NoReturn
 
-import utils.error as error
-from enums.symbols_enum import NameCategory
+import src.utils.error as error
+from src.enums.symbols_enum import NameCategory
 
 
 @dataclass

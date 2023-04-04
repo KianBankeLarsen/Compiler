@@ -1,6 +1,6 @@
 import ply.lex as lex
 
-import utils.error as error
+import src.utils.error as error
 
 reserved = {
     'print': 'PRINT',

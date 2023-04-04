@@ -3,13 +3,13 @@ from __future__ import annotations
 import copy
 from dataclasses import dataclass, field
 
-import dataclass.AST as AST
-import dataclass.symbol as dataclass_symbol
-import utils.error
-import utils.label_generator as label
-from dataclass.iloc import Instruction, Mode, Operand, Target
-from enums.code_generation_enum import M, Meta, Op, T
-from enums.symbols_enum import NameCategory
+import src.dataclass.AST as AST
+import src.dataclass.symbol as dataclass_symbol
+import src.utils.error
+import src.utils.label_generator as label
+from src.dataclass.iloc import Instruction, Mode, Operand, Target
+from src.enums.code_generation_enum import M, Meta, Op, T
+from src.enums.symbols_enum import NameCategory
 
 
 @dataclass
@@ -486,7 +486,7 @@ class GenerateCode:
                                 Operand(Target(T.IMI, integer), Mode(M.DIR)))
                 )
             case AST.ExpressionFloat(_, lineno):
-                utils.error("code Generation",
+                src.utils.error("code Generation",
                             "Floats are not implemented, yet.",
                             lineno)
             case AST.ExpressionBinop(binop, lhs, rhs) if binop in [Op.ADD, Op.SUB, Op.DIV, Op.MUL]:

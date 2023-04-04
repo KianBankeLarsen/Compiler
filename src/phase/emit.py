@@ -1,7 +1,7 @@
-import dataclass.iloc as iloc
-from enums.code_generation_enum import M, Meta, Op, T
-from utils.label_generator import Labels
-from utils.x86_instruction_enum_dict import intermediate_to_x86
+import src.dataclass.iloc as iloc
+from src.enums.code_generation_enum import M, Meta, Op, T
+from src.utils.label_generator import Labels
+from src.utils.x86_instruction_enum_dict import intermediate_to_x86
 
 
 class Emit:

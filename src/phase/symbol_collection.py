@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import dataclass.AST as AST
-from dataclass.symbol import Symbol, SymbolTable
-from enums.symbols_enum import NameCategory
+import src.dataclass.AST as AST
+from src.dataclass.symbol import Symbol, SymbolTable
+from src.enums.symbols_enum import NameCategory
 import copy
 
 class ASTSymbolIncorporator:

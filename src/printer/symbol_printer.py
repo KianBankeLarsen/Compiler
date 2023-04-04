@@ -1,5 +1,5 @@
-import dataclass.AST as AST
-from printer.generic_printer import GenericPrinter
+import src.dataclass.AST as AST
+from src.printer.generic_printer import GenericPrinter
 
 
 class SymbolPrinter(GenericPrinter):

@@ -1,12 +1,12 @@
 import ply.yacc as yacc
 
-import dataclass.AST as AST
-import phase.lexer
-import utils.error as error
-import utils.interfacing_parser as interfacing_parser
-from enums.code_generation_enum import Op
+import src.dataclass.AST as AST
+import src.phase.lexer
+import src.utils.error as error
+import src.utils.interfacing_parser as interfacing_parser
+from src.enums.code_generation_enum import Op
 
-tokens = phase.lexer.tokens
+tokens = src.phase.lexer.tokens
 
 precedence = (
     ('nonassoc', 'NEQ', 'LT', 'GT', 'LTE', 'GTE'), # Requires syntaxtic sugar

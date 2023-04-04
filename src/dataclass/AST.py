@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from enums.code_generation_enum import Op
+from src.enums.code_generation_enum import Op
 
 
 class AstNode:
