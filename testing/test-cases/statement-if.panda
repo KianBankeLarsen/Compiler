@@ -1,0 +1,9 @@
+int i;
+
+i = 5;
+
+if(i < 6){
+    print(5);
+}
+
+print(6);
