@@ -20,7 +20,7 @@ class PandaCompiler:
 
     args: argparse.Namespace
 
-    def compile(self):
+    def compile(self) -> None:
         """
         """
 
@@ -48,7 +48,10 @@ class PandaCompiler:
         code_emitter = src.phase.emit.Emit()
         assembly_code = code_emitter.emit(stack_program_code)
 
-        output = f"src/output/{self.args.output}"
+        if self.args.runTests:
+            output = self.args.output
+        else:
+            output = f"src/output/{self.args.output}"
 
         with open(f"{output}.s", "w") as f:
             f.write(assembly_code)

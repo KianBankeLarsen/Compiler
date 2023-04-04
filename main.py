@@ -1,6 +1,7 @@
 import argparse
-
+import unittest
 from src.compiler import PandaCompiler
+import testing.test
 
 argparser = argparse.ArgumentParser(
     prog='Compiler for Panda',
@@ -42,4 +43,8 @@ argparser.add_argument(
 )
 args = argparser.parse_args()
 
-PandaCompiler(args).compile()
+if args.runTests:
+    runner = unittest.TextTestRunner(verbosity=2)
+    runner.run(testing.test.load_tests(args))
+else:
+    PandaCompiler(args).compile()
