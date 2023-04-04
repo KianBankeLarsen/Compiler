@@ -285,17 +285,18 @@ class GenerateCode:
                                 Operand(Target(T.MEM, ast_node.else_label), Mode(M.DIR)))
                 )
 
-                self._current_scope = ast_node.symbol_table_else
-                self._precall(None, self._current_scope.level)
-                self._push_pseudo_return_address()
-                self._prolog(else_part)
+                if else_part:
+                    self._current_scope = ast_node.symbol_table_else
+                    self._precall(None, self._current_scope.level)
+                    self._push_pseudo_return_address()
+                    self._prolog(else_part)
 
-                self._generate_code(else_part)
+                    self._generate_code(else_part)
 
-                self._epilog(else_part)
-                self._pop_pseudo_return_address()
-                self._postreturn(0)
-                self._current_scope = self._current_scope.parent
+                    self._epilog(else_part)
+                    self._pop_pseudo_return_address()
+                    self._postreturn(0)
+                    self._current_scope = self._current_scope.parent
 
                 self._append_instruction(
                     Instruction(Op.LABEL,
