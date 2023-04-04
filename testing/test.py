@@ -25,6 +25,8 @@ class TestCase(unittest.TestCase):
 
     def runTest(self):
         src.compiler.PandaCompiler(self.args).compile()
+        os.remove(f"{self.src}.s")
+        os.remove(f"{self.src}.out")
 
 
 def load_tests(args: argparse.Namespace) -> unittest.TestSuite:
@@ -51,6 +53,7 @@ def load_tests(args: argparse.Namespace) -> unittest.TestSuite:
                 file_dict[name].append(file)
 
     for res, src in file_dict.values():
+        args = copy.copy(args)
         args.output = src
         args.file = src
         test_cases.addTest(TestCase('runTest', res, src, args))
