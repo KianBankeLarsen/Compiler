@@ -4,11 +4,10 @@ int foo(){
     return i;
 }
 
-int main(){
+void main(){
     i = foo();
-    return i;
 }
 
 i = 10;
-i = main();
+main();
 print(i);
