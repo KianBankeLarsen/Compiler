@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import copy
 import os
+import subprocess
 import unittest
 from collections import defaultdict
 
@@ -25,8 +26,28 @@ class TestCase(unittest.TestCase):
 
     def runTest(self):
         src.compiler.PandaCompiler(self.args).compile()
+
+        output = f"{self.src}.out.tmp"
+
+        with open(output, "w") as f:
+            subprocess.call([f"./{self.src}.out"], stdout=f)
+
         os.remove(f"{self.src}.s")
         os.remove(f"{self.src}.out")
+
+        assert _files_equal(self.res, output)
+
+        os.remove(output)
+
+
+def _files_equal(file1, file2):
+    with open(file1, 'r') as f:
+        file1_content = f.readlines()
+
+    with open(file2, 'r') as f:
+        file2_content = f.readlines()
+
+    return file1_content == file2_content
 
 
 def load_tests(args: argparse.Namespace) -> unittest.TestSuite:
@@ -35,6 +56,7 @@ def load_tests(args: argparse.Namespace) -> unittest.TestSuite:
 
     args = copy.copy(args)
     args.compile = True
+    args.run = False
 
     file_dict = defaultdict(list)
     test_cases = unittest.TestSuite()
