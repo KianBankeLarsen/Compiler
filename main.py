@@ -1,5 +1,7 @@
 import argparse
+
 from src.compiler import PandaCompiler
+
 argparser = argparse.ArgumentParser(
     prog='Compiler for Panda',
     description='Compiles source code to assembly'
