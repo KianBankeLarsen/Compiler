@@ -9,8 +9,6 @@ class Op(str, Enum):
     PUSH = auto()
     POP = auto()
     CALL = auto()
-    RET = auto()
-    RET_VOID = auto()
     CMP = auto()
     JMP = auto()
     LABEL = auto()

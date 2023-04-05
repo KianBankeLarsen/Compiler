@@ -5,14 +5,10 @@ int fee(){
 } 
 
 int main(){
-    int a, b; 
     int foo(){
-        int a; 
-        a = fee(); 
-        return a;
+        return fee();
     }  
-    b = foo(); 
-    print(b); 
+    print(foo()); 
     return 4;
 } 
 

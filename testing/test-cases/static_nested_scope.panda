@@ -1,0 +1,30 @@
+int a, dummy;
+
+int f(){
+
+  int g(){
+
+    int a;
+
+    int h(){
+      a = 0;
+      print(a);
+    }
+    
+    a = 2;
+    print(a);
+    dummy = h();
+    print(a);
+    return 0;
+  }
+
+  print(a);
+  dummy = g();
+  print(a);
+  return 0;
+}
+
+a = 1;
+dummy = f();
+print(a);
+return 0;

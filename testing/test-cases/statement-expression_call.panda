@@ -1,0 +1,17 @@
+int main(){
+    return 6;
+}
+
+int foo(){
+    return main() + 3;
+}
+
+int fii(){
+    return foo();
+}
+
+int fee(){
+    return foo();
+}
+
+print(fee() + fii() + 3);

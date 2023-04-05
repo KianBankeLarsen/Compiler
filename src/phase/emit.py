@@ -66,9 +66,6 @@ class Emit:
                 # move to destination
                 self._append_instruction(
                     f"movq %rax, {self._do_operand(args[1])}")
-            case iloc.Instruction(opcode=Op.RET, args=args):
-                self._append_instruction("popq %rax")
-                self._append_instruction(f"jmp {args[0]}")
             case iloc.Instruction(opcode=Op.LABEL, args=args):
                 self._append_label(args[0].target.val)
             case iloc.Instruction(opcode=Op.META, args=method):

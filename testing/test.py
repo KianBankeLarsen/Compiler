@@ -22,7 +22,7 @@ class TestCase(unittest.TestCase):
 
         self.args = args
 
-        self._testMethodDoc = f"Running test for {self.src}"
+        self._testMethodDoc = f"Testing {self.src}"
 
     def _files_equal(self, file1, file2):
         with open(file1, 'r') as f:
@@ -45,8 +45,13 @@ class TestCase(unittest.TestCase):
             src.compiler.PandaCompiler(self.args).compile()
         else:
             with open(output, "w") as f:
+                script = ["python3.10", "main.py", "-o", f"{self.src}", "-f", f"{self.src}", "--testFlag", "-c"]
+
+                if self.args.debug:
+                    script.append("-d")
+
                 exit_code = subprocess.call(
-                    ["python3.10", "main.py", "-o", f"{self.src}", "-f", f"{self.src}", "--testFlag", "-c"],
+                    script,
                     stderr=f
                 )
 

@@ -1,0 +1,10 @@
+int main(int a){
+    if(1){
+        if(1) {
+            a = 4;
+        }
+    }
+    return a;
+}
+
+print(main(5353098));

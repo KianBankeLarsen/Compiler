@@ -1,11 +1,8 @@
-int i;
-
-void fib(int n){
+void foo(int n){
     print(n);
     if(n > 1) {
-        fib(n-1);
+        foo(n-1);
     }
 }
 
-fib(10);
-return 0;
+foo(10);
