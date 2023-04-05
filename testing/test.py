@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import argparse
 import copy
+import io
 import os
 import subprocess
 import unittest
 from collections import defaultdict
+from contextlib import redirect_stderr
 
 import src.compiler
 
@@ -15,7 +17,7 @@ class TestCase(unittest.TestCase):
     """
 
     def __init__(self, methodName: str, res: str, src: str, args: argparse.Namespace) -> TestCase:
-        super(TestCase, self).__init__(methodName)
+        super().__init__(methodName)
 
         self.res = res
         self.src = src
@@ -36,24 +38,18 @@ class TestCase(unittest.TestCase):
     def runTest(self):
         """
         """
-
+        
         output = f"{self.src}.out.tmp"
 
         exit_code = None
 
-        if self.args.coverage:
-            src.compiler.PandaCompiler(self.args).compile()
-        else:
-            with open(output, "w") as f:
-                script = ["python3.10", "main.py", "-o", f"{self.src}", "-f", f"{self.src}", "--testFlag", "-c"]
-
-                if self.args.debug:
-                    script.append("-d")
-
-                exit_code = subprocess.call(
-                    script,
-                    stderr=f
-                )
+        with io.StringIO() as buf, redirect_stderr(buf):
+            try:
+                src.compiler.PandaCompiler(self.args).compile()
+            except SystemExit:
+                exit_code = True
+                with open(output, "w") as f:
+                    f.write(buf.getvalue())
 
         if exit_code:
             assert self._files_equal(self.res, output)
@@ -70,7 +66,6 @@ class TestCase(unittest.TestCase):
 
             if self.args.debug:
                 os.remove(f"{self.src}.iloc")
-
 
 
 def load_tests(args: argparse.Namespace) -> unittest.TestSuite:

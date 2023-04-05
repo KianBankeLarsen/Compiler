@@ -2,6 +2,7 @@ import argparse
 import unittest
 from src.compiler import PandaCompiler
 import testing.test
+import shutil
 
 argparser = argparse.ArgumentParser(
     prog='Compiler for Panda',
@@ -30,7 +31,7 @@ argparser.add_argument(
     help="Path to input file, otherwise stdin will be used"
 )
 argparser.add_argument(
-    '--runTests',
+    '-t', '--runTests',
     default=False,
     action='store_true',
     help="Run tests"
@@ -41,23 +42,14 @@ argparser.add_argument(
     action='store_true',
     help="Run compilled program"
 )
-argparser.add_argument(
-    '--testFlag',
-    default=False,
-    action='store_true',
-    help="Flag for internal use"
-)
-argparser.add_argument(
-    '--coverage',
-    default=False,
-    action='store_true',
-    help="Flag for internal use"
-)
+
 args = argparser.parse_args()
 
 if args.runTests:
     runner = unittest.TextTestRunner(verbosity=2)
     runner.run(testing.test.load_tests(args))
+    if args.debug:
+        shutil.rmtree("src/printer/images/AST.testing")
+        shutil.rmtree("src/printer/images/Symbol.testing")
 else:
-    args.runTests = args.testFlag
     PandaCompiler(args).compile()

@@ -1,0 +1,19 @@
+int fib(int n) {
+    int a, b, c, d;
+
+    if(n == 0) {
+	    return 1;
+    } 
+    
+    if (n == 1) {
+        return 1;
+    } 
+	
+    return fib(n-1) + fib(n-2);
+}
+
+int main(int a, int b){
+    return a + b;
+}
+
+print(main(fib(10), fib(10)));

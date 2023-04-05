@@ -1,3 +1,5 @@
+# This is a comment
+
 int i;
 
 i = 5;
