@@ -2,26 +2,25 @@ int a, dummy;
 
 int f(){
 
-  int g(){
+    int g(){
+        int a;
 
-    int a;
+        int h(){
+            a = 0;
+            print(a);
+        }
 
-    int h(){
-      a = 0;
-      print(a);
+        a = 2;
+        print(a);
+        dummy = h();
+        print(a);
+        return 0;
     }
-    
-    a = 2;
+
     print(a);
-    dummy = h();
+    dummy = g();
     print(a);
     return 0;
-  }
-
-  print(a);
-  dummy = g();
-  print(a);
-  return 0;
 }
 
 a = 1;

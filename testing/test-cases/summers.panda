@@ -1,21 +1,21 @@
 int sum_recurse(int n) {
-  if(n == 1) {
-    return 1;
-  } else {
-    return n + sum_recurse(n - 1);
-  }
+    if(n == 1) {
+        return 1;
+    } else {
+        return n + sum_recurse(n - 1);
+    }
 }
 
 int sum_loop(int n) {
-  int sum, i;
+    int sum, i;
   
-  i = 1;
-  sum = 0;
-  while(i <= n) {
-    sum = sum + i;
-    i = i + 1;
-  }
-  return sum;
+    i = 1;
+    sum = 0;
+    while(i <= n) {
+        sum = sum + i;
+        i = i + 1;
+    }
+    return sum;
 }
 
 print(sum_recurse(9));
