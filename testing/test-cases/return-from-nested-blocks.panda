@@ -1,0 +1,19 @@
+int i;
+
+int main(){
+    if(1){
+        if(1){
+            if(1){
+                i = i + 1;
+                return i;
+            }
+        }
+    }
+}
+
+i = 5;
+
+print(main());
+print(main());
+print(main());
+print(main());
