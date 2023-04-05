@@ -1,0 +1,11 @@
+int i;
+
+void fib(int n){
+    print(n);
+    if(n > 1) {
+        fib(n-1);
+    }
+}
+
+fib(10);
+return 0;
