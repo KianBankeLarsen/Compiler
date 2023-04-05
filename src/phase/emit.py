@@ -5,7 +5,9 @@ from src.utils.x86_instruction_enum_dict import intermediate_to_x86
 
 
 class Emit:
-    """
+    """Functionality to translate from linear ILOC IR to x86-64 assembly
+
+    The API exposes emit.
     """
 
     def __init__(self):
@@ -26,7 +28,9 @@ class Emit:
         }
 
     def emit(self, iloc_ir: list[iloc.Instruction]) -> str:
-        """
+        """Translates the ILOC IR to x86-64 assembly instructions.
+
+        The function outputs a string containing the complete program.
         """
 
         self._program_prologue()

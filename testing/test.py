@@ -13,11 +13,11 @@ import src.compiler
 
 
 class TestCase(unittest.TestCase):
-    """
+    """Default subclass of unittest.TestCase.
     """
 
     def __init__(self, methodName: str, res: str, src: str, args: argparse.Namespace) -> TestCase:
-        super().__init__(methodName)
+        super().__init__()
 
         self.res = res
         self.src = src
@@ -27,6 +27,9 @@ class TestCase(unittest.TestCase):
         self._testMethodDoc = f"Testing {self.src}"
 
     def _files_equal(self, file1, file2):
+        """Compares whether files share identical content.
+        """
+        
         with open(file1, 'r') as f:
             file1_content = f.readlines()
 
@@ -36,7 +39,7 @@ class TestCase(unittest.TestCase):
         return file1_content == file2_content
 
     def runTest(self):
-        """
+        """Controls how the unittest should proceed.
         """
         
         output = f"{self.src}.out.tmp"
@@ -69,7 +72,8 @@ class TestCase(unittest.TestCase):
 
 
 def load_tests(args: argparse.Namespace) -> unittest.TestSuite:
-    """
+    """Dynamically create a test suite, containing a test for every 
+    test-pair specified in the ```testing/test-cases``` folder.
     """
 
     args = copy.copy(args)
