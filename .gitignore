@@ -11,6 +11,10 @@ report/main.aux
 report/main.fdb_latexmk
 report/main.fls
 report/main.log
+report/main.run.xml
+report/main.bbl
+report/main.bcf
+report/main.blg
 report/_minted-main
 src/output/*
 !src/output/a.iloc
