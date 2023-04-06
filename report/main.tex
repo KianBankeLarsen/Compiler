@@ -1,6 +1,12 @@
+% !TeX root = main.tex
 %%%%%%%%%%%%%%%%%%%%%%%%% PREAMBLE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \input{misc/preamble}
 \usepackage{amssymb}
+
+\usepackage[block=ragged, sorting=nyt, style=authoryear-ibid, backend=biber]{biblatex}
+\setlength\bibitemsep{1.5\itemsep}
+\addbibresource{misc/mybib.bib}
+
 %%%%%%%%%%%%%%%%%%%%%% TITLE PAGE OPTIONS %%%%%%%%%%%%%%%%%%%%%%%%%
 \pagestyle{fancy}
 \setlength{\headsep}{15pt}
@@ -56,4 +62,10 @@ Kilar20, \formatdate{30}{07}{2001}
 { \hypersetup{hidelinks} \tableofcontents }
 
 \chapter{Introduction}
+\parencite{communcation4}
+
+\cleardoublepage
+\phantomsection
+\addcontentsline{toc}{section}{Referencer}
+\printbibliography
 \end{document}
