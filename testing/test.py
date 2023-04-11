@@ -4,6 +4,7 @@ import argparse
 import copy
 import io
 import os
+import shutil
 import subprocess
 import unittest
 from collections import defaultdict
@@ -69,6 +70,14 @@ class TestCase(unittest.TestCase):
 
             if self.args.debug:
                 os.remove(f"{self.src}.iloc")
+
+                file_name = os.path.basename(self.src)
+                os.remove(f"src/printer/images/AST.testing/test-cases/{file_name}.gv.png")
+                os.remove(f"src/printer/images/AST.testing/test-cases/{file_name}.gv")
+                os.remove(f"src/printer/images/AST-desugar.testing/test-cases/{file_name}.gv.png")
+                os.remove(f"src/printer/images/AST-desugar.testing/test-cases/{file_name}.gv")
+                os.remove(f"src/printer/images/Symbol.testing/test-cases/{file_name}.gv.png")
+                os.remove(f"src/printer/images/Symbol.testing/test-cases/{file_name}.gv")
 
 
 def load_tests(args: argparse.Namespace) -> unittest.TestSuite:

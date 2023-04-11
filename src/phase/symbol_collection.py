@@ -5,6 +5,7 @@ from src.dataclass.symbol import Symbol, SymbolTable
 from src.enums.symbols_enum import NameCategory
 import copy
 
+
 class ASTSymbolIncorporator:
     """Functionality to incoporate symbol table into
         the abstract syntax tree.
@@ -36,7 +37,6 @@ class ASTSymbolIncorporator:
         ast_node = copy.deepcopy(ast_node)
         self._build_symbol_table(ast_node)
         return ast_node
-
 
     def _build_symbol_table(self, ast_node: AST.AstNode) -> None:
         match ast_node:

@@ -47,9 +47,10 @@ args = argparser.parse_args()
 
 if args.runTests:
     runner = unittest.TextTestRunner(verbosity=2)
-    runner.run(testing.test.load_tests(args))
-    if args.debug:
+    result = runner.run(testing.test.load_tests(args))
+    if args.debug and not result.errors:
         shutil.rmtree("src/printer/images/AST.testing")
+        shutil.rmtree("src/printer/images/AST-desugar.testing")
         shutil.rmtree("src/printer/images/Symbol.testing")
 else:
     PandaCompiler(args).compile()

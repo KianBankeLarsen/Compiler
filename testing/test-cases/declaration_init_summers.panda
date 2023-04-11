@@ -1,0 +1,26 @@
+int sum_recurse(int n) {
+    if(n == 1) {
+        return 1;
+    } else {
+        return n + sum_recurse(n - 1);
+    }
+}
+
+int sum_loop(int n) {
+    int sum = 0;
+    int i = 1;
+    
+    while(i <= n) {
+        sum = sum + i;
+        i = i + 1;
+    }
+    return sum;
+}
+
+print(sum_recurse(9));
+print(sum_loop(9));
+
+print(sum_recurse(42));
+print(sum_loop(42));
+
+return 0;

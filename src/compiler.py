@@ -8,6 +8,7 @@ import src.phase.emit
 import src.phase.lexer
 import src.phase.parser
 import src.phase.symbol_collection
+import src.phase.syntactic_desugaring
 import src.printer.ast_printer as ast_printer
 import src.printer.symbol_printer as Symbol_printer
 import src.utils.interfacing_parser as interfacing_parser
@@ -41,8 +42,11 @@ class PandaCompiler:
         symbol_collection_IR = symbol_table_incorporator.build_symbol_table(
             the_program_AST)
 
+        desugared_AST = src.phase.syntactic_desugaring.ASTSyntacticDesugar()
+        desugared_IR = desugared_AST.desugar_AST(symbol_collection_IR)
+
         code_generation_stack = src.phase.code_generation_stack.GenerateCode()
-        code_generation_stack.generate_code(symbol_collection_IR)
+        code_generation_stack.generate_code(desugared_IR)
         stack_program_code = code_generation_stack.get_code()
 
         code_emitter = src.phase.emit.Emit()
@@ -66,6 +70,11 @@ class PandaCompiler:
             AST_pretty_printer = ast_printer.ASTTreePrinter(
                 f"AST.{output}")
             AST_pretty_printer.build_graph(the_program_AST)
+            AST_pretty_printer.render('png')
+
+            AST_pretty_printer = ast_printer.ASTTreePrinter(
+                f"AST-desugar.{output}")
+            AST_pretty_printer.build_graph(desugared_IR)
             AST_pretty_printer.render('png')
 
             symbol_table_printer = Symbol_printer.SymbolPrinter(

@@ -1,0 +1,7 @@
+void main(){
+    int a = 5;
+    print(a);
+}
+
+main();
+return 0;
