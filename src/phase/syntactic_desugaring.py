@@ -8,7 +8,13 @@ import src.dataclass.AST as AST
 
 @dataclass
 class ASTSyntacticDesugar:
-    """
+    """This phase is created as a consequence of the 
+        way the input is parsed. It is necessary to rewrite 
+        the syntactic sugar used when writing
+        `<type><name>=<exp>` to statements, 
+        otherwise the code generation will not work.
+
+    The API exposes `desugar_AST` which takes an IR as actual parameter.
     """
 
     def _collect_decl_var_init(self, decls_arg: AST.DeclarationList) -> list[AST.DeclarationVariableInit]:
@@ -64,7 +70,9 @@ class ASTSyntacticDesugar:
         ast_node.stm_list = top_node
 
     def desugar_AST(self, ast_node: AST.AstNode) -> AST.AstNode:
-        """
+        """Perform deep copy of provided IR before desugaring.
+        
+        Returns new desugared IR/AST.
         """
 
         ast_node = copy.deepcopy(ast_node)

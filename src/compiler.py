@@ -16,13 +16,26 @@ import src.utils.interfacing_parser as interfacing_parser
 
 @dataclass
 class PandaCompiler:
-    """
+    """The actual compiler. 
+    
+    The API exposes compile.
+
+    The compiler is instantiated with argparse options.
+
+    Argparse options
+    ----------------
+    output: str
+    compile: bool
+    debug: bool
+    file: str
+    runTests: bool
+    run: bool
     """
 
     args: argparse.Namespace
 
     def compile(self) -> None:
-        """
+        """Compile file or input as specified upon creation of PandaCompiler.
         """
 
         if self.args.file:
