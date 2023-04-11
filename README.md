@@ -64,14 +64,17 @@ $ python3.10 main.py --debug
 
 ## Abstract syntax tree
 A picture of the raw AST is inserted below.
+
 ![](src/printer/images/AST.src/output/a.gv.png)
 
 ## De-sugared Abstract Syntax Tree
 In case of occurrences of ```<type><name>=<exp>```, it has been necessary to perform some de-sugaring, which is why the tree is transformed into the following.
+
 ![](src/printer/images/AST-desugar.src/output/a.gv.png)
 
 ## Symbol Table
 The following is just an image of which variables are in which scopes, so that it could be checked that symbols were collected correctly.
+
 ![](src/printer/images/Symbol.src/output/a.gv.png)
 
 
