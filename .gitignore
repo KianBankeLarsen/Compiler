@@ -20,9 +20,13 @@ src/output/*
 !src/output/a.iloc
 !src/output/a.s
 *.out
-/src/printer/images/
-!./src/printer/images/AST-desugar.src/
-!/src/printer/images/AST-desugar.src/output
+/src/printer/images/*
+!src/printer/images/AST.src
+!src/printer/images/AST.src/output/*
+!src/printer/images/AST-desugar.src
+!src/printer/images/AST-desugar.src/output/*
+!src/printer/images/Symbol.src
+!src/printer/images/Symbol.src/output/*
 testing/test-cases/*.s
 testing/test-cases/*.iloc
 testing/test-cases/*.tmp
