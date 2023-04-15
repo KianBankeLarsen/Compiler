@@ -1,20 +1,10 @@
 % !TeX root = main.tex
 %%%%%%%%%%%%%%%%%%%%%%%%% PREAMBLE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \input{misc/preamble}
-\usepackage{amssymb}
 
 \usepackage[block=ragged, sorting=nyt, style=authoryear-ibid, backend=biber]{biblatex}
 \setlength\bibitemsep{1.5\itemsep}
 \addbibresource{misc/mybib.bib}
-
-%%%%%%%%%%%%%%%%%%%%%% TITLE PAGE OPTIONS %%%%%%%%%%%%%%%%%%%%%%%%%
-\pagestyle{fancy}
-\setlength{\headsep}{15pt}
-\setlength{\headheight}{15pt}
-\rhead{\datedate}
-\lhead{SDU, BADM500}
-\chead{Kian B. L.}
-\cfoot{\thepage\ ud af \pageref{LastPage}}
 
 %%%%%%%%%%%%% ACTUAL VISIBLE CONTENT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{document}
@@ -30,42 +20,111 @@
 
 \vspace{\fill}
 
-\fontsize{16}{19.2} {
-    \selectfont
-    KIAN BANKE LARSEN
-} \\
+\begin{minipage}{0.45\textwidth}
+\begin{flushleft}
+    \Large
+    \textit{Author}\\
+    KIAN BANKE LARSEN\\
+    kilar20@student.sdu.dk
+\end{flushleft}
+\end{minipage}
 
 \vspace{\fill}
 
-\includesvg[width=.4\textwidth]{misc/SDU.svg}\vspace*{-0.95cm} % Git does not have Inkscape
-%\includegraphics[width=.4\textwidth]{misc/SDU.pdf}\vspace*{-0.95cm}
+\begin{minipage}{0.45\textwidth}
+\begin{flushleft}
+    \Large
+    \textit{Supervisor}\\
+    KIM SKAK LARSEN\\
+    Professor
+\end{flushleft}
+\end{minipage}
+
+\vspace{\fill}
+
+\includesvg[width=.4\textwidth]{misc/SDU.svg}\vspace*{-0.95cm}
 
 \end{centering}
 
-\begin{tikzpicture}[overlay,remember picture]
-\node[align=center] at ($(current page.center)+(0,-11.4)$) 
-{
-Kilar20, \formatdate{30}{07}{2001}
-};
-\end{tikzpicture}
 \thispagestyle{empty}
 \end{titlepage}
 
-\newpage
-\setcounter{page}{0}
-\thispagestyle{empty}
+\pagenumbering{roman}
 
 \begin{abstract}
+    \paragraph{English}
     This is my very good abstract
+
+    \paragraph{Danish}
+    Et fantastisk abstract
 \end{abstract}
 
 { \hypersetup{hidelinks} \tableofcontents }
 
+\newpage
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
 \chapter{Introduction}
-\parencite{communcation4}
+This report examines how to make a simple compiler in Python. The compiler is simple in the sense that some decisions have been made to ease the process, despite the choice, although the decisions are not necessarily optimal. The aim is to learn different compiler techniques and get a hands-on feel for the different compiler phases by actually implementing a working compiler, targeting X86 assembler, from scratch, using a Flex/Bison equivalent package such as \texttt{PLY} for scanning and parsing. 
+
+The language to be compiled is a subset of the imperative language C. This has been chosen because of its simpler syntax and easy to read curly bracket enclosed static scopes. In this project, we are interested in making a language having integers, Booleans and preferably some kind of floats. The language must have control flow constructs in form of \texttt{if}-\texttt{else} statements and functions, and iterative constructs such as \texttt{for}- and \texttt{while}-loops. 
+
+A modern compiler is, as is well known, divided into phases. These phases relate to lexical and syntactic analysis, resulting in an abstract syntax tree. Subsequent phases analyze and adorn the abstract syntax tree, building a symbol table and finally generating assembler code.
+
+The main focus in regard to advanced techniques will be local register allocation, using techniques described in \cite{EnginneringACompiler}. Handling this efficiently requires data flow analysis via control flow-graph, construction of interference graph, graph coloring and translation back to instructions using a combination of the registers and the stack, when the available registers do not suffice.
+
+Initially, a stack machine will be prepared, which will form the basis for developing a compiler that uses CPU registers. We will take advantage of the split phases property when replacing the stack code generation phase in benefit for one that uses register allocation. This allows us to only worry about ensuring that subsequent phases cope with the changes made in the former phases.
+
+When adding extra complexity such as register allocation, it is important to document the benefit of this choice. Performance of the stack machine and the register machine will therefore be constructively compared.
+
+\chapter{Project Basics}
+\section{Project Structure}
+\section{Design Patterns}
+\section{Compiler Usage}
+\begin{minted}{text}
+Compiler$ python3.10 main.py --help
+
+usage: Compiler for Panda [-h] [-o OUTPUT] [-c] [-d] [-f FILE] [-t] [-r]
+
+Compiles source code to assembly
+
+options:
+    -h, --help            show this help message and exit
+    -o OUTPUT, --output OUTPUT
+                        Specify name of assembly output file
+    -c, --compile         Set this flag if the output file should be compilled with gcc
+    -d, --debug           Set this flag for debugging information, i.e., ILOC and Graphviz
+    -f FILE, --file FILE  Path to input file, otherwise stdin will be used
+    -t, --runTests        Run tests
+    -r, --run             Run compilled program
+\end{minted}
+
+\chapter{Phases}
+\section{Lexical Analysis}
+\section{Parsing}
+\section{Symbol Collection}
+\section{Code Generation}
+\subsection{Stack Machine}
+\subsection{Register Allocation}
+
+\chapter{Testing}
+
+\chapter{Performance Comparison}
+
+\chapter{Evaluation}
+
+\chapter{Conclusion}
 
 \cleardoublepage
 \phantomsection
-\addcontentsline{toc}{section}{Referencer}
+\addcontentsline{toc}{chapter}{References}
 \printbibliography
 \end{document}
+
+\begin{tikzpicture}[overlay,remember picture]
+    \node[align=center] at ($(current page.center)+(0,-11.4)$) 
+    {
+    Kilar20, \formatdate{30}{07}{2001}
+    };
+    \end{tikzpicture}
