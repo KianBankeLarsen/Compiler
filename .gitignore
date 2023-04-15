@@ -31,3 +31,7 @@ testing/test-cases/*.s
 testing/test-cases/*.iloc
 testing/test-cases/*.tmp
 .coverage
+!report/main.pdf
+report/*.pdf
+report/*.dot
+report/-p

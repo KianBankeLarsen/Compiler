@@ -10,6 +10,7 @@
 \usepackage{forest}
 \usepackage{svg}        % makes it possible to use svg files
 \usepackage{graphics}
+\usepackage{multicol}
 \usepackage{icomma}
 \usepackage{microtype}  % microscopic typography refinement
 \usepackage{lastpage}   % used to reference last page in footer
@@ -80,3 +81,19 @@
 \usepackage{wrapfig}
 
 \usepackage[export]{adjustbox}
+
+
+\usepackage[pdf]{graphviz}
+
+%%% Helper code for Overleaf's build system to
+%%% automatically update output drawings when
+%%% code in a \digraph{...} is modified
+\usepackage{xpatch}
+\makeatletter
+\newcommand*{\addFileDependency}[1]{% argument=file name and extension
+  \typeout{(#1)}
+  \@addtofilelist{#1}
+  \IfFileExists{#1}{}{\typeout{No file #1.}}
+}
+\makeatother
+\xpretocmd{\digraph}{\addFileDependency{#2.dot}}{}{}

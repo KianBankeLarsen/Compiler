@@ -20,7 +20,7 @@
 
 \vspace{\fill}
 
-\begin{minipage}{0.45\textwidth}
+\begin{minipage}{0.45\textwidth} 
 \begin{flushleft}
     \Large
     \textit{Author}\\
@@ -79,8 +79,21 @@ Initially, a stack machine will be prepared, which will form the basis for devel
 When adding extra complexity such as register allocation, it is important to document the benefit of this choice. Performance of the stack machine and the register machine will therefore be constructively compared.
 
 \chapter{Project Basics}
+this is a test
 \section{Project Structure}
-\section{Design Patterns}
+\begin{multicols}{2}
+    \begin{figure}[H]
+        \centering
+        \input{misc/filetree1.tex}
+        \caption{File tree (first half).}
+    \end{figure}
+    \begin{figure}[H]
+        \centering
+        \input{misc/filetree2.tex}
+        \caption{File tree (second half).}
+    \end{figure}
+\end{multicols}
+
 \section{Compiler Usage}
 \begin{minted}{text}
 Compiler$ python3.10 main.py --help
@@ -100,20 +113,95 @@ options:
     -r, --run             Run compilled program
 \end{minted}
 
+\section{Design Patterns}
+
 \chapter{Phases}
 \section{Lexical Analysis}
 \section{Parsing}
+\begin{figure}[H]
+    \centering
+    \input{misc/graphviz/ast.tex}
+    \caption{Abstract Syntax Tree.} 
+\end{figure}
 \section{Symbol Collection}
-\section{Code Generation}
+\begin{figure}[H]
+    \centering
+    \input{misc/graphviz/symbol.tex}
+    \caption{Symbol collection.} 
+\end{figure}
+\section{Desugaring}
+\begin{figure}[H]
+    \centering
+    \input{misc/graphviz/desugar.tex}
+    \caption{Desugaring tree.} 
+\end{figure}
+\section{Code Generation} 
 \subsection{Stack Machine}
 \subsection{Register Allocation}
 
 \chapter{Testing}
+\section{Unittest}
+\begin{minted}{text}
+Compiler$ python3.10 main.py --runTests
+
+runTest (testing.test.TestCase)
+Testing testing/test-cases/assignment.panda ... ok
+runTest (testing.test.TestCase)
+Testing testing/test-cases/declaration_init_function.panda ... ok
+runTest (testing.test.TestCase)
+Testing testing/test-cases/fibonacci_classic.panda ... ok
+...
+runTest (testing.test.TestCase)
+Testing testing/test-cases/statement-while.panda ... ok
+runTest (testing.test.TestCase)
+Testing testing/test-cases/static_nested_scope.panda ... ok
+runTest (testing.test.TestCase)
+Testing testing/test-cases/summers.panda ... ok
+
+----------------------------------------------------------------------
+Ran 21 tests in 2.261s
+
+OK 
+\end{minted}
+
+\section{Coverage}
+\begin{minted}{text}
+Compiler$ python3.10 -m coverage run main.py --runTests -d
+
+Name                                     Stmts   Miss  Cover
+------------------------------------------------------------
+main.py                                     21      1    95%
+src/compiler.py                             54      3    94%
+src/dataclass/AST.py                       125      0   100%
+src/dataclass/iloc.py                       22      0   100%
+src/dataclass/symbol.py                     34      2    94%
+src/enums/code_generation_enum.py           38      0   100%
+src/enums/symbols_enum.py                    5      0   100%
+src/phase/code_generation_stack.py         231      3    99%
+src/phase/emit.py                          128      6    95%
+src/phase/lexer.py                          44      8    82%
+src/phase/parser.py                        101      3    97%
+src/phase/parsetab.py                       18      0   100%
+src/phase/symbol_collection.py              86      0   100%
+src/phase/syntactic_desugaring.py           65      0   100%
+src/printer/ast_printer.py                 141      3    98%
+src/printer/generic_printer.py              17      0   100%
+src/printer/symbol_printer.py               40      0   100%
+src/utils/error.py                           5      0   100%
+src/utils/interfacing_parser.py              1      0   100%
+src/utils/label_generator.py                 9      0   100%
+src/utils/x86_instruction_enum_dict.py       2      0   100%
+testing/test.py                             73      0   100%
+------------------------------------------------------------
+TOTAL                                     1260     29    98%
+Wrote HTML report to htmlcov/index.html
+\end{minted}
+
 
 \chapter{Performance Comparison}
 
 \chapter{Evaluation}
-
+ 
 \chapter{Conclusion}
 
 \cleardoublepage
@@ -121,10 +209,3 @@ options:
 \addcontentsline{toc}{chapter}{References}
 \printbibliography
 \end{document}
-
-\begin{tikzpicture}[overlay,remember picture]
-    \node[align=center] at ($(current page.center)+(0,-11.4)$) 
-    {
-    Kilar20, \formatdate{30}{07}{2001}
-    };
-    \end{tikzpicture}
