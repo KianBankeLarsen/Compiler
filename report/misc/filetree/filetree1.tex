@@ -1,4 +1,4 @@
-\scalebox{0.7}{
+\scalebox{0.65}{
 \begin{forest}
   for tree={
     font=\ttfamily,
@@ -21,21 +21,17 @@
   }
 [Compiler/
     [src/
+        [dataclass/
+            [AST.py]
+            [iloc.py]
+            [symbol.py]
+        ]
         [printer/
             [ast\_printer.py]
             [generic\_printer.py]
             [symbol\_printer.py]
         ]
-        [utils/]
-        [compiler.py]
     ]
-    [testing/
-        [test-cases/]
-        [test.py]
-    ]
-    [main.py]
-    [README.md]
-    [...]
 ]
 \end{forest}
 }

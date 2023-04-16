@@ -35,3 +35,4 @@ testing/test-cases/*.tmp
 report/*.pdf
 report/*.dot
 report/-p
+report/main.synctex(busy)

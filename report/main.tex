@@ -10,7 +10,8 @@
 \begin{document}
 \begin{titlepage}
 \begin{centering}
-\vspace*{-20px}\large University of Southern Denmark $|$ IMADA \\
+\vspace*{-20px}\large Department of Mathematics \& Computer Science\\
+University of Southern Denmark $|$ IMADA \\
 \today \\
 
 \vspace{4CM}
@@ -79,20 +80,35 @@ Initially, a stack machine will be prepared, which will form the basis for devel
 When adding extra complexity such as register allocation, it is important to document the benefit of this choice. Performance of the stack machine and the register machine will therefore be constructively compared.
 
 \chapter{Project Basics}
-this is a test
+This section is reserved for articulating some choices made at the very beginning of the project that defined the framework for how to develop and use the compiler.
+
 \section{Project Structure}
-\begin{multicols}{2}
-    \begin{figure}[H]
-        \centering
-        \input{misc/filetree1.tex}
-        \caption{File tree (first half).}
-    \end{figure}
-    \begin{figure}[H]
-        \centering
-        \input{misc/filetree2.tex}
-        \caption{File tree (second half).}
-    \end{figure}
-\end{multicols}
+The Compiler module uses different python packages -- things that belong together must be together. It has been desired to make a clear division between the different phases, and this has been achieved by creating the Python package \texttt{phase}. Likewise, \texttt{dataclass} is a package that contains internal data structures, in other words, classes used to hold data. \texttt{Printer} is a package that is used primarily for debugging, but sometimes it is just nice to consider data structures graphically. \texttt{Testing} is placed on the same level as \texttt{src} because it has nothing to do with the compiler's implementation, it is just a QA tool that makes it easier to verify correctness. \texttt{compiler.py} takes care of summarizing all functionality, but the module requires arguments from the command line, and those arguments (as well as testing) are handled in \texttt{main.py}, which is why \texttt{main.py} can be considered the project's main file.
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.3\textwidth}
+    \centering
+    \input{misc/filetree/filetree1.tex}
+    \end{subfigure}        
+    \hfill
+    \begin{subfigure}{0.3\textwidth}
+    \centering
+    \input{misc/filetree/filetree2.tex}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.3\textwidth}
+    \centering
+    \input{misc/filetree/filetree3.tex}
+    \end{subfigure}
+    \caption{Project file tree.}
+\end{figure}
+
+\section{Python Lex-Yacc}
+\cite{ply}
+j
+\section{Design Patterns}
+
+\newpage
 
 \section{Compiler Usage}
 \begin{minted}{text}
@@ -113,7 +129,16 @@ options:
     -r, --run             Run compilled program
 \end{minted}
 
-\section{Design Patterns}
+\begin{minted}{py3}
+args = argparser.parse_args()
+
+if args.runTests:
+    runner = unittest.TextTestRunner(verbosity=2)
+    result = runner.run(testing.test.load_tests(args))
+    ...
+else:
+    PandaCompiler(args).compile()
+\end{minted}
 
 \chapter{Phases}
 \section{Lexical Analysis}
@@ -145,8 +170,6 @@ options:
 Compiler$ python3.10 main.py --runTests
 
 runTest (testing.test.TestCase)
-Testing testing/test-cases/assignment.panda ... ok
-runTest (testing.test.TestCase)
 Testing testing/test-cases/declaration_init_function.panda ... ok
 runTest (testing.test.TestCase)
 Testing testing/test-cases/fibonacci_classic.panda ... ok
@@ -163,6 +186,8 @@ Ran 21 tests in 2.261s
 
 OK 
 \end{minted}
+
+\newpage
 
 \section{Coverage}
 \begin{minted}{text}
@@ -197,10 +222,18 @@ TOTAL                                     1260     29    98%
 Wrote HTML report to htmlcov/index.html
 \end{minted}
 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{misc/images/coverage.png}
+    \caption{Coverage HTML report.}
+\end{figure}
+
 
 \chapter{Performance Comparison}
 
 \chapter{Evaluation}
+\section{Usefulness}
+\section{Further Development}
  
 \chapter{Conclusion}
 
