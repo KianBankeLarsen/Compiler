@@ -106,11 +106,14 @@ The Compiler module uses different python packages -- things that belong togethe
 \section{Python Lex-Yacc}
 \cite{ply}
 j
-\section{Design Patterns}
+
+\section{Design Principles \& Patterns}
 
 \newpage
 
 \section{Compiler Usage}
+The main file handles the instantiation and therefore also the running of the \texttt{PandaCompiler} class. Python \texttt{argparse} is used to take command line arguments. Python \texttt{argparse} adds a lot of user-friendliness to the compiler, because one get the opportunity to query the use of the compiler in the terminal, thus see what options are available. Doing so yields the result stated below:
+
 \begin{minted}{text}
 Compiler$ python3.10 main.py --help
 
@@ -129,6 +132,8 @@ options:
     -r, --run             Run compilled program
 \end{minted}
 
+This informs the user that one can specify an input file or provide input directly in the command line, and specifying the name of the output file is optional. Furthermore, one can control whether the file should be automatically compiled with \texttt{gcc} and directly run on the system. Many of the arguments act as flags to the compiler, such as \texttt{--debug} or \texttt{--runTests}, which are flags that specify whether a certain piece of code should be executed. Much of the setup of \texttt{argparse} is omitted, in this example, but the essential part of the functionality is listed below:
+
 \begin{minted}{py3}
 args = argparser.parse_args()
 
@@ -139,6 +144,8 @@ if args.runTests:
 else:
     PandaCompiler(args).compile()
 \end{minted}
+
+If the \texttt{--runTests} flag is set, then it will take priority over the regular compiler functionality. However, it is still possible to specify \texttt{--debug}, as debugging information may be useful in case some tests fail. Debugging information is information such as graphical representation of data structures and pretty printed ILOC code -- sequential assembly IR. Testing will be explained in depth later.
 
 \chapter{Phases}
 \section{Lexical Analysis}
@@ -232,7 +239,7 @@ Wrote HTML report to htmlcov/index.html
 \chapter{Performance Comparison}
 
 \chapter{Evaluation}
-\section{Usefulness}
+\section{Language Considerations}
 \section{Further Development}
  
 \chapter{Conclusion}
