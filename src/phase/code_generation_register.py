@@ -56,7 +56,7 @@ class GenerateCode:
                         Operand(Target(T.RBP), Mode(M.DIR)),
                         Operand(Target(T.RSL), Mode(M.DIR)))
         )
-        self._code.extend(
+        self._code[-1].extend(
             [Instruction(Op.MOVE,
                          Operand(Target(T.RSL), Mode(M.IRL, -7)),
                          Operand(Target(T.RSL), Mode(M.DIR)))
