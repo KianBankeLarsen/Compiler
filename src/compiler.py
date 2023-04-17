@@ -59,11 +59,11 @@ class PandaCompiler:
         desugared_AST = src.phase.syntactic_desugaring.ASTSyntacticDesugar()
         desugared_IR = desugared_AST.desugar_AST(symbol_collection_IR)
 
-        code_generation_stack = src.phase.code_generation_stack.GenerateCode()
+        code_generation_stack = src.phase.code_generation_stack.GenerateCodeStack()
         code_generation_stack.generate_code(desugared_IR)
         stack_program_code = code_generation_stack.get_code()
 
-        code_generation_register = src.phase.code_generation_register.GenerateCode()
+        code_generation_register = src.phase.code_generation_register.GenerateCodeRegister()
         code_generation_register.generate_code(desugared_IR)
         register_program_code = code_generation_register.get_code()
         pp = pprint.PrettyPrinter()
