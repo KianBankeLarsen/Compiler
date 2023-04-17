@@ -12,6 +12,7 @@ class Symbol:
     type: str
     kind: NameCategory
     info: int
+    SR: int = None
 
 
 @dataclass(init=False)

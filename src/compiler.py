@@ -4,6 +4,7 @@ import subprocess
 from dataclasses import dataclass
 
 import src.phase.code_generation_stack
+import src.phase.code_generation_register
 import src.phase.emit
 import src.phase.lexer
 import src.phase.parser
@@ -62,6 +63,12 @@ class PandaCompiler:
         code_generation_stack.generate_code(desugared_IR)
         stack_program_code = code_generation_stack.get_code()
 
+        code_generation_register = src.phase.code_generation_register.GenerateCode()
+        code_generation_register.generate_code(desugared_IR)
+        register_program_code = code_generation_register.get_code()
+        pp = pprint.PrettyPrinter()
+        # pp.pprint(register_program_code)
+
         code_emitter = src.phase.emit.Emit()
         assembly_code = code_emitter.emit(stack_program_code)
 
@@ -95,6 +102,10 @@ class PandaCompiler:
             symbol_table_printer.build_graph(symbol_collection_IR)
             symbol_table_printer.render('png', {'rankdir': 'BT'})
 
-            with open(f"{output}.iloc", 'w') as f:
+            with open(f"{output}.stack.iloc", 'w') as f:
                 pp = pprint.PrettyPrinter(stream=f)
                 pp.pprint(stack_program_code)
+
+            # with open(f"{output}.register.iloc", 'w') as f:
+            #     pp = pprint.PrettyPrinter(stream=f)
+            #     pp.pprint(register_program_code)
