@@ -205,12 +205,12 @@ class GenerateCode:
                 self._follow_static_link(symbol_level)
 
                 match symbol:
-                    case dataclass_symbol.Symbol(_, kind=NameCategory.PARAMETER, info=info):
+                    case dataclass_symbol.Symbol(kind=NameCategory.PARAMETER, info=info):
                         self._append_instruction(
                             Instruction(Op.POP,
                                         Operand(Target(T.RSL), Mode(M.IRL, -(info + 16))))
                         )
-                    case dataclass_symbol.Symbol(_, kind=NameCategory.VARIABLE, info=info):
+                    case dataclass_symbol.Symbol(kind=NameCategory.VARIABLE, info=info):
                         self._append_instruction(
                             Instruction(Op.POP,
                                         Operand(Target(T.RSL), Mode(M.IRL, info + 1)))
@@ -479,12 +479,12 @@ class GenerateCode:
                 self._follow_static_link(symbol_level)
 
                 match symbol:
-                    case dataclass_symbol.Symbol(_, kind=NameCategory.PARAMETER, info=info):
+                    case dataclass_symbol.Symbol(kind=NameCategory.PARAMETER, info=info):
                         self._append_instruction(
                             Instruction(Op.PUSH,
                                         Operand(Target(T.RSL), Mode(M.IRL, -(info + 16))))
                         )
-                    case dataclass_symbol.Symbol(_, kind=NameCategory.VARIABLE, info=info):
+                    case dataclass_symbol.Symbol(kind=NameCategory.VARIABLE, info=info):
                         self._append_instruction(
                             Instruction(Op.PUSH,
                                         Operand(Target(T.RSL), Mode(M.IRL, info + 1)))
