@@ -132,20 +132,21 @@ class GenerateCodeRegister(src.phase.code_generation_base.GenerateCodeBase):
 
                 self._generate_code(exp)
 
-                self._append_instruction(
-                    Instruction(Op.POP,
-                                Operand(Target(T.REG, 1), Mode(M.DIR)))
-                )
+                self._calc_reg += 1
+
                 self._append_instruction(
                     Instruction(Op.MOVE,
                                 Operand(Target(T.IMI, 0), Mode(M.DIR)),
-                                Operand(Target(T.REG, 2), Mode(M.DIR)))
+                                Operand(Target(T.CAL, self._calc_reg), Mode(M.DIR)))
                 )
                 self._append_instruction(
                     Instruction(Op.CMP,
-                                Operand(Target(T.REG, 1), Mode(M.DIR)),
-                                Operand(Target(T.REG, 2), Mode(M.DIR)))
+                                Operand(Target(T.CAL, self._calc_reg - 1), Mode(M.DIR)),
+                                Operand(Target(T.CAL, self._calc_reg), Mode(M.DIR)))
                 )
+
+                self._calc_reg -= 2
+
                 self._append_instruction(
                     Instruction(Op.JE,
                                 Operand(Target(T.MEM, ast_node.else_label), Mode(M.DIR)))
@@ -216,21 +217,21 @@ class GenerateCodeRegister(src.phase.code_generation_base.GenerateCodeBase):
 
                 self._generate_code(exp)
 
-                self._append_instruction(
-                    Instruction(Op.POP,
-                                Operand(Target(T.REG, 1), Mode(M.DIR)))
-                )
+                self._calc_reg += 1
 
                 self._append_instruction(
                     Instruction(Op.MOVE,
                                 Operand(Target(T.IMI, 0), Mode(M.DIR)),
-                                Operand(Target(T.REG, 2), Mode(M.DIR)))
+                                Operand(Target(T.CAL, self._calc_reg), Mode(M.DIR)))
                 )
                 self._append_instruction(
                     Instruction(Op.CMP,
-                                Operand(Target(T.REG, 1), Mode(M.DIR)),
-                                Operand(Target(T.REG, 2), Mode(M.DIR)))
+                                Operand(Target(T.CAL, self._calc_reg - 1), Mode(M.DIR)),
+                                Operand(Target(T.CAL, self._calc_reg), Mode(M.DIR)))
                 )
+
+                self._calc_reg -= 2
+
                 self._append_instruction(
                     Instruction(Op.JE,
                                 Operand(Target(T.MEM, ast_node.elihw_label), Mode(M.DIR)))
@@ -282,20 +283,21 @@ class GenerateCodeRegister(src.phase.code_generation_base.GenerateCodeBase):
 
                 self._generate_code(exp)
 
-                self._append_instruction(
-                    Instruction(Op.POP,
-                                Operand(Target(T.REG, 1), Mode(M.DIR)))
-                )
+                self._calc_reg += 1
+
                 self._append_instruction(
                     Instruction(Op.MOVE,
                                 Operand(Target(T.IMI, 0), Mode(M.DIR)),
-                                Operand(Target(T.REG, 2), Mode(M.DIR)))
+                                Operand(Target(T.CAL, self._calc_reg), Mode(M.DIR)))
                 )
                 self._append_instruction(
                     Instruction(Op.CMP,
-                                Operand(Target(T.REG, 1), Mode(M.DIR)),
-                                Operand(Target(T.REG, 2), Mode(M.DIR)))
+                                Operand(Target(T.CAL, self._calc_reg - 1), Mode(M.DIR)),
+                                Operand(Target(T.CAL, self._calc_reg), Mode(M.DIR)))
                 )
+
+                self._calc_reg -= 2
+
                 self._append_instruction(
                     Instruction(Op.JE,
                                 Operand(Target(T.MEM, ast_node.rof_label), Mode(M.DIR)))
@@ -336,17 +338,20 @@ class GenerateCodeRegister(src.phase.code_generation_base.GenerateCodeBase):
                 self._append_instruction(
                     Instruction(Op.META, Meta.POSTRETURN)
                 )
+
+                self._calc_reg -= 1
             case AST.StatementReturn(exp):
                 self._generate_code(exp)
                 func = self._function_stack[-1]
 
                 if exp:
-                    self._calc_reg += 1
                     self._append_instruction(
                         Instruction(Op.MOVE,
-                                    Operand(Target(T.RRT), Mode(M.DIR)),
-                                    Operand(Target(T.CAL, self._calc_reg), Mode(M.DIR)))
+                                    Operand(Target(T.CAL, self._calc_reg), Mode(M.DIR)),
+                                    Operand(Target(T.RRT), Mode(M.DIR)))
                     )
+
+                self._calc_reg -= 1
 
                 if self._body_stack:
                     vars = 0

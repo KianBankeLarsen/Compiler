@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 
 import src.dataclass.AST as AST
@@ -11,7 +12,7 @@ from src.enums.code_generation_enum import M, Meta, Op, T
 
 
 @dataclass
-class GenerateCodeBase:
+class GenerateCodeBase(ABC):
     """Abstract code generation base
 
     ---------------------- <-- RSP
@@ -36,12 +37,15 @@ class GenerateCodeBase:
     _body_stack: list(AST.AstNode) = field(default_factory=list)
     _labels: label.Labels = label.Labels()
 
+    @abstractmethod
     def _append_instruction(self, instruction: Instruction) -> None:
         pass
 
+    @abstractmethod
     def _get_code_block_to_extend(self) -> list[Instruction]:
         pass
 
+    @abstractmethod
     def _generate_code(self, ast_node: AST.AstNode) -> None:
         pass
 
