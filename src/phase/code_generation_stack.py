@@ -25,7 +25,7 @@ class GenerateCodeStack(src.phase.code_generation_base.GenerateCodeBase):
 
     def _get_code_block_to_extend(self) -> list[Instruction]:
         return self._code
-    
+
     def get_code(self) -> list(Instruction):
         """Get copy of linear ILOC IR code.
         """
