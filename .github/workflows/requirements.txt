@@ -1,2 +1,2 @@
-py-singleton
+singleton-decorator
 ply
