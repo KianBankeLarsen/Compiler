@@ -17,7 +17,7 @@ class TestCase(unittest.TestCase):
     """Default subclass of unittest.TestCase.
     """
 
-    def __init__(self, methodName: str, res: str, src: str, args: argparse.Namespace) -> TestCase:
+    def __init__(self, res: str, src: str, args: argparse.Namespace) -> TestCase:
         super().__init__()
 
         self.res = res
@@ -109,6 +109,6 @@ def load_tests(args: argparse.Namespace) -> unittest.TestSuite:
         args = copy.copy(args)
         args.output = src
         args.file = src
-        test_cases.addTest(TestCase('runTest', res, src, args))
+        test_cases.addTest(TestCase(res, src, args))
 
     return test_cases
