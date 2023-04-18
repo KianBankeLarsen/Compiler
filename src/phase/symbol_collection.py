@@ -66,7 +66,7 @@ class ASTSymbolIncorporator:
                                 self._body_scope[-1].variable_offset)
                 self._current_scope.insert(name, symval, lineno)
                 self._body_scope[-1].variable_offset += 1
-            case AST.Function(name, par_list, body):
+            case AST.Function(_, par_list, body):
                 ast_node.symbol_table = self._current_scope
                 self.parameter_offset = 0
                 self._build_symbol_table(par_list)

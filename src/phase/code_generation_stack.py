@@ -44,7 +44,7 @@ class GenerateCodeStack(src.phase.code_generation_base.GenerateCodeBase):
                 self._generate_code(next)
             case AST.DeclarationFunction(_, function):
                 self._generate_code(function)
-            case AST.Function(name, _, body):
+            case AST.Function(body=body):
                 """ start_label
                     prolog
                     allocate stack
@@ -328,12 +328,12 @@ class GenerateCodeStack(src.phase.code_generation_base.GenerateCodeBase):
                     )
 
                 if self._body_stack:
-                    vars = 0
+                    _vars = 0
                     for stack_frame in self._body_stack:
-                        vars += stack_frame.number_of_variables
+                        _vars += stack_frame.number_of_variables
 
                     save_reg = len(self._body_stack)*16*8
-                    local_vars = 8*vars
+                    local_vars = 8*_vars
                     vars_function = func.body.number_of_variables*8
                     self._append_instruction(
                         Instruction(Op.ADD,

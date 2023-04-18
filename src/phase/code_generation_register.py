@@ -49,7 +49,7 @@ class GenerateCodeRegister(src.phase.code_generation_base.GenerateCodeBase):
                 self._generate_code(next)
             case AST.DeclarationFunction(_, function):
                 self._generate_code(function)
-            case AST.Function(name, _, body):
+            case AST.Function(body=body):
                 """ start_label
                     prolog
                     allocate stack
@@ -96,20 +96,19 @@ class GenerateCodeRegister(src.phase.code_generation_base.GenerateCodeBase):
                 self._generate_code(rhs)
 
                 symbol, symbol_level = self._current_scope.lookup(lhs)
-                self._follow_static_link(symbol_level)
 
                 match symbol:
-                    case dataclass_symbol.Symbol(kind=NameCategory.PARAMETER, info=info, SR=None):
+                    case dataclass_symbol.Symbol(kind=NameCategory.PARAMETER, SR=None):
                         self._reg_count += 1
                         move_calc_to_reg(self._reg_count, self._calc_reg)
                         symbol.SR = self._reg_count
-                    case dataclass_symbol.Symbol(kind=NameCategory.PARAMETER, info=info, SR=SR):
+                    case dataclass_symbol.Symbol(kind=NameCategory.PARAMETER, SR=SR):
                         move_calc_to_reg(SR, self._calc_reg)
-                    case dataclass_symbol.Symbol(kind=NameCategory.VARIABLE, info=info, SR=None):
+                    case dataclass_symbol.Symbol(kind=NameCategory.VARIABLE, SR=None):
                         self._reg_count += 1
                         move_calc_to_reg(self._reg_count, self._calc_reg)
                         symbol.SR = self._reg_count
-                    case dataclass_symbol.Symbol(kind=NameCategory.VARIABLE, info=info, SR=SR):
+                    case dataclass_symbol.Symbol(kind=NameCategory.VARIABLE, SR=SR):
                         move_calc_to_reg(SR, self._calc_reg)
                     case _:
                         raise ValueError(
@@ -354,12 +353,12 @@ class GenerateCodeRegister(src.phase.code_generation_base.GenerateCodeBase):
                 self._calc_reg -= 1
 
                 if self._body_stack:
-                    vars = 0
+                    _vars = 0
                     for stack_frame in self._body_stack:
-                        vars += stack_frame.number_of_variables
+                        _vars += stack_frame.number_of_variables
 
                     save_reg = len(self._body_stack)*16*8
-                    local_vars = 8*vars
+                    local_vars = 8*_vars
                     vars_function = func.body.number_of_variables*8
                     self._append_instruction(
                         Instruction(Op.ADD,
@@ -406,7 +405,7 @@ class GenerateCodeRegister(src.phase.code_generation_base.GenerateCodeBase):
                         )
                         move_reg_to_calc(self._reg_count, self._calc_reg)
                         symbol.SR = self._reg_count
-                    case dataclass_symbol.Symbol(kind=NameCategory.PARAMETER, info=info, SR=SR):
+                    case dataclass_symbol.Symbol(kind=NameCategory.PARAMETER, SR=SR):
                         move_reg_to_calc(SR, self._calc_reg)
                     case dataclass_symbol.Symbol(kind=NameCategory.VARIABLE, info=info, SR=None):
                         self._reg_count += 1
@@ -418,7 +417,7 @@ class GenerateCodeRegister(src.phase.code_generation_base.GenerateCodeBase):
                         )
                         move_reg_to_calc(self._reg_count, self._calc_reg)
                         symbol.SR = self._reg_count
-                    case dataclass_symbol.Symbol(kind=NameCategory.VARIABLE, info=info, SR=SR):
+                    case dataclass_symbol.Symbol(kind=NameCategory.VARIABLE, SR=SR):
                         move_reg_to_calc(SR, self._calc_reg)
                     case _:
                         raise ValueError(

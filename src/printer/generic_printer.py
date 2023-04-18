@@ -14,12 +14,12 @@ class GenericPrinter:
         self.nodes = 0
         self.graph = graphviz.Digraph(name)
 
-    def add_node(self, label: str) -> int:
+    def add_node(self, label: str) -> str:
         """Add node with custom `label`.
 
         Returns
         ---------
-        Node number : int
+        Node number : str
             Total number of nodes in the graph.
         """
 
