@@ -1,2 +1,3 @@
 singleton-decorator
 ply
+graphviz
