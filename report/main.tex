@@ -134,7 +134,7 @@ options:
     -r, --run             Run compilled program
 \end{minted}
 
-This informs the user that one can specify an input file or provide input directly in the command line, and specifying the name of the output file is optional. Furthermore, one can control whether the file should be automatically compiled with \texttt{gcc} and directly run on the system. Many of the arguments act as flags to the compiler, such as \texttt{--debug} or \texttt{--runTests}, which are flags that specify whether a certain piece of code should be executed. Much of the setup of \texttt{argparse} is omitted, in this example, but the essential part of the functionality is listed below:
+This informs the user that one can specify an input file or provide input directly in the command line, and specifying the name of the output file is optional. Furthermore, one can control whether the file should be automatically compiled with \texttt{gcc} and directly run on the system. Many of the arguments act as flags to the compiler, such as \texttt{--debug} or \texttt{--runTests}, which are flags that specify whether a certain piece of code should be executed. Much of the setup of \texttt{argparse} is omitted, in this example, but the essential part of the functionality is listed below. All pip requirements needed for running \texttt{main.py} can be installed using \texttt{pip install -r requirements.txt} -- file located in the root of the project.
 
 \begin{minted}{py3}
 args = argparser.parse_args()
@@ -142,7 +142,6 @@ args = argparser.parse_args()
 if args.runTests:
     runner = unittest.TextTestRunner(verbosity=2)
     result = runner.run(testing.test.load_tests(args))
-    ...
 else:
     PandaCompiler(args).compile()
 \end{minted}
@@ -224,17 +223,16 @@ Compiler$ python3.10 main.py --runTests
 
 runTest (testing.test.TestCase)
 Testing testing/test-cases/fibonacci_classic.panda ... ok
-...
 runTest (testing.test.TestCase)
 Testing testing/test-cases/static_nested_scope.panda ... ok
-runTest (testing.test.TestCase)
-Testing testing/test-cases/summers.panda ... ok
-
+...
 ----------------------------------------------------------------------
 Ran 21 tests in 2.261s
 
 OK 
 \end{minted}
+
+The test suite is automatically run on every pull request or push to GitHub as part of the CI pipeline/workflow using GitHub Actions. Configuration can be found in \texttt{.github/workflows/unittest.yml}.
 
 \section{Coverage}
 \begin{minted}{text}
