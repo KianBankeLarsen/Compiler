@@ -236,9 +236,19 @@ Ran 21 tests in 2.261s
 OK 
 \end{minted}
 
-The test suite is automatically run on every pull request or push to GitHub as part of the CI workflow using GitHub Actions. Configuration can be found in \texttt{/.github/workflows/unittest.yml}.
+The test suite is automatically run on every pull request or push to GitHub as part of the CI workflow using GitHub Actions. Configuration can be found in \texttt{/.github/workflows/unittest.yml}. A \texttt{ValueError} is raised when a test fails, otherwise GitHub Actions workflow will not detect this.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{misc/images/GitHub_Actions.png}
+    \caption{GitHub Actions for unit testing.}
+\end{figure}
+That way, one know exactly which push or pull request caused the tests to fail, and associated code is directly available from the workflow via commit ID.
 
 \section{Coverage}
+Coverage cannot and should not be a measure of test quality, because the order in which functions and flow are executed has a great influence on the result. However, code coverage gives a direct warning if subsets of the code have not been tested at all. Thus, it is clear that more tests need to be written.
+
+The code coverage measuring tool \texttt{coverage.py} is used to perform code coverage statistics on this project. Code coverage is performed in the following way:
+
 \begin{minted}{text}
 Compiler$ python3.10 -m coverage run main.py --runTests -d
 
@@ -270,19 +280,30 @@ src/utils/x86_instruction_enum_dict.py       2      0   100%
 testing/test.py                             73      0   100%
 ... 
 ... 
-...
+... 
 ...
 ------------------------------------------------------------
 TOTAL                                     1521     40    97%
-Wrote HTML report to htmlcov/index.html
 \end{minted}
+
+Based on this output, it can be assessed that the prepared tests in the \texttt{test-cases} folder cover the code well. Note that code coverage is run with the debug flag, \texttt{-d}. This is because code in the printer files are only executed when debug is desired.
+
+It is possible to convert the coverage data to an HTML report with the command \texttt{python3.10 -m coverage html}. The advantage of having the data in report form is that it is possible to clearly see which lines have been executed and which are missing, as shown in the figure below: 
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=.9\textwidth]{misc/images/coverage_full.png}
+    \begin{subfigure}{1\textwidth}
+        \centering
+        \includegraphics[width=1\textwidth]{misc/images/Coverage_Panel.png}
+        \end{subfigure}\\
+        \begin{subfigure}{1\textwidth}
+        \centering
+        \includegraphics[width=1\textwidth]{misc/images/Coverage_Info.png}
+        \end{subfigure}
     \caption{Coverage HTML report.}
 \end{figure}
 
+The HTML report also makes it possible to carry out filtering etc. in the table, and thus get a nicer and more user-friendly interface.
 
 \chapter{Performance Comparison}
 
