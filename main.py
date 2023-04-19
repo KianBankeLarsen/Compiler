@@ -48,6 +48,10 @@ args = argparser.parse_args()
 if args.runTests:
     runner = unittest.TextTestRunner(verbosity=2)
     result = runner.run(testing.test.load_tests(args))
+
+    if result.errors or result.failures:
+        raise ValueError("Test failed")
+    
     if args.debug and not result.errors:
         shutil.rmtree("src/printer/images/AST.testing")
         shutil.rmtree("src/printer/images/AST-desugar.testing")
