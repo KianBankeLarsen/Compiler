@@ -19,8 +19,43 @@ class GenerateCodeRegister(src.phase.code_generation_base.GenerateCodeBase):
     """
 
     _code: list[list[Instruction]] = field(default_factory=list)
-    _calc_reg: int = 0
+    _reg_stack: list[int] = field(default_factory=list)
+    _used_symbols: list[list[dataclass_symbol.Symbol]] = field(default_factory=list)
+    _symbol_restore: list[list[dataclass_symbol.Symbol]] = field(default_factory=list)
     _reg_count: int = 0
+
+    def _push_new_reg_count(self):
+        self._reg_count += 1
+        self._reg_stack.append(self._reg_count)
+
+    def _push_SR(self, sr):
+        self._reg_stack.append(sr)
+
+    def _reg_stack_pop(self):
+        return self._reg_stack.pop()
+
+    def _new_reg(self):
+        self._reg_count += 1
+        return self._reg_count
+
+    def _save_symbol(self, symbol):
+        self._used_symbols[-1].append(symbol)
+
+    def _create_new_symbol_scope(self):
+        if self._used_symbols:
+            self._symbol_restore.append(copy.deepcopy(self._used_symbols[-1]))
+            for symbol in self._used_symbols[-1]:
+                symbol.SR = None
+
+        self._used_symbols.append([])
+
+    def _remove_symbol_scope(self):
+        for symbol in self._used_symbols.pop():
+            symbol.SR = None
+
+        if self._symbol_restore:
+            for original, restore in zip(self._used_symbols[-1], self._symbol_restore.pop()):
+                original.SR = restore.SR
 
     def _append_instruction(self, instruction: Instruction) -> None:
         self._code[-1].append(instruction)
@@ -58,6 +93,7 @@ class GenerateCodeRegister(src.phase.code_generation_base.GenerateCodeBase):
                     deallocate stack
                     epilog
                 """
+                self._create_new_symbol_scope()
                 self._append_empty_instruction_group()
                 self._current_scope = ast_node.symbol_table
                 self._function_stack.append(ast_node)
@@ -82,39 +118,55 @@ class GenerateCodeRegister(src.phase.code_generation_base.GenerateCodeBase):
                 self._generate_code(body.decls)
                 self._function_stack.pop()
                 self._current_scope = self._current_scope.parent
+                self._remove_symbol_scope()
             case AST.StatementList(stm, next):
                 self._generate_code(stm)
                 self._generate_code(next)
             case AST.StatementAssignment(lhs, rhs):
-                def move_calc_to_reg(SR, calc_reg):
-                    self._append_instruction(
-                        Instruction(
-                            Operand(Target(T.CAL, calc_reg), Mode(M.DIR)),
-                            Operand(Target(T.REG, SR), Mode(M.DIR)))
-                    )
-
                 self._generate_code(rhs)
 
                 symbol, symbol_level = self._current_scope.lookup(lhs)
+                level_difference = self._follow_static_link(symbol_level)
 
-                match symbol:
-                    case dataclass_symbol.Symbol(kind=NameCategory.PARAMETER, SR=None):
-                        self._reg_count += 1
-                        move_calc_to_reg(self._reg_count, self._calc_reg)
-                        symbol.SR = self._reg_count
-                    case dataclass_symbol.Symbol(kind=NameCategory.PARAMETER, SR=SR):
-                        move_calc_to_reg(SR, self._calc_reg)
-                    case dataclass_symbol.Symbol(kind=NameCategory.VARIABLE, SR=None):
-                        self._reg_count += 1
-                        move_calc_to_reg(self._reg_count, self._calc_reg)
-                        symbol.SR = self._reg_count
-                    case dataclass_symbol.Symbol(kind=NameCategory.VARIABLE, SR=SR):
-                        move_calc_to_reg(SR, self._calc_reg)
-                    case _:
-                        raise ValueError(
-                            f"Symbol kind, {symbol.kind}, is unknown.")
+                reg = self._reg_stack_pop()
 
-                self._calc_reg -= 1
+                if level_difference:
+                    match symbol:
+                        case dataclass_symbol.Symbol(kind=NameCategory.PARAMETER, info=info):
+                            self._append_instruction(
+                                Instruction(Op.MOVE,
+                                            Operand(Target(T.REG, reg),
+                                                    Mode(M.DIR)),
+                                            Operand(Target(T.RSL), Mode(M.IRL, -(info + 16))))
+                            )
+                        case dataclass_symbol.Symbol(kind=NameCategory.VARIABLE, info=info):
+                            self._append_instruction(
+                                Instruction(Op.MOVE,
+                                            Operand(Target(T.REG, reg),
+                                                    Mode(M.DIR)),
+                                            Operand(Target(T.RSL), Mode(M.IRL, info + 1)))
+                            )
+                        case _:
+                            raise ValueError(
+                                f"Symbol kind, {symbol.kind}, is unknown.")
+                else:
+                    match symbol:
+                        case dataclass_symbol.Symbol(SR=None):
+                            symbol.SR = self._new_reg()
+                            self._save_symbol(symbol)
+                            self._append_instruction(
+                                Instruction(Op.MOVE,
+                                            Operand(Target(T.REG, reg),
+                                                    Mode(M.DIR)),
+                                            Operand(Target(T.REG, symbol.SR), Mode(M.DIR)))
+                            )
+                        case dataclass_symbol.Symbol(SR=SR):
+                            self._append_instruction(
+                                Instruction(Op.MOVE,
+                                            Operand(Target(T.REG, reg),
+                                                    Mode(M.DIR)),
+                                            Operand(Target(T.REG, SR), Mode(M.DIR)))
+                            )
             case AST.StatementIfthenelse(exp, then_part, else_part):
                 """     pop reg1
                         move 0, reg 2
@@ -131,25 +183,23 @@ class GenerateCodeRegister(src.phase.code_generation_base.GenerateCodeBase):
 
                 self._generate_code(exp)
 
-                self._calc_reg += 1
-
                 self._append_instruction(
                     Instruction(Op.MOVE,
                                 Operand(Target(T.IMI, 0), Mode(M.DIR)),
-                                Operand(Target(T.CAL, self._calc_reg), Mode(M.DIR)))
+                                Operand(Target(T.CAL), Mode(M.DIR)))
                 )
                 self._append_instruction(
                     Instruction(Op.CMP,
-                                Operand(Target(T.CAL, self._calc_reg - 1), Mode(M.DIR)),
-                                Operand(Target(T.CAL, self._calc_reg), Mode(M.DIR)))
+                                Operand(
+                                    Target(T.REG, self._reg_stack_pop()), Mode(M.DIR)),
+                                Operand(Target(T.CAL), Mode(M.DIR)))
                 )
-
-                self._calc_reg -= 2
-
                 self._append_instruction(
                     Instruction(Op.JE,
                                 Operand(Target(T.MEM, ast_node.else_label), Mode(M.DIR)))
                 )
+
+                self._create_new_symbol_scope()
                 self._append_empty_instruction_group()
                 self._current_scope = ast_node.symbol_table_then
                 self._precall(None, self._current_scope.level)
@@ -162,6 +212,7 @@ class GenerateCodeRegister(src.phase.code_generation_base.GenerateCodeBase):
                 self._pop_pseudo_return_address()
                 self._postreturn(0)
                 self._current_scope = self._current_scope.parent
+                self._remove_symbol_scope()
 
                 self._append_instruction(
                     Instruction(Op.JMP, Operand(
@@ -173,6 +224,7 @@ class GenerateCodeRegister(src.phase.code_generation_base.GenerateCodeBase):
                 )
 
                 if else_part:
+                    self._create_new_symbol_scope()
                     self._append_empty_instruction_group()
                     self._current_scope = ast_node.symbol_table_else
                     self._precall(None, self._current_scope.level)
@@ -185,6 +237,7 @@ class GenerateCodeRegister(src.phase.code_generation_base.GenerateCodeBase):
                     self._pop_pseudo_return_address()
                     self._postreturn(0)
                     self._current_scope = self._current_scope.parent
+                    self._remove_symbol_scope()
 
                 self._append_instruction(
                     Instruction(Op.LABEL,
@@ -200,6 +253,7 @@ class GenerateCodeRegister(src.phase.code_generation_base.GenerateCodeBase):
                         jmp while_label
                     elihw_label:
                 """
+                self._create_new_symbol_scope()
                 self._append_empty_instruction_group()
                 self._current_scope = ast_node.symbol_table
                 ast_node.while_label = self._labels.next("while")
@@ -216,20 +270,17 @@ class GenerateCodeRegister(src.phase.code_generation_base.GenerateCodeBase):
 
                 self._generate_code(exp)
 
-                self._calc_reg += 1
-
                 self._append_instruction(
                     Instruction(Op.MOVE,
                                 Operand(Target(T.IMI, 0), Mode(M.DIR)),
-                                Operand(Target(T.CAL, self._calc_reg), Mode(M.DIR)))
+                                Operand(Target(T.CAL), Mode(M.DIR)))
                 )
                 self._append_instruction(
                     Instruction(Op.CMP,
-                                Operand(Target(T.CAL, self._calc_reg - 1), Mode(M.DIR)),
-                                Operand(Target(T.CAL, self._calc_reg), Mode(M.DIR)))
+                                Operand(
+                                    Target(T.REG, self._reg_stack_pop()), Mode(M.DIR)),
+                                Operand(Target(T.CAL), Mode(M.DIR)))
                 )
-
-                self._calc_reg -= 2
 
                 self._append_instruction(
                     Instruction(Op.JE,
@@ -252,6 +303,7 @@ class GenerateCodeRegister(src.phase.code_generation_base.GenerateCodeBase):
                 self._postreturn(0)
 
                 self._current_scope = self._current_scope.parent
+                self._remove_symbol_scope()
             case AST.StatementFor(iter, exp, assign, body):
                 """ for_label: 
                         pop reg1
@@ -263,6 +315,7 @@ class GenerateCodeRegister(src.phase.code_generation_base.GenerateCodeBase):
                         jmp for_label
                     rof_label:
                 """
+                self._create_new_symbol_scope()
                 self._append_empty_instruction_group()
                 self._current_scope = ast_node.symbol_table
                 ast_node.for_label = self._labels.next("for")
@@ -282,20 +335,17 @@ class GenerateCodeRegister(src.phase.code_generation_base.GenerateCodeBase):
 
                 self._generate_code(exp)
 
-                self._calc_reg += 1
-
                 self._append_instruction(
                     Instruction(Op.MOVE,
                                 Operand(Target(T.IMI, 0), Mode(M.DIR)),
-                                Operand(Target(T.CAL, self._calc_reg), Mode(M.DIR)))
+                                Operand(Target(T.CAL), Mode(M.DIR)))
                 )
                 self._append_instruction(
                     Instruction(Op.CMP,
-                                Operand(Target(T.CAL, self._calc_reg - 1), Mode(M.DIR)),
-                                Operand(Target(T.CAL, self._calc_reg), Mode(M.DIR)))
+                                Operand(
+                                    Target(T.REG, self._reg_stack_pop()), Mode(M.DIR)),
+                                Operand(Target(T.CAL), Mode(M.DIR)))
                 )
-
-                self._calc_reg -= 2
 
                 self._append_instruction(
                     Instruction(Op.JE,
@@ -319,6 +369,7 @@ class GenerateCodeRegister(src.phase.code_generation_base.GenerateCodeBase):
                 self._postreturn(ast_node.number_of_parameters)
 
                 self._current_scope = self._current_scope.parent
+                self._remove_symbol_scope()
             case AST.StatementPrint(exp):
                 """ push argument
                     precall
@@ -337,8 +388,6 @@ class GenerateCodeRegister(src.phase.code_generation_base.GenerateCodeBase):
                 self._append_instruction(
                     Instruction(Op.META, Meta.POSTRETURN)
                 )
-
-                self._calc_reg -= 1
             case AST.StatementReturn(exp):
                 self._generate_code(exp)
                 func = self._function_stack[-1]
@@ -346,11 +395,10 @@ class GenerateCodeRegister(src.phase.code_generation_base.GenerateCodeBase):
                 if exp:
                     self._append_instruction(
                         Instruction(Op.MOVE,
-                                    Operand(Target(T.CAL, self._calc_reg), Mode(M.DIR)),
+                                    Operand(
+                                        Target(T.REG, self._reg_stack_pop()), Mode(M.DIR)),
                                     Operand(Target(T.RRT), Mode(M.DIR)))
                     )
-
-                self._calc_reg -= 1
 
                 if self._body_stack:
                     _vars = 0
@@ -382,55 +430,44 @@ class GenerateCodeRegister(src.phase.code_generation_base.GenerateCodeBase):
                     move -2(rsl), rsl - dereference zero or more times
                     push rsl_offset
                 """
-
-                def move_reg_to_calc(SR, calc_reg):
-                    self._append_instruction(
-                        Instruction(
-                            Operand(Target(T.REG, SR), Mode(M.DIR)),
-                            Operand(Target(T.CAL, calc_reg), Mode(M.DIR)))
-                    )
-
                 symbol, symbol_level = self._current_scope.lookup(identifier)
                 self._follow_static_link(symbol_level)
-                self._calc_reg += 1
 
                 match symbol:
                     case dataclass_symbol.Symbol(kind=NameCategory.PARAMETER, info=info, SR=None):
-                        self._reg_count += 1
+                        self._push_new_reg_count()
                         self._append_instruction(
                             Instruction(Op.MOVE,
                                         Operand(Target(T.RSL), Mode(
                                             M.IRL, -(info + 16))),
                                         Operand(Target(T.REG, self._reg_count), Mode(M.DIR)))
                         )
-                        move_reg_to_calc(self._reg_count, self._calc_reg)
                         symbol.SR = self._reg_count
-                    case dataclass_symbol.Symbol(kind=NameCategory.PARAMETER, SR=SR):
-                        move_reg_to_calc(SR, self._calc_reg)
+                        self._save_symbol(symbol)
                     case dataclass_symbol.Symbol(kind=NameCategory.VARIABLE, info=info, SR=None):
-                        self._reg_count += 1
+                        self._push_new_reg_count()
                         self._append_instruction(
                             Instruction(Op.MOVE,
                                         Operand(Target(T.RSL), Mode(
                                             M.IRL, info + 1)),
                                         Operand(Target(T.REG, self._reg_count), Mode(M.DIR)))
                         )
-                        move_reg_to_calc(self._reg_count, self._calc_reg)
                         symbol.SR = self._reg_count
-                    case dataclass_symbol.Symbol(kind=NameCategory.VARIABLE, SR=SR):
-                        move_reg_to_calc(SR, self._calc_reg)
+                        self._save_symbol(symbol)
+                    case dataclass_symbol.Symbol(SR=SR):
+                        self._push_SR(SR)
                     case _:
                         raise ValueError(
                             f"Symbol kind, {symbol.kind}, is unknown.")
             case AST.ExpressionInteger(integer):
                 """ push integer
                 """
-                self._calc_reg += 1
+                self._push_new_reg_count()
 
                 self._append_instruction(
                     Instruction(Op.MOVE,
                                 Operand(Target(T.IMI, integer), Mode(M.DIR)),
-                                Operand(Target(T.CAL, self._calc_reg), Mode(M.DIR)))
+                                Operand(Target(T.REG, self._reg_count), Mode(M.DIR)))
                 )
             case AST.ExpressionFloat(_, lineno):
                 src.utils.error("code Generation",
@@ -445,13 +482,22 @@ class GenerateCodeRegister(src.phase.code_generation_base.GenerateCodeBase):
                 self._generate_code(lhs)
                 self._generate_code(rhs)
 
+                self._push_new_reg_count()
+
+                reg1 = self._reg_stack_pop()
+                reg2 = self._reg_stack_pop()
+
+                self._append_instruction(
+                    Instruction(Op.MOVE,
+                                Operand(Target(T.REG, reg2), Mode(M.DIR)),
+                                Operand(Target(T.REG, self._reg_count), Mode(M.DIR)))
+                )
+
                 self._append_instruction(
                     Instruction(binop,
-                                Operand(Target(T.CAL, self._calc_reg),
-                                        Mode(M.DIR)),
-                                Operand(Target(T.CAL, self._calc_reg - 1), Mode(M.DIR)))
+                                Operand(Target(T.REG, reg1), Mode(M.DIR)),
+                                Operand(Target(T.REG, self._reg_count), Mode(M.DIR)))
                 )
-                self._calc_reg -= 1
             case AST.ExpressionBinop(binop_cmp, lhs, rhs) if binop_cmp in [Op.JE, Op.JNE, Op.JL, Op.JG, Op.JGE, Op.JLE]:
                 """     pop reg2
                         pop reg1
@@ -469,14 +515,14 @@ class GenerateCodeRegister(src.phase.code_generation_base.GenerateCodeBase):
                 true_label = self._labels.next("cmp_true")
                 end_label = self._labels.next("cmp_end")
 
+                self._push_new_reg_count()
+
                 self._append_instruction(
                     Instruction(Op.CMP,
-                                Operand(Target(T.CAL, self._calc_reg),
-                                        Mode(M.DIR)),
-                                Operand(Target(T.CAL, self._calc_reg - 1), Mode(M.DIR)))
+                                Operand(
+                                    Target(T.REG, self._reg_stack_pop()), Mode(M.DIR)),
+                                Operand(Target(T.REG, self._reg_stack_pop()), Mode(M.DIR)))
                 )
-
-                self._calc_reg -= 1
 
                 self._append_instruction(
                     Instruction(binop_cmp,
@@ -485,7 +531,7 @@ class GenerateCodeRegister(src.phase.code_generation_base.GenerateCodeBase):
                 self._append_instruction(
                     Instruction(Op.MOVE,
                                 Operand(Target(T.IMI, 0), Mode(M.DIR)),
-                                Operand(Target(T.CAL, self._calc_reg), Mode(M.DIR)))
+                                Operand(Target(T.REG, self._reg_count), Mode(M.DIR)))
                 )
                 self._append_instruction(
                     Instruction(Op.JMP,
@@ -498,7 +544,7 @@ class GenerateCodeRegister(src.phase.code_generation_base.GenerateCodeBase):
                 self._append_instruction(
                     Instruction(Op.MOVE,
                                 Operand(Target(T.IMI, 1), Mode(M.DIR)),
-                                Operand(Target(T.CAL, self._calc_reg), Mode(M.DIR)))
+                                Operand(Target(T.REG, self._reg_count), Mode(M.DIR)))
                 )
                 self._append_instruction(
                     Instruction(Op.LABEL,
@@ -531,12 +577,17 @@ class GenerateCodeRegister(src.phase.code_generation_base.GenerateCodeBase):
 
                 # Put return value on the stack (if any)
                 if symbol.type != "void":
-                    self._calc_reg += 1
+                    self._push_new_reg_count()
                     self._append_instruction(
                         Instruction(Op.MOVE,
                                     Operand(Target(T.RRT), Mode(M.DIR)),
-                                    Operand(Target(T.CAL, self._calc_reg), Mode(M.DIR)))
+                                    Operand(Target(T.REG, self._reg_count), Mode(M.DIR)))
                     )
             case AST.ExpressionList(exp, next):
                 self._generate_code(next)
                 self._generate_code(exp)
+
+                self._append_instruction(
+                    Instruction(Op.PUSH,
+                                Operand(Target(T.REG, self._reg_stack_pop()), Mode(M.DIR)))
+                )

@@ -242,7 +242,13 @@ The test suite is automatically run on every pull request or push to GitHub as p
     \includegraphics[width=1\textwidth]{misc/images/GitHub_Actions.png}
     \caption{GitHub Actions for unit testing.}
 \end{figure}
-That way, one know exactly which push or pull request caused the tests to fail, and associated code is directly available from the workflow via commit ID.
+That way, one know exactly which push or pull request caused the tests to fail, and associated code is directly available from the workflow via commit ID. History for workflow is available too.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{misc/images/Workflow.png}
+    \caption{Workflow history.}
+\end{figure}
 
 \section{Coverage}
 Coverage cannot and should not be a measure of test quality, because the order in which functions and flow are executed has a great influence on the result. However, code coverage gives a direct warning if subsets of the code have not been tested at all. Thus, it is clear that more tests need to be written.

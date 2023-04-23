@@ -11,8 +11,8 @@ class Emit:
     """
 
     def __init__(self):
-        self._callee_save_reg = ["rbx", "r12", "r13", "r14", "r15"]
-        self._calleer_save_reg = ["rcx", "rdx", "rsi", "rdi", "r8", "r9", "r10", "r11"]
+        self._callee_save_reg: list[str] = ["rbx", "r12", "r13", "r14", "r15"]
+        self._calleer_save_reg: list[str] = ["rcx", "rdx", "rsi", "rdi", "r8", "r9", "r10", "r11"]
         
         self._labels = Labels()
         self._instruction_indent = 16
@@ -169,9 +169,9 @@ class Emit:
         self._append_instruction("incq %rbx")
         self._append_label(lbl)
         self._append_instruction("pushq %rbx")  # pushing 0/1 on the stack
-        self._append_instruction(f"subq $8, %rsp")  # aligning
-        self._append_instruction(f"callq printf@plt")  # call printf
-        self._append_instruction(f"addq $8, %rsp")  # revert latest aligning
+        self._append_instruction("subq $8, %rsp")  # aligning
+        self._append_instruction("callq printf@plt")  # call printf
+        self._append_instruction("addq $8, %rsp")  # revert latest aligning
         self._append_instruction("popq %rbx")  # get alignment indicator
         # checking for alignment change
         self._append_instruction("cmpq $0, %rbx")
@@ -181,5 +181,5 @@ class Emit:
         self._append_instruction("addq $8, %rsp")
         self._append_label(lbl)
         # remove printed expression from stack
-        self._append_instruction(f"addq $8, %rsp")
+        self._append_instruction("addq $8, %rsp")
         self._append_newline()

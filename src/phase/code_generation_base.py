@@ -49,7 +49,7 @@ class GenerateCodeBase(ABC):
     def _generate_code(self, ast_node: AST.AstNode) -> None:
         pass
 
-    def _follow_static_link(self, symbol_level: int) -> None:
+    def _follow_static_link(self, symbol_level: int) -> int:
         level_difference = self._current_scope.level - symbol_level
 
         self._append_instruction(
@@ -63,6 +63,8 @@ class GenerateCodeBase(ABC):
                          Operand(Target(T.RSL), Mode(M.DIR)))
              for _ in range(level_difference)]
         )
+
+        return level_difference
 
     def _ensure_labels(self, ast_node: AST.AstNode) -> None:
         if ast_node.name == "?main":
