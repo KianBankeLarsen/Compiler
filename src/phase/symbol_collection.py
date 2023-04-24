@@ -84,6 +84,11 @@ class ASTSymbolIncorporator:
             case AST.StatementList(stm, next):
                 self._build_symbol_table(stm)
                 self._build_symbol_table(next)
+            case AST.StatementAssignment(lhs):
+                symbol, level = self._current_scope.lookup(lhs)
+                level_difference = self._current_scope.level - level
+                if level_difference:
+                    symbol.escaping = True
             case AST.StatementIfthenelse(_, then_part, else_part):
                 self._current_scope = SymbolTable(self._current_scope)
                 ast_node.symbol_table_then = self._current_scope

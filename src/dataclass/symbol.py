@@ -13,6 +13,7 @@ class Symbol:
     kind: NameCategory
     info: int
     SR: int = None
+    escaping: bool = False
 
 
 @dataclass(init=False)

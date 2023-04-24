@@ -50,7 +50,7 @@ class T(Enum):
     RSL = auto()  # register: static link computation
     REG = auto()  # general-purpose registers
     
-    CAL = auto()
+    CMP = auto()
 
 
 class Meta(Enum):
