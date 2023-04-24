@@ -10,6 +10,7 @@ import src.phase.lexer
 import src.phase.parser
 import src.phase.symbol_collection
 import src.phase.syntactic_desugaring
+import src.phase.liveness
 import src.printer.ast_printer as ast_printer
 import src.printer.symbol_printer as Symbol_printer
 import src.utils.interfacing_parser as interfacing_parser
@@ -68,6 +69,8 @@ class PandaCompiler:
         register_program_code = code_generation_register.get_code()
         pp = pprint.PrettyPrinter()
         # pp.pprint(register_program_code)
+        control_flow = src.phase.liveness.Liveness()
+        control_flow.perform_liveness_analysis(register_program_code)
 
         code_emitter = src.phase.emit.Emit()
         assembly_code = code_emitter.emit(stack_program_code)
