@@ -51,4 +51,3 @@ class Liveness:
 
         find_labels(code)
         control_flow(code)
-        print(labels)

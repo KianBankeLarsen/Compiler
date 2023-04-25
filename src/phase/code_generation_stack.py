@@ -317,6 +317,12 @@ class GenerateCodeStack(src.phase.code_generation_base.GenerateCodeBase):
                 self._append_instruction(
                     Instruction(Op.META, Meta.POSTRETURN)
                 )
+
+                self._append_instruction(
+                    Instruction(Op.ADD,
+                                Operand(Target(T.IMI, 8), Mode(M.DIR)),
+                                Operand(Target(T.RSP), Mode(M.DIR)))
+                    )
             case AST.StatementReturn(exp):
                 self._generate_code(exp)
                 func = self._function_stack[-1]

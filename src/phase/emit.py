@@ -180,6 +180,4 @@ class Emit:
         # revert earlier alignment change
         self._append_instruction("addq $8, %rsp")
         self._append_label(lbl)
-        # remove printed expression from stack
-        self._append_instruction("addq $8, %rsp")
         self._append_newline()
