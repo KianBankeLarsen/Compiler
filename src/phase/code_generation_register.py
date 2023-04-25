@@ -108,12 +108,6 @@ class GenerateCodeRegister(src.phase.code_generation_base.GenerateCodeBase):
 
                 self._prolog(body)
 
-                self._append_instruction(
-                    Instruction(Op.MOVE,
-                                Operand(Target(T.IMI, 0), Mode(M.DIR)),
-                                Operand(Target(T.CMP), M(M.DIR)))
-                )
-
                 self._generate_code(body.stm_list)
 
                 self._append_instruction(
@@ -480,10 +474,10 @@ class GenerateCodeRegister(src.phase.code_generation_base.GenerateCodeBase):
                 self._generate_code(lhs)
                 self._generate_code(rhs)
 
-                self._push_new_reg_count()
-
                 reg1 = self._reg_stack_pop()
                 reg2 = self._reg_stack_pop()
+
+                self._push_new_reg_count()
 
                 self._append_instruction(
                     Instruction(Op.MOVE,
