@@ -67,7 +67,7 @@ University of Southern Denmark $|$ IMADA \\
 \setcounter{page}{1}
 
 \chapter{Introduction}
-This report examines how to make a simple compiler in Python. The compiler is simple in the sense that some decisions have been made to ease the process, despite the choice, although the decisions are not necessarily optimal. The aim is to learn different compiler techniques and get a hands-on feel for the different compiler phases by actually implementing a working compiler, targeting X86 assembler, from scratch, using a Flex/Bison equivalent package such as \texttt{PLY} for scanning and parsing. 
+This report examines how to make a simple compiler in Python, named Panda for no particular reason. The compiler is simple in the sense that some decisions have been made to ease the process, although the decisions are not necessarily optimal. The aim is to learn different compiler techniques and get a hands-on feel for the different compiler phases by actually implementing a working compiler, targeting X86 assembler, from scratch, using a Flex/Bison equivalent package such as \texttt{PLY} for scanning and parsing. 
 
 The language to be compiled is a subset of the imperative language C. This has been chosen because of its simpler syntax and easy to read curly bracket enclosed static scopes. In this project, we are interested in making a language having integers, Booleans and preferably some kind of floats. The language must have control flow constructs in form of \texttt{if}-\texttt{else} statements and functions, and iterative constructs such as \texttt{for}- and \texttt{while}-loops. 
 
@@ -83,7 +83,7 @@ When adding extra complexity such as register allocation, it is important to doc
 This section is reserved for articulating some choices made at the very beginning of the project that defined the framework for how to develop and use the compiler.
 
 \section{Project Structure}
-The Compiler module uses different python packages -- things that belong together must be together. It has been desired to make a clear division between the different phases, and this has been achieved by creating the Python package \texttt{phase}. Likewise, \texttt{dataclass} is a package that contains internal data structures, in other words, classes used to hold data. \texttt{Printer} is a package that is used primarily for debugging, but sometimes it is just nice to consider data structures graphically. \texttt{Testing} is placed on the same level as \texttt{src} because it has nothing to do with the compiler's implementation, it is just a QA tool that makes it easier to verify correctness. \texttt{compiler.py} takes care of summarizing all functionality, but the module requires arguments from the command line, and those arguments (as well as testing) are handled in \texttt{main.py} (the project's main file). Moreover, \texttt{README.md} has been written as a quick-start guide.
+The Compiler module uses different python packages -- things that belong together must be together. It has been desired to make a clear division between the different phases, and this has been achieved by creating the Python package \texttt{phase}. Likewise, \texttt{dataclass} is a package that contains internal data structures, in other words, classes used to hold data. \texttt{Printer} is a package that is used primarily for debugging, but sometimes it is just nice to consider data structures graphically. \texttt{Testing} is placed on the same level as \texttt{src} because it has nothing to do with the compiler's implementation, it is just a QA tool that makes it easier to verify correctness. \texttt{compiler.py} takes care of summarizing all functionality, but the module requires arguments from the command line, and those arguments (as well as testing) are handled in \texttt{main.py} (the project's main file). Moreover, a \texttt{README.md} has been written as a quick-start guide.
 \begin{figure}[H]
     \centering
     \begin{subfigure}{0.3\textwidth}
@@ -104,7 +104,7 @@ The Compiler module uses different python packages -- things that belong togethe
 \end{figure}
 
 \section{Python Lex-Yacc}
-PLY is a native Python tool, relying on reflection, used to automatically generate scanners and LALR(1) parsers. The package is well documented at the following source: \cite{ply}. Usage of the package will be described when reviewing the compiler phases in isolation. It has been chosen to use PLY in order to reserve more time for the compiler itself, though studies show that most compilers use hand-coded scanners \parencite[69]{EnginneringACompiler}. However, tool-generated parsers are more common than handed-parsers \parencite[85]{EnginneringACompiler}.
+PLY is a native Python tool, relying on reflection, used to automatically generate scanners and LALR(1) parsers. The package is well documented at the following source: \cite{ply}. Usage of the package will be described when reviewing the compiler phases in isolation. It has been chosen to use PLY in order to reserve more time for the compiler itself, though studies show that most compilers use hand-coded scanners \parencite[69]{EnginneringACompiler}. However, tool-generated parsers are more common than hand-coded parsers \parencite[85]{EnginneringACompiler}.
 
 \section{Design Principles \& Patterns}
 When starting a new project, it is important to make some basic thoughts about the architecture. Sensible choices at the beginning can increase code readability and make maintainability easier. It is particularly important to consider design principles and design patterns, as this will have a big effect on, i.e., how data structures are traversed and code testability. In this context, design principles refer to SOLID, and design patterns refer to Gang of Four's 23 design patterns.
@@ -134,7 +134,7 @@ options:
     -r, --run             Run compilled program
 \end{minted}
 
-This informs the user that one can specify an input file or provide input directly in the command line, and specifying the name of the output file is optional. Furthermore, one can control whether the file should be automatically compiled with \texttt{gcc} and directly run on the system. Many of the arguments act as flags to the compiler, such as \texttt{--debug} or \texttt{--runTests}, which are flags that specify whether a certain piece of code should be executed. Much of the setup of \texttt{argparse} is omitted, in this example, but the essential part of the functionality is listed below. All pip requirements needed for running \texttt{main.py} can be installed using \texttt{pip install -r requirements.txt} -- file located in the root of the project.
+This informs the user that one can specify an input file or provide input directly in the command line. Specifying the name of the output file is optional. Furthermore, one can control whether the file should be automatically compiled with \texttt{gcc} and directly run on the system. Many of the arguments act as flags to the compiler, such as \texttt{--debug} or \texttt{--runTests}, which are flags that specify whether a certain piece of code should be executed. Much of the setup of \texttt{argparse} is omitted, in this example, but the essential part of the functionality is listed below. All pip requirements needed for running \texttt{main.py} can be installed using \texttt{pip install -r requirements.txt} -- file located in the root of the project.
 
 \begin{minted}{py3}
 args = argparser.parse_args()
@@ -149,9 +149,93 @@ else:
 If the \texttt{--runTests} flag is set, then it will take priority over the regular compiler functionality. However, it is still possible to specify \texttt{--debug}, as debugging information may be useful in case some tests fail. Debugging information is information such as graphical representation of data structures and pretty printed ILOC code -- sequential assembly IR. Testing will be explained in depth later.
 
 \chapter{Phases}
-\section{Lexical Analysis}
+One aspect that is important to consider is time. Keeping track of when various things happen is hard. 
+
+\begin{displayquote}
+    \textit{``Some decisions are made when the compiler is designed, at design time. Some algorithms run when the compiler is built, at build time. Many activities take place when the compiler itself runs, at compile time. Finally, the compiled code can execute multiple times, at runtime."}
+\end{displayquote}
+\hspace*\fill{\small--- \cite[8]{EnginneringACompiler}}
+
+
+\begin{figure}[H]
+    \centering
+    \input{misc/tikz/three-phase-compiler.tex}
+    \caption{Three-phase compiler.}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \input{misc/tikz/internal-structure.tex}
+    \caption{Internal structure of Panda.}
+\end{figure}
+
 \newpage
+
+\section{Scanner}
+
+\begin{minted}{py3}
+reserved = {
+    'print': 'PRINT',
+    'return': 'RETURN',
+    ...
+}
+\end{minted}
+
+\begin{minted}{py3}
+tokens = (
+    'IDENT', 'INT', 'FLOAT',
+    'PLUS', 'MINUS', 'TIMES', 'DIVIDE',
+    ...
+) + tuple(reserved.values())
+\end{minted}
+
+\begin{minted}{py3}
+t_PLUS = r'\+'
+t_MINUS = r'-'
+...
+\end{minted}
+
+\begin{minted}{py3}
+def t_IDENT(t):
+    r'[a-zA-Z_][a-zA-Z_0-9]*'
+    t.type = reserved.get(t.value, 'IDENT')
+    return t
+\end{minted}
+
+\newpage
+
 \section{Parsing}
+
+\begin{minted}{py3}
+def p_program(t):
+    'program : body'
+    interfacing_parser.the_program = AST.Function(
+        "?main", None, t[1], t.lexer.lineno)
+\end{minted}
+
+\begin{minted}{py3}
+@dataclass
+class Body(AstNode):
+    decls: DeclarationList
+    stm_list: StatementList
+    lineno: int    
+\end{minted}
+
+\begin{minted}{py3}
+precedence = (
+    ('nonassoc', 'NEQ', 'LT', 'GT', 'LTE', 'GTE'),
+    ('right', 'EQ'),
+    ('left', 'PLUS', 'MINUS'),
+    ('left', 'TIMES', 'DIVIDE')
+)
+\end{minted}
+
+\begin{minted}{py3}
+def p_body(t):
+    'body : optional_declarations optional_statement_list'
+    t[0] = AST.Body(t[1], t[2], t.lexer.lineno)
+\end{minted}
+
 \begin{figure}[H]
     \centering
     \input{misc/graphviz/ast.tex}
@@ -159,13 +243,60 @@ If the \texttt{--runTests} flag is set, then it will take priority over the regu
 \end{figure}
 \newpage
 \section{Symbol Collection}
+\begin{minted}{py}
+@dataclass
+class Symbol:
+    type: str
+    kind: NameCategory
+    info: int
+    SR: int = None
+    escaping: bool = False
+\end{minted}
+
+\begin{minted}{py3}
+@dataclass(init=False)
+class SymbolTable:
+    level: int
+    parent: SymbolTable
+    _tab: dict
+
+    def __init__(self, parent: SymbolTable) -> SymbolTable:
+        self._tab = {}
+        self.level = parent.level + 1 if parent else 0
+        self.parent = parent
+\end{minted}
+
+\begin{minted}{py3}
+case AST.DeclarationFunction(type, func, lineno):
+    symval = Symbol(type, NameCategory.FUNCTION, func)
+    self._current_scope.insert(func.name, symval, lineno)
+    self._current_scope = SymbolTable(self._current_scope)
+    self._build_symbol_table(func)
+case ...
+\end{minted}
+
 \begin{figure}[H]
     \centering
     \input{misc/graphviz/symbol.tex}
     \caption{Symbol collection.} 
 \end{figure}
+
 \newpage
+
 \section{Desugaring}
+\begin{minted}{py3}
+def _desugar_AST(self, ast_node: AST.AstNode) -> None:
+    match ast_node:
+        case AST.Body(decls):
+            self._desugar_AST(decls)
+            decl_var_init_list = self._collect_decl_var_init(decls)
+            assignments = self._trans_var_init_list_to_stm(
+                decl_var_init_list)
+            self._insert_stm(assignments, ast_node)
+            self._desugar_AST(ast_node.stm_list)
+        case ...
+\end{minted}
+
 \begin{figure}[H]
     \centering
     \input{misc/graphviz/desugar.tex}
@@ -173,6 +304,7 @@ If the \texttt{--runTests} flag is set, then it will take priority over the regu
 \end{figure}
 \newpage
 \section{Code Generation} 
+\subsection{ILOC code}
 \subsection{Stack Machine}
 \subsection{Register Allocation}
 
@@ -211,7 +343,7 @@ The method named \texttt{runTest} will be executed when running the test, unless
     \item Assert whether output and expected output is identical.
 \end{enumerate}
 
-Of course, some exception handling needs to be done, but that is the basics. An interesting necessary exception handling is when running a test developed to fail, as the exception handling in the compiler will execute \texttt{os.exit(1)} (it does not make sense to continue), so that exception must be caught in the running test in order to retrieve whatever is printed to \texttt{std:err}.
+Of course, some exception handling needs to be done, but that is the basics. An interesting exception handling is when running a test developed to fail, as the exception handling in the compiler will execute \texttt{os.exit(1)} (it does not make sense to continue), so that exception must be caught in the running test in order to retrieve whatever is printed to \texttt{std:err}.
 
 The test suite can be run as follows when the desired tests have been added:
 
@@ -220,7 +352,7 @@ runner = unittest.TextTestRunner(verbosity=2)
 result = runner.run(testing.test.load_tests(args))
 \end{minted}
 
-The above logic is contained within \texttt{main.py} and wrapped in an \texttt{if-else} statement. Running the tests therefore requires calling main.py with option \texttt{--runTests} or simply \texttt{-t}, as shown below:
+The above logic is contained within \texttt{main.py} and wrapped in an \texttt{if-else} statement. Running the tests therefore requires calling main.py with option \texttt{--runTests}, or simply \texttt{-t}, as shown below:
 
 \begin{minted}{text}
 Compiler$ python3.10 main.py --runTests
@@ -236,7 +368,7 @@ Ran 21 tests in 2.261s
 OK 
 \end{minted}
 
-The test suite is automatically run on every pull request or push to GitHub as part of the CI workflow using GitHub Actions. Configuration can be found in \texttt{/.github/workflows/unittest.yml}. A \texttt{ValueError} is raised when a test fails, otherwise GitHub Actions workflow will not detect this.
+The test suite is automatically run on every pull request or push to GitHub as part of the CI workflow using GitHub Actions. Configuration can be found in \texttt{/.github/workflows/unittest.yml}. A \texttt{ValueError} is raised when a test fails, otherwise the GitHub Actions workflow will not detect this.
 \begin{figure}[H]
     \centering
     \includegraphics[width=1\textwidth]{misc/images/GitHub_Actions.png}
@@ -309,12 +441,15 @@ It is possible to convert the coverage data to an HTML report with the command \
     \caption{Coverage HTML report.}
 \end{figure}
 
-The HTML report also makes it possible to carry out filtering etc. in the table, and thus get a nicer and more user-friendly interface.
+The HTML report also makes it possible to carry out filtering etc. in the file overview table, and thus get a nicer and more user-friendly interface.
 
 \chapter{Performance Comparison}
 
 \chapter{Evaluation}
 \section{Language Considerations}
+
+\newpage
+
 \section{Further Development}
  
 \chapter{Conclusion}
