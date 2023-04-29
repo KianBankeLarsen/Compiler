@@ -84,6 +84,7 @@ This section is reserved for articulating some choices made at the very beginnin
 
 \section{Project Structure}
 The Compiler module uses different python packages -- things that belong together must be together. It has been desired to make a clear division between the different phases, and this has been achieved by creating the Python package \texttt{phase}. Likewise, \texttt{dataclass} is a package that contains internal data structures, in other words, classes used to hold data. \texttt{Printer} is a package that is used primarily for debugging, but sometimes it is just nice to consider data structures graphically. \texttt{Testing} is placed on the same level as \texttt{src} because it has nothing to do with the compiler's implementation, it is just a QA tool that makes it easier to verify correctness. \texttt{compiler.py} takes care of summarizing all functionality, but the module requires arguments from the command line, and those arguments (as well as testing) are handled in \texttt{main.py} (the project's main file). Moreover, a \texttt{README.md} has been written as a quick-start guide.
+
 \begin{figure}[H]
     \centering
     \begin{subfigure}{0.3\textwidth}
@@ -156,20 +157,41 @@ One aspect that is important to consider is time. Keeping track of when various 
 \end{displayquote}
 \hspace*\fill{\small--- \cite[8]{EnginneringACompiler}}
 
+Clearly most time is spent on design time, because it is at design time the compiler has been created in the development environment. This includes time spent on designing an interface and writing the code. Compile time is equally important, as it can be coded using more or less efficient algorithms. Perhaps the compiler depends on certain packages being available on the machine, just as various python packages are used in this project. Some code has a very short lifetime in compile time before spending the rest of its life in runtime. It is therefore worth spending substantially more time during compile time in order to perform code analysis and subsequent optimization, such that the code running can be more efficient in some metric. The code could for example be optimized to run faster or save power. Fast programs are wanted when analyzing big data or fast response is needed. Focusing on power saving programs is key when targeting portable devices. 
+
+A typical three-phase compiler is designed as shown in Figure \ref{fig:three-phase}.
 
 \begin{figure}[H]
     \centering
     \input{misc/tikz/three-phase-compiler.tex}
     \caption{Three-phase compiler.}
+    \label{fig:three-phase}
 \end{figure}
+
+There is no restriction on what the individual stages can contain, as it depends entirely on architecture and program needs. The breakdown of Panda is presented in Figure \ref{fig:panda-structure}.
 
 \begin{figure}[H]
     \centering
     \input{misc/tikz/internal-structure.tex}
     \caption{Internal structure of Panda.}
+    \label{fig:panda-structure}
 \end{figure}
 
-\newpage
+Type checking has been colored red because it has not been implemented yet, though it would be preferable to have functionality to refrain users from doing something nonsensical, for example, assigning a function to an integer variable.
+
+\begin{minted}{text}
+int a;
+int main(){}
+a = main;
+\end{minted}
+
+This error will cause the compiler to raise a value error during code generation, as the match statement for case \texttt{AST.StatementAssignment} is designed to do exactly that for any symbol with \texttt{NameCategory} not parameter or variable -- function is neither. It is wanted behavior that the compiler stops compiling on such error, but it should never crash because of an uncaught exception. The user must always be informed properly about what went wrong, without having to deal with an indifferent stack trace.
+
+Optimizations like instruction selection, instruction scheduling and peephole etc. could have been interesting to implement, but this is unfortunately beyond the scope of this project, since time did not allow. The stage is therefore skipped.
+
+Panda can either produce stack machine code or register allocation code. The allocator phase is colored blue because it is clearly only used upon compiling source code to assembler code utilizing CPU registers. 
+
+The individual phases presented in Figure \ref{fig:panda-structure} will be reviewed in detail in the subsequent sections of this chapter. As a consequence of having studied the SCIL compiler, it will be clear that several things are done similarly, or at least inspired by SCIL to some extent. 
 
 \section{Scanner}
 
@@ -302,7 +324,9 @@ def _desugar_AST(self, ast_node: AST.AstNode) -> None:
     \input{misc/graphviz/desugar.tex}
     \caption{Desugaring tree.} 
 \end{figure}
+
 \newpage
+
 \section{Code Generation} 
 \subsection{ILOC code}
 \subsection{Stack Machine}
@@ -369,11 +393,13 @@ OK
 \end{minted}
 
 The test suite is automatically run on every pull request or push to GitHub as part of the CI workflow using GitHub Actions. Configuration can be found in \texttt{/.github/workflows/unittest.yml}. A \texttt{ValueError} is raised when a test fails, otherwise the GitHub Actions workflow will not detect this.
+
 \begin{figure}[H]
     \centering
     \includegraphics[width=1\textwidth]{misc/images/GitHub_Actions.png}
     \caption{GitHub Actions for unit testing.}
 \end{figure}
+
 That way, one know exactly which push or pull request caused the tests to fail, and associated code is directly available from the workflow via commit ID. History for workflow is available too.
 
 \begin{figure}[H]
