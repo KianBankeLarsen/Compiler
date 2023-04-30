@@ -179,7 +179,7 @@ There is no restriction on what the individual stages can contain, as it depends
 
 Type checking has been colored red because it has not been implemented yet, though it would be preferable to have functionality to refrain users from doing something nonsensical, for example, assigning a function to an integer variable.
 
-\begin{minted}{text}
+\begin{minted}{c}
 int a; int main(){} a = main;
 \end{minted}
 
@@ -298,10 +298,10 @@ precedence = (
 
 Parsing is a relatively large operation, but it was a representative sample.
 
-To gain better insight into the resulting IR of the parsing phase, one can advantageously use the printer class to create a graphical representation of the DAG data structure. We will consider the input program specified in Figure \ref{fig:ex_program}.
+To gain better insight into the resulting IR of the parsing phase, one can advantageously use the printer class to create a graphical representation of the DAG data structure. We will consider the input program stated in Figure \ref{fig:ex_program}.
 
 \begin{figure}[H]
-\begin{minted}{text}
+\begin{minted}{c}
 int j = 5; 
 for(int i = 1; i < 5; i = i + 1){}   
 \end{minted}
@@ -318,7 +318,46 @@ The resulting abstract syntax tree is given in Figure \ref{fig:AST}.
     \label{fig:AST}
 \end{figure}
 
-The input program is...
+The input program stated in Figure \ref{fig:ex_program} is a good example because it is a small program with an associated small parse tree, although the parse tree is more verbose than it necessarily should be. Furthermore, there are two different uses of the \texttt{init\_var\_decl} node -- this node contains syntax such as \texttt{int i = 1;}. All usages of that node is syntactic sugar for a declaration and simultaneous assignment. The iterative \texttt{for} construction uses it as a parameter, so that can just be transformed directly when visited. The story is a little more complicated for other usages of this node, since code for declarations is first generated after all statements belonging to a \texttt{body} node have been visited. It has therefore been necessary to add a desugaring phase to transform the AST, as we will see later in section \ref{sec:desugar}.
+
+Panda is designed in such a way that every curly bracket enclosed environment creates a new scope. The default scope is global scope. Every scope consists of a single \texttt{body} node -- the grammar is \texttt{`new\_scope : LCURL body RCURL'}. Recall that a \texttt{body} node can contain optional declarations followed by optional statements. Just to mention boolean values, the convention used is that the integer value $0$ is \texttt{false}; otherwise \texttt{true}.
+
+The syntax is very C-like, but below are some examples of the different language constructions. Starting with a \texttt{for} loop:
+
+\begin{minted}{c}
+for(int i = 1; i < 5; i = i + 1){...}
+\end{minted}
+
+Then a \texttt{while} loops follows naturally:
+
+\begin{minted}{c}
+while(...){...}
+\end{minted}
+
+The \texttt{if}-\texttt{else} flow control statement:
+
+\begin{minted}{py}
+if(...){...} else{...}
+\end{minted}
+
+The classical \texttt{print} statement:
+
+\begin{minted}{c}
+print(3 + 5); 
+\end{minted}
+
+And finally function calls:\footnote{Remark: it is not valid to assign \texttt{void} function calls to any variable.}
+
+\begin{minted}{c}
+int a; int b = 1;
+int fee(int arg){... return ...;}
+void foo(){...}
+
+a = fee(b);
+foo();
+\end{minted}
+
+More examples can be found in the \texttt{/testing/test-cases/} folder.
 
 \newpage
 
@@ -363,7 +402,7 @@ case ...
 
 \begin{minted}{text}
 int a; 
-if(3<4){int b;}else{int c; if(3){int c;}else{int d;}} 
+if(3<4){int b;} else{int c; if(3){int c;} else{int d;}} 
 while(4){int d;}
 \end{minted}
 
@@ -375,26 +414,33 @@ while(4){int d;}
 
 \newpage
 
-\section{Desugaring}
+\section{Desugar}\label{sec:desugar}
+Desugar is a phase that has been included because it was realized that the way nodes were visited during code generation was inexpedient, although necessary. The problem is only associated with the grammar:
+
+\begin{center}
+\texttt{variable\_init\_declaration : type IDENT ASSIGN expression SEMICOL}
+\end{center}
+
+Code for statements is produced before producing code for declarations. This is because we want to strangulate declared functions such that they do not appear within the function executed by the operating system. The functions would otherwise execute without being called by the user.
+
+The way the problem has been solved is by traversing declarations and collecting all nodes of this type. The nodes are then transformed to \texttt{StatementAssignment} nodes and inserted, in the beginning and in the same order, as assignment statements too. The transformed nodes could have been advantageously removed from the tree, to minimize the IR, but since they do nothing, it has been decided to leave them as they are. The algorithmic approach is stated below:
+
 \begin{minted}{py3}
-def _desugar_AST(self, ast_node: AST.AstNode) -> None:
-    match ast_node:
-        case AST.Body(decls):
-            self._desugar_AST(decls)
-            decl_var_init_list = self._collect_decl_var_init(decls)
-            assignments = self._trans_var_init_list_to_stm(
-                decl_var_init_list)
-            self._insert_stm(assignments, ast_node)
-            self._desugar_AST(ast_node.stm_list)
-        case ...
+case AST.Body(decls):
+    self._desugar_AST(decls)
+    decl_var_init_list = self._collect_decl_var_init(decls)
+    assignments = self._trans_var_init_list_to_stm(decl_var_init_list)
+    self._insert_stm(assignments, ast_node)
+    self._desugar_AST(ast_node.stm_list)
 \end{minted}
 
-\newpage 
+Reusing the input program from Figure \ref{fig:ex_program}, we can observe that the yellow nodes have been inserted, in Figure \ref{fig:desugar}, as a result of the desugaring phase.
 
 \begin{figure}[H]
     \centering
     \input{misc/graphviz/desugar.tex}
     \caption{Desugaring tree.} 
+    \label{fig:desugar}
 \end{figure}
 
 \newpage
