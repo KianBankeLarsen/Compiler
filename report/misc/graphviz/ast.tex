@@ -1,41 +1,45 @@
 \digraph[scale=0.5]{ast}{
 	0 [label="?main"]
 	1 [label=body]
-	2 [label=stm_list]
-	3 [label=init_var_decl]
-	4 [label=1]
-	5 [label=int]
-	6 [label=i]
-	3 -> 5
-	3 -> 6
-	3 -> 4
-	7 [label=i]
-	8 [label=5]
-	9 [label="<"]
-	9 -> 7
-	9 -> 8
-	10 [label=i]
-	11 [label=1]
-	12 [label="+"]
-	12 -> 10
-	12 -> 11
-	13 [label="="]
-	14 [label=i]
-	13 -> 14
-	13 -> 12
-	15 [label=body]
-	16 [label=stm_list]
-	17 [label=i]
-	18 [label=print]
+	2 [label=init_var_decl]
+	3 [label=5]
+	4 [label=int]
+	5 [label=j]
+	2 -> 4
+	2 -> 5
+	2 -> 3
+	6 [label=decl_list]
+	6 -> 2
+	1 -> 6
+	7 [label=stm_list]
+	8 [label=init_var_decl]
+	9 [label=1]
+	10 [label=int]
+	11 [label=i]
+	8 -> 10
+	8 -> 11
+	8 -> 9
+	12 [label=i]
+	13 [label=5]
+	14 [label="<"]
+	14 -> 12
+	14 -> 13
+	15 [label=i]
+	16 [label=1]
+	17 [label="+"]
+	17 -> 15
+	17 -> 16
+	18 [label="="]
+	19 [label=i]
+	18 -> 19
 	18 -> 17
-	16 -> 18
-	15 -> 16
-	19 [label=for]
-	19 -> 3
-	19 -> 9
-	19 -> 13
-	19 -> 15
-	2 -> 19
-	1 -> 2
+	20 [label=body]
+	21 [label=for]
+	21 -> 8
+	21 -> 14
+	21 -> 18
+	21 -> 20
+	7 -> 21
+	1 -> 7
 	0 -> 1
 }
