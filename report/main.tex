@@ -362,6 +362,13 @@ More examples can be found in the \texttt{/testing/test-cases/} folder.
 \newpage
 
 \section{Symbol Collection}
+The compiler discovers the names and properties of many entities during parsing. For each name used in the program, the compiler needs a variety of information before it can generate code to manipulate that entity. The Symbol Collection phase implements a recursive traversal of the AST in order to collect symbols into symbol tables.
+
+Each scope has its own symbol table and each symbol within that scope is stored in that symbol table. The sole purpose of scopes is to encapsulate symbols so that logically separate parts of the program do not interfere. The introduction of scopes makes it possible to reuse symbol names, which is convenient, and a necessity when using recursion. The scoping mechanism implemented in Panda is static nested scoping. ``Static" because it can be determined where a symbol is accessible and visible by reasoning about the lexical structure of the source program -- this is often a cognitive comprehensive task when reading programs based on dynamic scoping. ``Nested" refer to the hierarchical separation of scopes. The primary purpose of a symbol table is to resolve names. When the compiler finds a symbol, it needs a mechanism that maps that symbol back to its declaration; otherwise we would not be able to locate the entity in memory.
+
+The compiler for Panda only supports simple \SI{64}{bit} scalar variables and functions, and some additional information such as source register (\texttt{SR}) and \texttt{escaping} which will be elaborated in the code generation phase (section \ref{sec:code-gen}). The \texttt{Symbol} class is defined as stated in Figure \ref{fig:symbol}.
+
+\begin{figure}[H]
 \begin{minted}{py}
 @dataclass
 class Symbol:
@@ -371,6 +378,24 @@ class Symbol:
     SR: int = None
     escaping: bool = False
 \end{minted}
+    \caption{Symbol to be stored in symbol table.}
+    \label{fig:symbol}
+\end{figure}
+
+Each symbol encountered is stored in a symbol table associated with information about its \texttt{type}, \texttt{kind} (variable, parameter or function) and \texttt{info} (offset such that the variable can be located on the stack). To give an example of what happens when encountering a function declaration, the following has been inserted:
+
+\begin{minted}{py3}
+case AST.DeclarationFunction(type, func, lineno):
+    symval = Symbol(type, NameCategory.FUNCTION, func)
+    self._current_scope.insert(func.name, symval, lineno)
+    self._current_scope = SymbolTable(self._current_scope)
+    self._build_symbol_table(func)
+case ...
+\end{minted}
+
+In this case, \texttt{\_current\_scope} is the active symbol table. It is thereby possible to instantiate a \texttt{Symbol} with information about the function and insert it into the table.
+
+this is a test
 
 \begin{minted}{py3}
 @dataclass(init=False)
@@ -383,15 +408,6 @@ class SymbolTable:
         self._tab = {}
         self.level = parent.level + 1 if parent else 0
         self.parent = parent
-\end{minted}
-
-\begin{minted}{py3}
-case AST.DeclarationFunction(type, func, lineno):
-    symval = Symbol(type, NameCategory.FUNCTION, func)
-    self._current_scope.insert(func.name, symval, lineno)
-    self._current_scope = SymbolTable(self._current_scope)
-    self._build_symbol_table(func)
-case ...
 \end{minted}
 
 \begin{figure}[H]

@@ -111,14 +111,17 @@ class Liveness:
                                 Operand(target=Target(spec=T.REG, val=val2)))):
                 ins.in_.add(val1)
                 ins.in_.add(val2)
+                ins.in_.union(ins.out)
 
                 return self._live_set_changed_and_out_calc(ins)
             case Instruction(args=(Operand(target=Target(spec=T.REG, val=val)), Operand())):
                 ins.in_.add(val)
+                ins.in_.union(ins.out)
 
                 return self._live_set_changed_and_out_calc(ins)
             case Instruction(args=(Operand(target=Target(spec=T.REG, val=val)), )):                
                 ins.in_.add(val)
+                ins.in_.union(ins.out)
 
                 return self._live_set_changed_and_out_calc(ins)
 

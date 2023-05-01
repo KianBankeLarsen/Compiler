@@ -89,12 +89,13 @@ class ASTSymbolIncorporator:
                 level_difference = self._current_scope.level - level
                 if level_difference:
                     symbol.escaping = True
-            case AST.ExpressionIdentifier(ident): # TODO Not reached by recursion
+            case AST.ExpressionIdentifier(ident):
                 symbol, level = self._current_scope.lookup(ident)
                 level_difference = self._current_scope.level - level
                 if level_difference:
                     symbol.escaping = True
-            case AST.StatementIfthenelse(_, then_part, else_part):
+            case AST.StatementIfthenelse(exp, then_part, else_part):
+                self._build_symbol_table(exp)
                 self._current_scope = SymbolTable(self._current_scope)
                 ast_node.symbol_table_then = self._current_scope
                 self._build_symbol_table(then_part)
@@ -104,12 +105,14 @@ class ASTSymbolIncorporator:
                     ast_node.symbol_table_else = self._current_scope
                     self._build_symbol_table(else_part)
                     self._current_scope = self._current_scope.parent
-            case AST.StatementWhile(_, body):
+            case AST.StatementWhile(exp, body):
+                self._build_symbol_table(exp)
                 self._current_scope = SymbolTable(self._current_scope)
                 ast_node.symbol_table = self._current_scope
                 self._build_symbol_table(body)
                 self._current_scope = self._current_scope.parent
             case AST.StatementFor(iter, _, _, body, lineno):
+                self._build_symbol_table(iter.exp)
                 self._current_scope = SymbolTable(self._current_scope)
                 ast_node.symbol_table = self._current_scope
                 ast_node.number_of_parameters = 1
@@ -117,13 +120,21 @@ class ASTSymbolIncorporator:
                 self._current_scope.insert(iter.name, symval, lineno)
                 self._build_symbol_table(body)
                 self._current_scope = self._current_scope.parent
+            case AST.StatementReturn(exp):
+                self._build_symbol_table(exp)
+            case AST.StatementPrint(exp):
+                self._build_symbol_table(exp)
+            case AST.ExpressionCall(exp_list=exp_list):
+                self._build_symbol_table(exp_list)
+            case AST.ExpressionList(exp, next):
+                self._build_symbol_table(exp)
+                self._build_symbol_table(next)
+            case AST.ExpressionBinop(_, lhs, rhs):
+                self._build_symbol_table(lhs)
+                self._build_symbol_table(rhs)
+            case AST.ExpressionInteger():
+                pass            
             case None:
-                pass
-            case AST.StatementReturn():
-                pass
-            case AST.StatementPrint():
-                pass
-            case AST.ExpressionCall():
                 pass
             case _:
                 raise ValueError(ast_node)
