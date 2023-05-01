@@ -89,6 +89,11 @@ class ASTSymbolIncorporator:
                 level_difference = self._current_scope.level - level
                 if level_difference:
                     symbol.escaping = True
+            case AST.ExpressionIdentifier(ident): # TODO Not reached by recursion
+                symbol, level = self._current_scope.lookup(ident)
+                level_difference = self._current_scope.level - level
+                if level_difference:
+                    symbol.escaping = True
             case AST.StatementIfthenelse(_, then_part, else_part):
                 self._current_scope = SymbolTable(self._current_scope)
                 ast_node.symbol_table_then = self._current_scope
@@ -112,3 +117,13 @@ class ASTSymbolIncorporator:
                 self._current_scope.insert(iter.name, symval, lineno)
                 self._build_symbol_table(body)
                 self._current_scope = self._current_scope.parent
+            case None:
+                pass
+            case AST.StatementReturn():
+                pass
+            case AST.StatementPrint():
+                pass
+            case AST.ExpressionCall():
+                pass
+            case _:
+                raise ValueError(ast_node)

@@ -1,10 +1,7 @@
-from dataclasses import dataclass
-
 from singleton_decorator import singleton
 
 
 @singleton
-@dataclass
 class Labels:
     """Singleton label generator to ensure uniqueness.
     """

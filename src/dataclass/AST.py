@@ -66,7 +66,7 @@ class VariableList(Symbol):
 
 @dataclass
 class Function(Symbol):
-    name: ExpressionIdentifier
+    name: str
     par_list: ParameterList
     body: Body
     lineno: int

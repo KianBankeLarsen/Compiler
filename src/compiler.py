@@ -70,7 +70,7 @@ class PandaCompiler:
         pp = pprint.PrettyPrinter()
         # pp.pprint(register_program_code)
         control_flow = src.phase.liveness.Liveness()
-        control_flow.perform_liveness_analysis(register_program_code)
+        control_flow.perform_register_allocation(register_program_code)
 
         code_emitter = src.phase.emit.Emit()
         assembly_code = code_emitter.emit(stack_program_code)

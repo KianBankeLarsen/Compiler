@@ -364,6 +364,11 @@ class GenerateCodeRegister(src.phase.code_generation_base.GenerateCodeBase):
                 self._generate_code(exp)
 
                 self._append_instruction(
+                    Instruction(Op.PUSH,
+                                Operand(Target(T.REG, self._reg_stack_pop()), Mode(M.DIR)))
+                )
+
+                self._append_instruction(
                     Instruction(Op.META, Meta.PRECALL)
                 )
                 self._append_instruction(
@@ -583,3 +588,11 @@ class GenerateCodeRegister(src.phase.code_generation_base.GenerateCodeBase):
                     Instruction(Op.PUSH,
                                 Operand(Target(T.REG, self._reg_stack_pop()), Mode(M.DIR)))
                 )
+            case AST.DeclarationVariableList():
+                pass
+            case AST.DeclarationVariableInit():
+                pass
+            case None:
+                pass
+            case _:
+                raise ValueError(ast_node)

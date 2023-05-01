@@ -505,3 +505,11 @@ class GenerateCodeStack(src.phase.code_generation_base.GenerateCodeBase):
             case AST.ExpressionList(exp, next):
                 self._generate_code(next)
                 self._generate_code(exp)
+            case AST.DeclarationVariableList():
+                pass
+            case AST.DeclarationVariableInit():
+                pass
+            case None:
+                pass
+            case _:
+                raise ValueError(ast_node)
