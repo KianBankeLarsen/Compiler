@@ -71,7 +71,7 @@ This report examines how to make a simple compiler in Python, named Panda for no
 
 The language to be compiled is a subset of the imperative language C. This has been chosen because of its simpler syntax and easy to read curly bracket enclosed static scopes. In this project, we are interested in making a language having integers, Booleans and preferably some kind of floats. The language must have control flow constructs in form of \texttt{if}-\texttt{else} statements and functions, and iterative constructs such as \texttt{for}- and \texttt{while}-loops. 
 
-A modern compiler is, as is well known, divided into phases. These phases relate to lexical and syntactic analysis, resulting in an abstract syntax tree. Subsequent phases analyze and adorn the abstract syntax tree, building a symbol table and finally generating assembler code.
+A modern compiler is, as is well-known, divided into phases. These phases relate to lexical and syntactic analysis, resulting in an abstract syntax tree. Subsequent phases analyze and adorn the abstract syntax tree, building a symbol table and finally generating assembler code.
 
 The main focus in regard to advanced techniques will be local register allocation, using techniques described in \cite{EnginneringACompiler}. Handling this efficiently requires data flow analysis via control flow-graph, construction of interference graph, graph coloring and translation back to instructions using a combination of the registers and the stack, when the available registers do not suffice.
 
@@ -110,9 +110,9 @@ PLY is a native Python tool, relying on reflection, used to automatically genera
 \section{Design Principles \& Patterns}
 When starting a new project, it is important to make some basic thoughts about the architecture. Sensible choices at the beginning can increase code readability and make maintainability easier. It is particularly important to consider design principles and design patterns, as this will have a big effect on, i.e., how data structures are traversed and code testability. In this context, design principles refer to SOLID, and design patterns refer to Gang of Four's 23 design patterns.
 
-We will start by considering design principles. SOLID is a mnemonic acronym for at set of design principles concerning software development in object-oriented languages: \textbf{S}ingle Responsibility, \textbf{O}pen Closed, \textbf{L}iskov's Substitution, \textbf{I}nterface Segregation and \textbf{D}ependency Inversion. The principles are in many ways obvious when rehearsed, but not necessarily followed as it requires active consideration. Single responsibility is particularly expressed in the project by the sharp division of phases and their interfaces between them. Open/closed is not particularly used in the project, as inheritance cases sparsely appear, though crucial in the printer package. It will never be necessary to edit the generic printer because functionality to print a specific data structure is first implemented upon extension. Liskov's substitution principle is accommodated in the AST data class, since any subtree is a valid tree and all nodes are AST nodes. Dependency inversion principle simply means that you must program against an interface and not an implementation. There is actually an incident where the project does not live up to this principle, and that is when using the hidden method \texttt{\_value2member\_map\_} on \texttt{Enum} in the parsing phase. Other examples apply, of course, as every class must accommodate every principle. This was just a quick review.
+We will start by considering design principles. SOLID is a mnemonic acronym for at set of design principles concerning software development in object-oriented languages: \textbf{S}ingle Responsibility, \textbf{O}pen Closed, \textbf{L}iskov's Substitution, \textbf{I}nterface Segregation and \textbf{D}ependency Inversion. The principles are in many ways obvious when rehearsed, but not necessarily followed, as it requires active consideration. Single responsibility is particularly expressed in the project by the sharp division of phases and their interfaces between them. Open/closed is not particularly used in the project, as inheritance cases sparsely appear, though crucial in the printer package. It will never be necessary to edit the generic printer because functionality to print a specific data structure is first implemented upon extension. Liskov's substitution principle is accommodated in the AST data class, since any subtree is a valid tree and all nodes are AST nodes. Dependency inversion principle simply means that you must program against an interface and not an implementation. There is actually an incident where the project does not live up to this principle, and that is when using the hidden method \texttt{\_value2member\_map\_} on \texttt{Enum} in the parsing phase. Other examples apply, of course, as every class must accommodate every principle. This was just a quick review.
 
-One of the big decisions regarding behavioral design patterns has been whether to use Visitors, just like in the well known SCIL compiler from the DM565 course. It was decided not to use visitors, because Python 3.10 comes with a new cool feature, namely match statements, which makes it possible to exploit the benefits of structural pattern matching. Although it is nice to let the data structure decide its iteration, I still prefer having everything written explicitly when learning to write a compiler. Using match statements requires one to repeat the iteration logic for every new operation, but that kind of also makes it easier to implement new logic, as one does not have to remember the visitor pattern. Another useful creational design pattern is the Singleton pattern used in \texttt{label\_generator.py}. This makes it possible to retrieve the label generator in any class, while preserving the state on \texttt{count}, without having to pass the object through all the phases manually.
+One of the big decisions regarding behavioral design patterns has been whether to use Visitors, just like in the well-known SCIL compiler from the DM565 course. It was decided not to use visitors, because Python 3.10 comes with a new cool feature, namely match statements, which makes it possible to exploit the benefits of structural pattern matching. Although it is nice to let the data structure decide its iteration, I still prefer having everything written explicitly when learning to write a compiler. Using match statements requires one to repeat the iteration logic for every new operation, but that somewhat also makes it easier to implement new logic, as one does not have to remember the visitor pattern. Another useful creational design pattern is the Singleton pattern used in \texttt{label\_generator.py}. This makes it possible to retrieve the label generator in any class, while preserving the state on \texttt{count}, without having to pass the object through all the phases manually.
 
 \section{Compiler Usage}
 The main file handles the instantiation and therefore also the running of the \texttt{PandaCompiler} class. Python \texttt{argparse} is used to take command line arguments because it adds a lot of user-friendliness to the compiler. \texttt{argparse} provides the opportunity to query the compiler usage in the terminal, thus showing what options are available. Doing so yields the result stated below:
@@ -183,7 +183,7 @@ Type checking has been colored red because it has not been implemented yet, thou
 int a; int main(){} a = main;
 \end{minted}
 
-This error will cause the compiler to raise a value error during code generation, as the match statement for case \texttt{AST.StatementAssignment} is designed to do exactly that for any symbol with \texttt{NameCategory} not parameter or variable -- function is neither. It is wanted behavior that the compiler stops compiling on such error, but it should never crash because of an uncaught exception. The user must always be informed properly about what went wrong, without having to deal with an indifferent stack trace.
+This error will cause the compiler to raise a value error during code generation, as the match statement for case \texttt{AST.StatementAssignment} is designed to do exactly that for any symbol with \texttt{NameCategory} not parameter or variable -- function is neither. It is wanted that the compiler stops compiling on such error, but it should never crash because of an uncaught exception. The user must always be informed properly about what went wrong, without having to deal with an indifferent stack trace.
 
 Optimizations like instruction selection, instruction scheduling and peephole etc. could have been interesting to implement, but this is unfortunately beyond the scope of this project, since time did not allow. The stage is therefore skipped.
 
@@ -227,7 +227,7 @@ t_MINUS = r'-'
 
 The prefix \texttt{t\_} is used to indicate that it defines a token. The string must be compatible with Python's \texttt{re} module.
 
-A token can also be specified as a function if some kind of action needs to be performed. This is particularly useful in connection with separating identifiers from reserved words. In that case, it will be possible to lookup a given identifier in reserved words. If the relevant key is not found, then it can be concluded that the token in question is just a regular identifier; otherwise the found reserved token will be returned.
+A token can also be specified as a function if some kind of action needs to be performed. This is particularly useful in connection with separating identifiers from reserved words. In that case, it will be possible to lookup a given identifier in reserved words. If the relevant key is not found, then it can be concluded that the token in question is just a regular identifier; otherwise, the found reserved token will be returned.
 
 \begin{minted}{py3}
 def t_IDENT(t):
@@ -277,7 +277,7 @@ class Body(AstNode):
 
 The \texttt{Body} class is annotated with \texttt{dataclass}. Python data classes are specially structured class optimized for storage and representation, and it allows for concise class declaration since the constructor is generated automatically.
 
-To make the language semantics easy to understand and unambiguous, it has been decided to constraint that declarations of variables must come before any usage. Declarations and statements are both optional (body can be empty), though useless without statements. Mixing declarations and statements can be confusing to handle, and it will be explained later why it encourages trouble.
+To make the language semantics easy to understand, it has been decided to constraint that declarations of variables must come before any usage. Declarations and statements are both optional (body can be empty), though useless without statements. Mixing declarations and statements can be confusing to handle, and it will be elaborated in section \ref{sec:symbol_collection} why it encourages trouble.
 
 \begin{minted}{py3}
 def p_body(t):
@@ -285,7 +285,7 @@ def p_body(t):
     t[0] = AST.Body(t[1], t[2], t.lexer.lineno)
 \end{minted}
 
-Associativity of tokens can be encoded directly in the grammar, but can also be specified as precedence directives for the parser. It makes the grammar simpler when one can ignore this kind of troubles. The precedence directives stated below specify that the parser must reduce when encountering \texttt{TIMES}, \texttt{DIVIDE} etc. and shift when encountering \texttt{EQ}. The directives go from lowest to highest precedence. The \texttt{nonassoc} directive used on comparison based operators are very useful, because it refrains the user from specifying some like \texttt{3 < x < 7}. The semantic of this statement is clear and powerful, but quite hard to produce correct code for. The \texttt{nonassoc} directive will cause the parser to throw an error whenever it encounters such case. 
+Associativity of tokens can be encoded directly in the grammar, but can also be specified as precedence directives for the parser. It makes the grammar simpler when one can ignore this kind of trouble. The precedence directives stated below specify that the parser must reduce when encountering \texttt{TIMES}, \texttt{DIVIDE} etc. and shift when encountering \texttt{EQ}. The directives go from lowest to highest precedence. The \texttt{nonassoc} directive used on comparison based operators are very useful, because it refrains the user from specifying some like \texttt{3 < x < 7}. The semantic of this statement is powerful, although difficult to express directly in code, as it is syntactic sugar for two subsequent statements. The \texttt{nonassoc} directive will cause the parser to throw an error whenever it encounters such case. 
 
 \begin{minted}{py3}
 precedence = (
@@ -336,7 +336,7 @@ while(...){...}
 
 The \texttt{if}-\texttt{else} flow control statement:
 
-\begin{minted}{py}
+\begin{minted}{c}
 if(...){...} else{...}
 \end{minted}
 
@@ -361,7 +361,7 @@ More examples can be found in the \texttt{/testing/test-cases/} folder.
 
 \newpage
 
-\section{Symbol Collection}
+\section{Symbol Collection}\label{sec:symbol_collection}
 The compiler discovers the names and properties of many entities during parsing. For each name used in the program, the compiler needs a variety of information before it can generate code to manipulate that entity. The Symbol Collection phase implements a recursive traversal of the AST in order to collect symbols into symbol tables.
 
 Each scope has its own symbol table and each symbol within that scope is stored in that symbol table. The sole purpose of scopes is to encapsulate symbols so that logically separate parts of the program do not interfere. The introduction of scopes makes it possible to reuse symbol names, which is convenient, and a necessity when using recursion. The scoping mechanism implemented in Panda is static nested scoping. ``Static" because it can be determined where a symbol is accessible and visible by reasoning about the lexical structure of the source program -- this is often a cognitive comprehensive task when reading programs based on dynamic scoping. ``Nested" refer to the hierarchical separation of scopes. The primary purpose of a symbol table is to resolve names. When the compiler finds a symbol, it needs a mechanism that maps that symbol back to its declaration; otherwise we would not be able to locate the entity in memory.
@@ -382,7 +382,7 @@ class Symbol:
     \label{fig:symbol}
 \end{figure}
 
-Each symbol encountered is stored in a symbol table associated with information about its \texttt{type}, \texttt{kind} (variable, parameter or function) and \texttt{info} (offset such that the variable can be located on the stack). To give an example of what happens when encountering a function declaration, the following has been inserted:
+Each symbol encountered is stored in a symbol table associated with information about its \texttt{type}, \texttt{kind} (variable, parameter or function) and \texttt{info} (offset such that the variable can be located on the stack). The following has been inserted, to provide insight into what happens when encountering a function declaration:
 
 \begin{minted}{py3}
 case AST.DeclarationFunction(type, func, lineno):
@@ -393,9 +393,9 @@ case AST.DeclarationFunction(type, func, lineno):
 case ...
 \end{minted}
 
-In this case, \texttt{\_current\_scope} is the active symbol table. It is thereby possible to instantiate a \texttt{Symbol} with information about the function and insert it into the table.
+In this case, \texttt{\_current\_scope} is the active symbol table. It is thereby possible to instantiate a \texttt{Symbol} with information about the function and insert it into the table. Before recursively collecting symbols within that function, a new symbol table is instantiated for that scope.
 
-this is a test
+The way the symbol table is declared is shown below:
 
 \begin{minted}{py3}
 @dataclass(init=False)
@@ -410,17 +410,26 @@ class SymbolTable:
         self.parent = parent
 \end{minted}
 
+The symbol table itself takes care of keeping track of its lexical \texttt{level}, its parent, and the actual symbol table named \texttt{\_tab}. The \texttt{parent} field makes it possible to search upwards in the structure towards the global scope, if the symbol searched for is not at the current level.
+
+Scopes create a tree structure, but where the leafs point to the root and not the other way around. Considering the input program stated in Figure \ref{fig:ex_program} again, we see, in Figure \ref{fig:symbol_collection}, that \texttt{j} is declared in the global scope (root, level $0$) and \texttt{i} is declared at level $1$ immediately incident to global scope. 
+
 \begin{figure}[H]
     \centering
     \input{misc/graphviz/symbol.tex}
     \caption{Symbol collection.} 
+    \label{fig:symbol_collection}
 \end{figure}
 
-\begin{minted}{text}
+Because the example just presented is relatively minimal, a more exciting input program is considered below:
+
+\begin{minted}{c}
 int a; 
 if(3<4){int b;} else{int c; if(3){int c;} else{int d;}} 
 while(4){int d;}
 \end{minted}
+
+It is here clearly shown how to quickly introduce some scopes by using \texttt{if}-\texttt{else} statements, since all curly bracket enclosed environments constitute a new scope. Furthermore, it is also noted that two versions of $d$ are accessible in two scopes respectively. 
 
 \begin{figure}[H]
     \centering
@@ -428,7 +437,18 @@ while(4){int d;}
     \caption{Another symbol collection example.} 
 \end{figure}
 
-\newpage
+The symbol collection figures are automatically generated using \texttt{printer/\-symbol\_printer.py}. The feature is only provided when executing the compiler with the debug option.
+
+To return to the issue of mixing declarations and statements, it is quickly realized that this places greater demands on parser flexibility, since it will no longer be possible to make a discrete segregation of these groups. As such, it makes no difference to the symbol collection phase, as we already have to recurse through both declarations and statements. I will though make code generation more complicated, because code for functions declared within the scope will be generated simultaneously with statements, if this is not handled with some special case logic. Besides, the mixing also makes it confusing what variable that accessed whenever, since some declaration can appear near the end of the scope -- the declaration is valid for the entire scope and not just after the line it appears -- this is a hypothetical implementation, open for discussion, of course.
+
+To give an example of what problems may arise with this implementation, please consider the code fragment below. At first sight, one will assume that the input program is valid, but as it is considered, one will realize that \texttt{a} is not defined before \texttt{print(a)} is called. This would have been harder to spot of if the distance between print and declaration of $a$ spanned multiple lines.
+
+\begin{minted}{c}
+void main(){print(a); int a = 8;}
+a = 5;
+main();
+int a;
+\end{minted}
 
 \section{Desugar}\label{sec:desugar}
 Desugar is a phase that has been included because it was realized that the way nodes were visited during code generation was inexpedient, although necessary. The problem is only associated with the grammar:
@@ -462,7 +482,7 @@ Reusing the input program from Figure \ref{fig:ex_program}, we can observe that 
 \newpage
 
 \section{Code Generation} \label{sec:code-gen}
-\subsection{ILOC code}
+\cite{ModernCompilerImplementation}
 
 \newpage
 
@@ -473,7 +493,7 @@ Reusing the input program from Figure \ref{fig:ex_program}, we can observe that 
 \subsection{Register Allocation}
 
 \chapter{Testing}
-The main benefit of testing is the identification and subsequent mitigation of errors. It is to be expected to find errors in larger projects, which is why there must be a way to quickly and dynamically run tests during development. Testing helps software developers compare expected and actual output in order to improve quality. In this case, only system testing is carried out, although a higher granularity of testing would only enrich the project. There exist many tools to solve this task, which is why the big challenge lies in choosing the one that best suits the problem. The most advanced tool is not always the best solution. The chosen tools in this project are the testing framework \texttt{unittest} and the coverage tool \texttt{coverage.py}. In addition, SonarLint is used to perform static code analysis within the IDE to provide best-practice hints, cognitive complexity metrics and more -- not important but worth mentioning.
+The main benefit of testing is the identification and subsequent mitigation of errors. It is to be expected to find errors in larger projects, which is why there must be a way to quickly and dynamically run tests during development. Testing helps software developers compare expected and actual output in order to improve quality. In this case, only system testing is carried out, although a higher granularity of testing would only enrich the project. There are many tools available to solve this task, which is why the big challenge lies in choosing the tool that best suits the problem. The most advanced tool is not always the best solution. The chosen tools in this project are the testing framework \texttt{unittest} and the coverage tool \texttt{coverage.py}. In addition, SonarLint is used to perform static code analysis within the IDE to provide best-practice hints, cognitive complexity metrics and more -- not important but worth mentioning.
 
 \section{System Testing}
 The most common choice would have been to use \texttt{pytest} because it is significantly more popular than \texttt{unittest}, but for the task \texttt{unittest} seemed like the right choice. I am not able to judge whether the same could have been achieved using \texttt{pytest} with parametrized tests, but setting up \texttt{unittest} was straight forward.
@@ -592,7 +612,7 @@ TOTAL                                     1521     40    97%
 
 Based on this output, it can be assessed that the prepared tests in the \texttt{test-cases} folder cover the code well. Note that code coverage is run with the debug flag, \texttt{-d}. This is because code in the printer files are only executed when debug is desired.
 
-It is possible to convert the coverage data to an HTML report with the command \texttt{python3.10 -m coverage html}. The advantage of having the data in report form is that it is possible to clearly see which lines have been executed and which are missing, as shown in the figure below: 
+It is possible to convert the coverage data to an HTML report with the command \texttt{python3.10 -m coverage html}. The advantage of having the data in report form is that it is possible to see which lines have been executed and which are missing, as shown in the figure below: 
 
 \begin{figure}[H]
     \centering
@@ -610,17 +630,44 @@ It is possible to convert the coverage data to an HTML report with the command \
 The HTML report also makes it possible to carry out filtering etc. in the file overview table, and thus get a nicer and more user-friendly interface.
 
 \chapter{Performance Comparison}
+introduction...
 
-\chapter{Evaluation}
-\cite[6]{EnginneringACompiler}
-\begin{enumerate}
-    \item The compiler must preserve the meaning of the input program;
-    \item The compiler must discernible improve the program.
-\end{enumerate}
-
-\section{Language Considerations}
+\begin{figure}[H]
+    \centering
+    \missingfigure{Performance graph}
+    \caption{Stack Machine vs Register Machine.}
+\end{figure}
 
 \newpage
+
+second page...
+
+
+\chapter{Evaluation}
+This chapter is devoted to reflecting on the learning through the project, as well as describing some issues that could be interesting to work on if the project had had a longer duration.
+
+\section{Retrospect}
+There are two fundamental principles that must be observed when building a compiler. The first principle is inviolable:
+
+\begin{displayquote}
+    \textit{``The compiler must preserve the meaning of the input program.''}
+\end{displayquote}
+\hspace*\fill{\small--- \cite[6]{EnginneringACompiler}}
+
+The second principle has a more practical aspect:
+
+\begin{displayquote}
+    \textit{``The compiler must discernibly improve the input program.''}
+\end{displayquote}
+\hspace*\fill{\small--- \cite[7]{EnginneringACompiler}}
+
+It has been a core value throughout the project to make a well-defined compiler implementation that does not do anything inappropriate. Furthermore, the goal has been to create a clear, consistent, easily understandable grammar that a user would be able to pick up with ease. It is assessed that the first principle has been complied with. In this project, no special effort has been made in optimization apart from the preparation of an implementation that uses registers, which is why the second principle must be trivially respected -- an example of an optimization that could create conflicts would be instruction scheduling.
+
+The approach to the project has been academically based on literature, in order to gain an overview of new as well as old knowledge. Although this has given a confident approach to the project, it must be recognized that it has dulled the process unnecessarily. When coding a project such as a compiler that consists of relatively many lines of code, and many hours of debugging, it is necessary to purposefully choose a theme and then learn as needed, otherwise many hours are lost on something that is not directly applicable. It is of course not wasted, but not beneficial for the project either.
+
+This is a test
+
+\dots\todo{Results on comparison}
 
 \section{Further Development}
  
