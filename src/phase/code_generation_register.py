@@ -78,10 +78,8 @@ class GenerateCodeRegister(src.phase.code_generation_base.GenerateCodeBase):
     def _generate_code(self, ast_node: AST.AstNode) -> None:
         match ast_node:
             case AST.Body(decls, stm_list):
-                self._body_stack.append(ast_node)
                 self._generate_code(decls)
                 self._generate_code(stm_list)
-                self._body_stack.pop()
             case AST.DeclarationList(decl, next):
                 self._generate_code(decl)
                 self._generate_code(next)
@@ -390,31 +388,29 @@ class GenerateCodeRegister(src.phase.code_generation_base.GenerateCodeBase):
                 if exp:
                     self._append_instruction(
                         Instruction(Op.MOVE,
-                                    Operand(
-                                        Target(T.REG, self._reg_stack_pop()), Mode(M.DIR)),
+                                    Operand(Target(T.REG, self._reg_stack_pop()), Mode(M.DIR)),
                                     Operand(Target(T.RRT), Mode(M.DIR)))
                     )
 
-                if self._body_stack:
-                    _vars = 0
-                    for stack_frame in self._body_stack:
-                        _vars += stack_frame.number_of_variables
+                symbol, symbol_level = self._current_scope.lookup(func.name)
+                level_difference = self._current_scope.level - symbol_level
 
-                    save_reg = len(self._body_stack)*16*8
-                    local_vars = 8*_vars
-                    vars_function = func.body.number_of_variables*8
-                    self._append_instruction(
-                        Instruction(Op.ADD,
-                                    Operand(
-                                        Target(T.IMI, save_reg + local_vars + vars_function), Mode(M.DIR)),
-                                    Operand(Target(T.RSP), Mode(M.DIR)))
-                    )
-
-                    self._append_instruction(
-                        Instruction(Op.MOVE,
-                                    Operand(Target(T.RSP), Mode(M.DIR)),
-                                    Operand(Target(T.RBP), Mode(M.DIR)))
-                    )
+                self._append_instruction(
+                    Instruction(Op.MOVE,
+                                Operand(Target(T.RBP), Mode(M.DIR)),
+                                Operand(Target(T.RSL), Mode(M.DIR)))
+                )
+                self._get_code_block_to_extend().extend(
+                    [Instruction(Op.MOVE,
+                                    Operand(Target(T.RSL), Mode(M.IRL, -7)),
+                                    Operand(Target(T.RSL), Mode(M.DIR)))
+                        for _ in range(level_difference-1)]
+                )
+                self._append_instruction(
+                    Instruction(Op.MOVE,
+                                Operand(Target(T.RSL), Mode(M.DIR)),
+                                Operand(Target(T.RBP), Mode(M.DIR)))
+                )
 
                 self._append_instruction(
                     Instruction(Op.JMP,
