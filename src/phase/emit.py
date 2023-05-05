@@ -11,7 +11,7 @@ class Emit:
     """
 
     def __init__(self):
-        self._callee_save_reg: list[str] = ["rbx", "r12", "r13", "r14", "r15"]
+        self._callee_save_reg: list[str] = ["rbx", "r12", "r13", "r14", "r15", "rbp"]
         self._calleer_save_reg: list[str] = ["rcx", "rdx", "rsi", "rdi", "r8", "r9", "r10", "r11"]
         
         self._labels = Labels()
@@ -95,6 +95,26 @@ class Emit:
                 text = "%rbx"
             case iloc.Target(spec=T.REG, val=2):
                 text = "%rcx"
+            case iloc.Target(spec=T.REG, val=3):
+                text = "%rsi"
+            case iloc.Target(spec=T.REG, val=4):
+                text = "%rdi"
+            case iloc.Target(spec=T.REG, val=5):
+                text = "%r8"
+            case iloc.Target(spec=T.REG, val=6):
+                text = "%r9"
+            case iloc.Target(spec=T.REG, val=7):
+                text = "%r10"
+            case iloc.Target(spec=T.REG, val=8):
+                text = "%r12"
+            case iloc.Target(spec=T.REG, val=9):
+                text = "%r13"
+            case iloc.Target(spec=T.REG, val=10):
+                text = "%r14"
+            case iloc.Target(spec=T.REG, val=11):
+                text = "%r15"
+            case iloc.Target(spec=T.REG, val=None):
+                raise ValueError("You are using to many registers")
             case _:
                 raise ValueError(f"Unkown target: {operand.target}")
 
@@ -118,13 +138,11 @@ class Emit:
 
     def _prolog(self):
         self._save_retore_reg("pushq", self._callee_save_reg)
-        self._append_instruction("pushq %rbp")
         self._append_instruction("movq %rsp, %rbp")
         self._append_newline()
 
     def _epilog(self):
         self._append_instruction("movq %rbp, %rsp")
-        self._append_instruction("popq %rbp")
         self._save_retore_reg("popq", reversed(self._callee_save_reg))
         self._append_newline()
 

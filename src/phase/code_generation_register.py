@@ -184,11 +184,18 @@ class GenerateCodeRegister(src.phase.code_generation_base.GenerateCodeBase):
 
                 self._generate_code(exp)
 
+                reg_cmp = self._new_reg()
+                self._append_instruction(
+                    Instruction(Op.MOVE,
+                                Operand(Target(T.IMI, 0), Mode(M.DIR)),
+                                Operand(Target(T.REG, reg_cmp), Mode(M.DIR)))
+                )
+
                 self._append_instruction(
                     Instruction(Op.CMP,
                                 Operand(
                                     Target(T.REG, self._reg_stack_pop()), Mode(M.DIR)),
-                                Operand(Target(T.CMP), Mode(M.DIR)))
+                                Operand(Target(T.REG, reg_cmp), Mode(M.DIR)))
                 )
                 self._append_instruction(
                     Instruction(Op.JE,
@@ -263,11 +270,18 @@ class GenerateCodeRegister(src.phase.code_generation_base.GenerateCodeBase):
 
                 self._generate_code(exp)
 
+                reg_cmp = self._new_reg()
+                self._append_instruction(
+                    Instruction(Op.MOVE,
+                                Operand(Target(T.IMI, 0), Mode(M.DIR)),
+                                Operand(Target(T.REG, reg_cmp), Mode(M.DIR)))
+                )
+
                 self._append_instruction(
                     Instruction(Op.CMP,
                                 Operand(
                                     Target(T.REG, self._reg_stack_pop()), Mode(M.DIR)),
-                                Operand(Target(T.CMP), Mode(M.DIR)))
+                                Operand(Target(T.REG, reg_cmp), Mode(M.DIR)))
                 )
 
                 self._append_instruction(
@@ -322,11 +336,18 @@ class GenerateCodeRegister(src.phase.code_generation_base.GenerateCodeBase):
 
                 self._generate_code(exp)
 
+                reg_cmp = self._new_reg()
+                self._append_instruction(
+                    Instruction(Op.MOVE,
+                                Operand(Target(T.IMI, 0), Mode(M.DIR)),
+                                Operand(Target(T.REG, reg_cmp), Mode(M.DIR)))
+                )
+
                 self._append_instruction(
                     Instruction(Op.CMP,
                                 Operand(
                                     Target(T.REG, self._reg_stack_pop()), Mode(M.DIR)),
-                                Operand(Target(T.CMP), Mode(M.DIR)))
+                                Operand(Target(T.REG, reg_cmp), Mode(M.DIR)))
                 )
 
                 self._append_instruction(
@@ -508,14 +529,14 @@ class GenerateCodeRegister(src.phase.code_generation_base.GenerateCodeBase):
                 true_label = self._labels.next("cmp_true")
                 end_label = self._labels.next("cmp_end")
 
-                self._push_new_reg_count()
-
                 self._append_instruction(
                     Instruction(Op.CMP,
                                 Operand(
                                     Target(T.REG, self._reg_stack_pop()), Mode(M.DIR)),
                                 Operand(Target(T.REG, self._reg_stack_pop()), Mode(M.DIR)))
                 )
+
+                self._push_new_reg_count()
 
                 self._append_instruction(
                     Instruction(binop_cmp,

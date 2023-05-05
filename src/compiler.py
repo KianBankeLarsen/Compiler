@@ -15,6 +15,8 @@ import src.printer.ast_printer as ast_printer
 import src.printer.symbol_printer as Symbol_printer
 import src.utils.interfacing_parser as interfacing_parser
 
+# pp = pprint.PrettyPrinter()
+# pp.pprint(register_program_code)
 
 @dataclass
 class PandaCompiler:
@@ -60,20 +62,22 @@ class PandaCompiler:
         desugared_AST = src.phase.syntactic_desugaring.ASTSyntacticDesugar()
         desugared_IR = desugared_AST.desugar_AST(symbol_collection_IR)
 
-        code_generation_stack = src.phase.code_generation_stack.GenerateCodeStack()
-        code_generation_stack.generate_code(desugared_IR)
-        stack_program_code = code_generation_stack.get_code()
-
-        code_generation_register = src.phase.code_generation_register.GenerateCodeRegister()
-        code_generation_register.generate_code(desugared_IR)
-        register_program_code = code_generation_register.get_code()
-        pp = pprint.PrettyPrinter()
-        # pp.pprint(register_program_code)
-        control_flow = src.phase.liveness.Liveness()
-        control_flow.perform_register_allocation(register_program_code)
 
         code_emitter = src.phase.emit.Emit()
-        assembly_code = code_emitter.emit(stack_program_code)
+
+        if self.args.stack:
+            code_generation_stack = src.phase.code_generation_stack.GenerateCodeStack()
+            code_generation_stack.generate_code(desugared_IR)
+            stack_program_code = code_generation_stack.get_code()
+            assembly_code = code_emitter.emit(stack_program_code)
+        else:
+            code_generation_register = src.phase.code_generation_register.GenerateCodeRegister()
+            code_generation_register.generate_code(desugared_IR)
+            register_program_code = code_generation_register.get_code()
+            control_flow = src.phase.liveness.Liveness()
+            register_program_code = control_flow.perform_register_allocation(register_program_code)
+            assembly_code = code_emitter.emit(register_program_code)
+
 
         if self.args.runTests:
             output = self.args.output
@@ -83,7 +87,7 @@ class PandaCompiler:
         with open(f"{output}.s", "w") as f:
             f.write(assembly_code)
 
-        if self.args.compile:
+        if self.args.compile or self.args.run:
             subprocess.call(["gcc", f"{output}.s", "-o", f"{output}.out"])
 
         if self.args.run:

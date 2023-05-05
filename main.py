@@ -17,13 +17,13 @@ argparser.add_argument(
     '-c', '--compile',
     default=False,
     action='store_true',
-    help="Set this flag if the output file should be compilled with gcc"
+    help="Compile output with gcc"
 )
 argparser.add_argument(
     '-d', '--debug',
     default=False,
     action='store_true',
-    help="Set this flag for debugging information, i.e., ILOC and Graphviz"
+    help="Debugging information, i.e., ILOC and Graphviz"
 )
 argparser.add_argument(
     '-f', '--file',
@@ -41,6 +41,12 @@ argparser.add_argument(
     default=False,
     action='store_true',
     help="Run compilled program"
+)
+argparser.add_argument(
+    '-s', '--stack',
+    default=False,
+    action='store_true',
+    help="Use stack only; default is registers"
 )
 
 args = argparser.parse_args()

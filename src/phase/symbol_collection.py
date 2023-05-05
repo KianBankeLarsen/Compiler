@@ -116,7 +116,7 @@ class ASTSymbolIncorporator:
                 self._current_scope = SymbolTable(self._current_scope)
                 ast_node.symbol_table = self._current_scope
                 ast_node.number_of_parameters = 1
-                symval = Symbol(iter.type, NameCategory.PARAMETER, 0)
+                symval = Symbol(iter.type, NameCategory.PARAMETER, 0, escaping=True)
                 self._current_scope.insert(iter.name, symval, lineno)
                 self._build_symbol_table(body)
                 self._current_scope = self._current_scope.parent

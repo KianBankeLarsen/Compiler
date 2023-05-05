@@ -49,8 +49,6 @@ class T(Enum):
     RRT = auto()  # register: return value
     RSL = auto()  # register: static link computation
     REG = auto()  # general-purpose registers
-    
-    CMP = auto()
 
 
 class Meta(Enum):
