@@ -564,7 +564,7 @@ def _follow_static_link(self, symbol_level: int) -> int:
             for _ in range(level_difference-1)]
     )
     \end{minted}
-    \caption{Remove multiple stack frames if needed.}
+    \caption{Tear down multiple stack frames if needed.}
     \label{fig:remove_stack_frames}
 \end{figure}
 
@@ -724,6 +724,19 @@ def emit(self, iloc_ir: list[iloc.Instruction]) -> str:
     return "\n".join(self._code)
 \end{minted}
 
+\todo{Consider output}
+\begin{minted}{asm}
+main:
+    pushq %rbx
+    pushq %r12
+    pushq %r13
+    pushq %r14
+    pushq %r15
+
+    pushq %rbp
+    movq %rsp, %rbp
+\end{minted}
+
 \chapter{Testing}
 The main benefit of testing is the identification and subsequent mitigation of errors. It is to be expected to find errors in larger projects, which is why there must be a way to quickly and dynamically run tests during development. Testing helps software developers compare expected and actual output in order to improve quality. In this case, only system testing is carried out, although a higher granularity of testing would only enrich the project. There are many tools available to solve this task, which is why the big challenge lies in choosing the tool that best suits the problem. The most advanced tool is not always the best solution. The chosen tools in this project are the testing framework \texttt{unittest} and the coverage tool \texttt{coverage.py}. In addition, SonarLint is used to perform static code analysis within the IDE to provide best-practice hints, cognitive complexity metrics and more -- not important but worth mentioning.
 
@@ -789,7 +802,7 @@ The test suite is automatically run on every pull request or push to GitHub as p
 \begin{figure}[H]
     \centering
     \includegraphics[width=1\textwidth]{misc/images/GitHub_Actions.png}
-    \caption{GitHub Actions for unit testing.}
+    \caption{GitHub Actions for system testing.}
 \end{figure}
 
 That way, one know exactly which push or pull request caused the tests to fail, and associated code is directly available from the workflow via commit ID. History for workflow is available too.
@@ -809,20 +822,19 @@ A workflow build consists of the stages stated in Figure \ref{fig:workflow_run}.
     \label{fig:workflow_run}
 \end{figure}
 
+The list of tests is too long to mention each one, instead two tests that caused particularly many problems have been chosen. The tests are representative because they have a relatively high complexity, as the input programs utilize recursion, loops and nested scopes. For this to work properly, it requires that the constructs and static link pointer works correctly. In addition, it must be possible to tear down several stack frames at once, since every scope introduces a new stack frame. Failing to remove a stack frame properly causes problems in the postreturn and epilog phase, and in worst case segmentation fault. 
+
+The test below is borrowed from SCIL. The test is named summers.panda.
+
 \begin{minted}{c}
 int sum_recurse(int n) {
-    if(n == 1) {
-        return 1;
-    } else {
+    if(n == 1) {return 1;} else {
         return n + sum_recurse(n - 1);
     }
 }
-
 int sum_loop(int n) {
     int sum, i;
-  
-    i = 1;
-    sum = 0;
+    i = 1; sum = 0;
     while(i <= n) {
         sum = sum + i;
         i = i + 1;
@@ -830,15 +842,14 @@ int sum_loop(int n) {
     return sum;
 }
 
-print(sum_recurse(9));
-print(sum_loop(9));
-print(sum_recurse(42));
-print(sum_loop(42));
+print(sum_recurse(9)); print(sum_loop(9));
+print(sum_recurse(42)); print(sum_loop(42));
 \end{minted}
 
-\begin{minted}{c}
-int i;
+The test below does not calculate anything meaningful or difficult, but it checks that the functionality implemented in Figure \ref{fig:remove_stack_frames} works as expected.
 
+\begin{minted}{c}
+int i = 5;
 int main(){
     if(1){
         if(1){
@@ -849,11 +860,10 @@ int main(){
         }
     }
 }
-
-i = 5;
-
 print(main());
 \end{minted}
+
+The goal has been to test all legal semantic thoroughly. This includes assignment to variables declared outside the current scope. Assignment to formal parameters, recursion, return from static nested scopes, comments, sugared declaration with assignment, binary operations (comparisons and arithmetic) and constructs like \texttt{while}, \texttt{for}, \texttt{if} and \texttt{print}.
 
 \newpage
 

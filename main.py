@@ -11,7 +11,7 @@ argparser = argparse.ArgumentParser(
 argparser.add_argument(
     '-o', '--output',
     default='a',
-    help="Specify name of assembly output file"
+    help="Name of assembly output file"
 )
 argparser.add_argument(
     '-c', '--compile',
@@ -28,7 +28,7 @@ argparser.add_argument(
 argparser.add_argument(
     '-f', '--file',
     default=False,
-    help="Path to input file, otherwise stdin will be used"
+    help="Path to input file; default is stdin."
 )
 argparser.add_argument(
     '-t', '--runTests',
