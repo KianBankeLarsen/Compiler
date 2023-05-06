@@ -1,0 +1,17 @@
+\begin{tikzpicture}
+    \node[anchor=south east] at (0,0) {$2^n$};
+    \node[anchor=north east] at (0,5.25) {Low};
+    \draw (0,0) rectangle ++(5, 0.75) node[pos=.5]{Parameter Area};
+    \draw (0,0.75) rectangle ++(5, 0.75) node[pos=.5]{Caller-Save Area};
+    \draw (0,1.5) rectangle ++(5, 0.75) node[pos=.5]{Callers ARP};
+    \draw (0,2.25) rectangle ++(5, 0.75) node[pos=.5]{Return Address};
+    \draw (0,3) rectangle ++(5, 0.75) node[pos=.5]{Callee-Save Area};
+    \draw (0,3.75) rectangle ++(5, 0.75) node[pos=.5]{Local Data Area};
+    \draw (0,4.5) rectangle ++(5, 0.75) node[pos=.5]{Temporary Saves};
+    \draw[->, dashed] (5.75, 5.25) --++ (-0.75, 0) node[right, xshift=.8cm]{\%RSP};
+    \draw[->, dashed] (5.75, 3.75) --++ (-0.75, 0) node[right, xshift=.8cm]{\%RBP};
+    \draw[->, dashed] (5.75, 0.75) --++ (-0.75, 0) node[right, xshift=.8cm]{$\text{\%RBP} + 128$};
+    \draw [decorate, decoration = {calligraphic brace, raise=2pt, amplitude=5pt}] (0,0.75) --++  (0,1.5) node[midway, xshift=-1cm]{Precall};
+    \draw [decorate, decoration = {calligraphic brace, raise=2pt, amplitude=5pt}] (0,2.25) --++  (0,0.75) node[midway, xshift=-1cm]{Call};
+    \draw [decorate, decoration = {calligraphic brace, raise=2pt, amplitude=5pt}] (0,3) --++  (0,0.75) node[midway, xshift=-1cm]{Prolog};
+\end{tikzpicture}

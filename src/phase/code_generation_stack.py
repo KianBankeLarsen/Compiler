@@ -333,24 +333,14 @@ class GenerateCodeStack(src.phase.code_generation_base.GenerateCodeBase):
                                     Operand(Target(T.RRT), Mode(M.DIR)))
                     )
 
-                symbol, symbol_level = self._current_scope.lookup(func.name)
+                _, symbol_level = self._current_scope.lookup(func.name)
                 level_difference = self._current_scope.level - symbol_level
 
-                self._append_instruction(
-                    Instruction(Op.MOVE,
-                                Operand(Target(T.RBP), Mode(M.DIR)),
-                                Operand(Target(T.RSL), Mode(M.DIR)))
-                )
                 self._get_code_block_to_extend().extend(
                     [Instruction(Op.MOVE,
-                                    Operand(Target(T.RSL), Mode(M.IRL, -7)),
-                                    Operand(Target(T.RSL), Mode(M.DIR)))
+                                    Operand(Target(T.RBP), Mode(M.IRL, -7)),
+                                    Operand(Target(T.RBP), Mode(M.DIR)))
                         for _ in range(level_difference-1)]
-                )
-                self._append_instruction(
-                    Instruction(Op.MOVE,
-                                Operand(Target(T.RSL), Mode(M.DIR)),
-                                Operand(Target(T.RBP), Mode(M.DIR)))
                 )
 
                 self._append_instruction(

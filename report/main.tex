@@ -484,13 +484,195 @@ Reusing the input program from Figure \ref{fig:ex_program}, we can observe that 
 \section{Code Generation} \label{sec:code-gen}
 \cite{ModernCompilerImplementation}
 
+\begin{figure}[H]
+    \centering
+    \input{misc/tikz/virtual_adress-space.tex}
+    \caption{Virtual address-space layout.} 
+    \label{fig:address_space}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \input{misc/tikz/stack_frame.tex}
+    \caption{Stack Frame.} 
+    \label{fig:stack}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \input{misc/tikz/procedure_linkage.tex}
+    \caption{Procedure linkage.} 
+    \label{fig:procedure}
+\end{figure}
+
+\begin{minted}{py3}
+@dataclass(init=False)
+class Instruction:
+    opcode: Op
+    args: list(Operand)
+
+    def __init__(self, *args) -> Instruction:
+        self.opcode = args[0]
+        self.args = args[1:]
+\end{minted}
+
+\begin{minted}{py3}
+@dataclass
+class Operand:
+    target: Target
+    addressing: Mode
+\end{minted}
+
+\begin{minted}{py3}
+[
+    Instruction(opcode=<Op.LABEL: '7'>,
+        args=(Operand(target=Target(spec=<T.MEM: 2>, val='main'),
+                    addressing=Mode(mode=<M.DIR: 1>, offset=None)),)),
+    Instruction(opcode=<Op.META: '8'>, args=(<Meta.PROLOG: 2>,)),
+    ...
+]
+\end{minted}
+
+\begin{minted}{py3}
+def _follow_static_link(self, symbol_level: int) -> int:
+    level_difference = self._current_scope.level - symbol_level
+
+    self._append_instruction(
+        Instruction(Op.MOVE,
+                    Operand(Target(T.RBP), Mode(M.DIR)),
+                    Operand(Target(T.RSL), Mode(M.DIR)))
+    )
+    self._get_code_block_to_extend().extend(
+        [Instruction(Op.MOVE,
+                        Operand(Target(T.RSL), Mode(M.IRL, -7)),
+                        Operand(Target(T.RSL), Mode(M.DIR)))
+            for _ in range(level_difference)]
+    )
+
+    return level_difference
+\end{minted}
+
+\begin{minted}{py3}
+_, symbol_level = self._current_scope.lookup(func.name)
+level_difference = self._current_scope.level - symbol_level
+
+self._get_code_block_to_extend().extend(
+    [Instruction(Op.MOVE,
+                    Operand(Target(T.RBP), Mode(M.IRL, -7)),
+                    Operand(Target(T.RBP), Mode(M.DIR)))
+        for _ in range(level_difference-1)]
+)
+\end{minted}
+
+\begin{minted}{py3}
+case AST.Function(body=body):
+    ...
+    self._ensure_labels(ast_node)
+
+    self._append_instruction(
+        Instruction(Op.LABEL,
+                    Operand(Target(T.MEM, ast_node.start_label), Mode(M.DIR)))
+    )
+    self._prolog(body)
+    self._generate_code(body.stm_list)
+    self._append_instruction(
+        Instruction(Op.LABEL,
+                    Operand(Target(T.MEM, ast_node.end_label), Mode(M.DIR)))
+    )
+    self._epilog()
+    self._append_instruction(
+        Instruction(Op.META, Meta.RET)
+    )
+    self._generate_code(body.decls)
+    ...
+\end{minted}
+
 \newpage
 
 \subsection{Stack Machine}
+\begin{minted}{py3}
+case AST.ExpressionBinop(binop, lhs, rhs) if binop in [Op.ADD, Op.SUB, Op.DIV, Op.MUL]:
+    self._generate_code(lhs)
+    self._generate_code(rhs)
+
+    self._append_instruction(
+        Instruction(Op.POP,
+                    Operand(Target(T.REG, 1), Mode(M.DIR)))
+    )
+    self._append_instruction(
+        Instruction(Op.POP,
+                    Operand(Target(T.REG, 2), Mode(M.DIR)))
+    )
+    self._append_instruction(
+        Instruction(binop,
+                    Operand(Target(T.REG, 1), Mode(M.DIR)),
+                    Operand(Target(T.REG, 2), Mode(M.DIR)))
+    )
+    self._append_instruction(
+        Instruction(Op.PUSH,
+                    Operand(Target(T.REG, 2), Mode(M.DIR)))
+    )
+\end{minted}
 
 \newpage
 
+
 \subsection{Register Allocation}
+\begin{minted}{py3}
+case AST.ExpressionBinop(binop, lhs, rhs) if binop in [Op.ADD, Op.SUB, Op.DIV, Op.MUL]:
+    self._generate_code(lhs)
+    self._generate_code(rhs)
+
+    reg1 = self._reg_stack_pop()
+    reg2 = self._reg_stack_pop()
+
+    self._push_new_reg_count()
+
+    self._append_instruction(
+        Instruction(Op.MOVE,
+                    Operand(Target(T.REG, reg2), Mode(M.DIR)),
+                    Operand(Target(T.REG, self._reg_count), Mode(M.DIR)))
+    )
+    self._append_instruction(
+        Instruction(binop,
+                    Operand(Target(T.REG, reg1), Mode(M.DIR)),
+                    Operand(Target(T.REG, self._reg_count), Mode(M.DIR)))
+    )
+\end{minted}
+
+\ldots\todo{Ongoing}
+
+\newpage
+
+\section{Emit}
+
+\begin{minted}{py3}
+self._callee_save_reg: list[str] = ["rbx", "r12", "r13", "r14", "r15", "rbp"]
+self._calleer_save_reg: list[str] = ["rcx", "rdx", "rsi", "rdi", "r8", "r9", "r10", "r11"]
+\end{minted}
+
+\begin{minted}{py3}
+self._labels = Labels()
+\end{minted}
+
+\begin{minted}{py3}
+self._enum_to_method_map = {
+    Meta.CALL_PRINTF: self._call_printf,
+    Meta.PROLOG: self._prolog,
+    Meta.EPILOG: self._epilog,
+    Meta.PRECALL: self._precall,
+    Meta.POSTRETURN: self._postreturn,
+    Meta.RET: self._ret
+}
+\end{minted}
+
+\begin{minted}{py3}
+def emit(self, iloc_ir: list[iloc.Instruction]) -> str:
+    self._program_prologue()
+    list(map(self._dispatch, iloc_ir))
+    self._code.append("\n")
+    return "\n".join(self._code)
+\end{minted}
 
 \chapter{Testing}
 The main benefit of testing is the identification and subsequent mitigation of errors. It is to be expected to find errors in larger projects, which is why there must be a way to quickly and dynamically run tests during development. Testing helps software developers compare expected and actual output in order to improve quality. In this case, only system testing is carried out, although a higher granularity of testing would only enrich the project. There are many tools available to solve this task, which is why the big challenge lies in choosing the tool that best suits the problem. The most advanced tool is not always the best solution. The chosen tools in this project are the testing framework \texttt{unittest} and the coverage tool \texttt{coverage.py}. In addition, SonarLint is used to perform static code analysis within the IDE to provide best-practice hints, cognitive complexity metrics and more -- not important but worth mentioning.
@@ -568,7 +750,7 @@ That way, one know exactly which push or pull request caused the tests to fail, 
     \caption{Workflow history.}
 \end{figure}
 
-A workflow build consists of the stages stated in Figure \ref{fig:workflow_run}.  Note that the stack machine test passed, but the register version did not (errors are fixed, this is for presentation only).
+A workflow build consists of the stages stated in Figure \ref{fig:workflow_run}.  Note that, in this example, the stack machine test passed, but the register version did not. Upon build failure, an email is sent to whom introduced the issue.
 
 \begin{figure}[H]
     \centering
@@ -576,6 +758,54 @@ A workflow build consists of the stages stated in Figure \ref{fig:workflow_run}.
     \caption{Workflow run. Red indicates failure.}
     \label{fig:workflow_run}
 \end{figure}
+
+\begin{minted}{c}
+int sum_recurse(int n) {
+    if(n == 1) {
+        return 1;
+    } else {
+        return n + sum_recurse(n - 1);
+    }
+}
+
+int sum_loop(int n) {
+    int sum, i;
+  
+    i = 1;
+    sum = 0;
+    while(i <= n) {
+        sum = sum + i;
+        i = i + 1;
+    }
+    return sum;
+}
+
+print(sum_recurse(9));
+print(sum_loop(9));
+print(sum_recurse(42));
+print(sum_loop(42));
+\end{minted}
+
+\begin{minted}{c}
+int i;
+
+int main(){
+    if(1){
+        if(1){
+            if(1){
+                i = i + 1;
+                return i;
+            }
+        }
+    }
+}
+
+i = 5;
+
+print(main());
+\end{minted}
+
+\newpage
 
 \section{Coverage}
 Coverage cannot and should not be a measure of test quality, because the order in which functions and flow are executed has a great influence on the result. However, code coverage gives a direct warning if subsets of the code have not been tested at all. Thus, it is clear that more tests need to be written.
@@ -674,7 +904,7 @@ It has been a core value throughout the project to make a well-defined compiler 
 
 The approach to the project has been academically based on literature, in order to gain an overview of new as well as old knowledge. Although this has given a confident approach to the project, it must be recognized that it has dulled the process unnecessarily. When coding a project such as a compiler that consists of relatively many lines of code, and many hours of debugging, it is necessary to purposefully choose a theme and then learn as needed, otherwise many hours are lost on something that is not directly applicable. It is of course not wasted, but not beneficial for the project either.
 
-This is a test
+This is a test (The scopes was a bad idea)
 
 \dots\todo{Results on comparison}
 

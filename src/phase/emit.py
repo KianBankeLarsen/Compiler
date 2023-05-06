@@ -166,6 +166,7 @@ class Emit:
         self._append_section("globl main")
         self._append_newline()
 
+    #* The printf function is borrowed from SCIL.
     def _call_printf(self):
         # pass 1. argument in %rdi
         self._append_instruction("leaq form(%rip), %rdi")
