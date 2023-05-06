@@ -482,7 +482,6 @@ Reusing the input program from Figure \ref{fig:ex_program}, we can observe that 
 \newpage
 
 \section{Code Generation} \label{sec:code-gen}
-\cite{ModernCompilerImplementation}
 
 \begin{figure}[H]
     \centering
@@ -552,17 +551,22 @@ def _follow_static_link(self, symbol_level: int) -> int:
     return level_difference
 \end{minted}
 
+\begin{figure}[H]
+    \centering
 \begin{minted}{py3}
-_, symbol_level = self._current_scope.lookup(func.name)
-level_difference = self._current_scope.level - symbol_level
-
-self._get_code_block_to_extend().extend(
-    [Instruction(Op.MOVE,
-                    Operand(Target(T.RBP), Mode(M.IRL, -7)),
-                    Operand(Target(T.RBP), Mode(M.DIR)))
-        for _ in range(level_difference-1)]
-)
-\end{minted}
+    _, symbol_level = self._current_scope.lookup(func.name)
+    level_difference = self._current_scope.level - symbol_level
+    
+    self._get_code_block_to_extend().extend(
+        [Instruction(Op.MOVE,
+                        Operand(Target(T.RBP), Mode(M.IRL, -7)),
+                        Operand(Target(T.RBP), Mode(M.DIR)))
+            for _ in range(level_difference-1)]
+    )
+    \end{minted}
+    \caption{Remove multiple stack frames if needed.}
+    \label{fig:remove_stack_frames}
+\end{figure}
 
 \begin{minted}{py3}
 case AST.Function(body=body):
@@ -618,6 +622,7 @@ case AST.ExpressionBinop(binop, lhs, rhs) if binop in [Op.ADD, Op.SUB, Op.DIV, O
 
 
 \subsection{Register Allocation}
+\cite{ModernCompilerImplementation}
 \begin{minted}{py3}
 case AST.ExpressionBinop(binop, lhs, rhs) if binop in [Op.ADD, Op.SUB, Op.DIV, Op.MUL]:
     self._generate_code(lhs)
@@ -640,7 +645,52 @@ case AST.ExpressionBinop(binop, lhs, rhs) if binop in [Op.ADD, Op.SUB, Op.DIV, O
     )
 \end{minted}
 
-\ldots\todo{Ongoing}
+\begin{figure}[H]
+    \centering
+    \input{misc/tikz/abstract_flow_graph.tex}
+    \caption{Abstract flow graph.}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \input{misc/tikz/loop_construction.tex}
+    \caption{Loop construction flow graph.}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \input{misc/tikz/if_construction.tex}
+    \caption{\texttt{if} construction flow graph.}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \input{misc/tikz/flow_restriction.tex}
+    \caption{Flow restriction due to scope implementation.}
+\end{figure}
+
+\begin{minted}{py3}
+# Example code
+\end{minted}
+
+\begin{minted}{py3}
+# Show in sets
+\end{minted}
+
+\begin{minted}{py3}
+# Show graph
+\end{minted}
+
+\begin{minted}{py3}
+# Show colors
+\end{minted}
+
+This is the colored graph:
+\begin{figure}[H]
+    \centering
+    \input{misc/tikz/interference_graph.tex}
+    \caption{Interference graph (TODO: do real example).}
+\end{figure}
 
 \newpage
 
