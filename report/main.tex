@@ -362,7 +362,7 @@ More examples can be found in the \texttt{/testing/test-cases/} folder.
 \newpage
 
 \section{Symbol Collection}\label{sec:symbol_collection}
-The compiler discovers the names and properties of many entities during parsing. For each name used in the program, the compiler needs a variety of information before it can generate code to manipulate that entity. The Symbol Collection phase implements a recursive traversal of the AST in order to collect symbols into symbol tables.
+Symbol collection is the third phase of the compilers front end. The compiler discovers the names and properties of many entities during parsing. For each name used in the program, the compiler needs a variety of information before it can generate code to manipulate that entity. The Symbol Collection phase implements a recursive traversal of the AST in order to collect symbols into symbol tables.
 
 Each scope has its own symbol table and each symbol within that scope is stored in that symbol table. The sole purpose of scopes is to encapsulate symbols so that logically separate parts of the program do not interfere. The introduction of scopes makes it possible to reuse symbol names, which is convenient, and a necessity when using recursion. The scoping mechanism implemented in Panda is static nested scoping. ``Static" because it can be determined where a symbol is accessible and visible by reasoning about the lexical structure of the source program -- this is often a cognitive comprehensive task when reading programs based on dynamic scoping. ``Nested" refer to the hierarchical separation of scopes. The primary purpose of a symbol table is to resolve names. When the compiler finds a symbol, it needs a mechanism that maps that symbol back to its declaration; otherwise we would not be able to locate the entity in memory.
 
@@ -451,7 +451,7 @@ int a;
 \end{minted}
 
 \section{Desugar}\label{sec:desugar}
-Desugar is a phase that has been included because it was realized that the way nodes were visited during code generation was inexpedient, although necessary. The problem is only associated with the grammar:
+Desugar is the fourth, and last, phase of the compiles front end. Desugar is a phase that has been included because it was realized that the way nodes were visited during code generation was inexpedient, although necessary. The problem is only associated with the grammar:
 
 \begin{center}
 \texttt{variable\_init\_declaration : type IDENT ASSIGN expression SEMICOL}
@@ -695,15 +695,9 @@ This is the colored graph:
 \newpage
 
 \section{Emit}
+The emit phase is the last phase in the compiler's back end. It is in this phase that the internal representation introduced in the code generation is made into actual assembler instructions, which can be compiled into machine code using \texttt{gcc}.
 
-\begin{minted}{py3}
-self._callee_save_reg: list[str] = ["rbx", "r12", "r13", "r14", "r15", "rbp"]
-self._calleer_save_reg: list[str] = ["rcx", "rdx", "rsi", "rdi", "r8", "r9", "r10", "r11"]
-\end{minted}
-
-\begin{minted}{py3}
-self._labels = Labels()
-\end{minted}
+The mapping from the internal representation is almost 1:1, however there is small deviations such as the use of \texttt{\%RSL}, which is a virtual register used to calculate links, and that register does not exist nativelty on the x86 architecture. In addition, it is necessary to handle a handful of \texttt{Meta} instructions, because it made sense to assemble these into such composite instructions, and then let the emit phase handle the actual code for this, since it is the same every time -- these instructions could as well have been represented in the linear IR. The \texttt{Meta} instructions are:
 
 \begin{minted}{py3}
 self._enum_to_method_map = {
@@ -716,6 +710,27 @@ self._enum_to_method_map = {
 }
 \end{minted}
 
+The \texttt{Meta} instructions is thus simply mapped using a dictionary in python, mapping the Enum to a function implemented within the Emit class.
+
+The majority of these functions are functions used during procedure linkage, which is why it makes sense to declare exactly which registers are callee-save and caller-save registers:
+
+\begin{minted}{py3}
+self._callee_save_reg: list[str] = ["rbx", "r12", "r13", "r14", "r15", "rbp"]
+self._calleer_save_reg: list[str] = ["rcx", "rdx", "rsi", "rdi", "r8", "r9", "r10", "r11"]
+\end{minted}
+
+It might also have been advantageous to have specified these fields in another class, so that variable offsets did not have to be hardcoded in the code generation, but could instead have been implemented as a function on the two lists. Adding extra callee-save and caller-save would then not require futher intervention.
+
+\texttt{Meta.CALL\_PRINTF} uses labels to ensure correct memory alignment, and we therefore want to reuse \texttt{Labels} instantiated during code generations. This is achieved using the property that the class is declared singleton, and Python will therefore just return the same instance as used in code generation, without manually having to pass that instance to code emition:
+
+\begin{minted}{py3}
+self._labels = Labels()
+\end{minted}
+
+It is important that the counter within \texttt{Labels} is not reset, since this could, in the worst case, cause clashing labels, meaning that the program would be incorrect and in turn prevent \texttt{gcc} from being able to compile it, since labels are no longer ensured to be unique.
+
+The code snippet given below is responsible for ``dispatching'' any ILOC instruction to an assembly instruction. Because the ILOC instructions are provided as a list, one can simply iterate through the list and translate the individual instruction as intended. The native function \texttt{map} is used though this is not the intended use of it, as \texttt{\_dispatch} accumulates its result in a field called \texttt{\_code}. However, it is nice to think of it as a mapping, why it is done that way. Also, map is a concise way to do iteration even if the resulting list just contains None.
+
 \begin{minted}{py3}
 def emit(self, iloc_ir: list[iloc.Instruction]) -> str:
     self._program_prologue()
@@ -723,6 +738,13 @@ def emit(self, iloc_ir: list[iloc.Instruction]) -> str:
     self._code.append("\n")
     return "\n".join(self._code)
 \end{minted}
+
+The final result of \texttt{emit} is a single string containing all the generated assembler code, including newlines. The output string can therefore just be inserted directly into any file using Python's built-in I/O library.
+
+\begin{minted}{py3}
+# How is spill code handled.
+\end{minted}
+    
 
 \todo{Consider output}
 \begin{minted}{asm}
