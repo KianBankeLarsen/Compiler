@@ -17,6 +17,7 @@ class Emit:
         self._labels = Labels()
         self._instruction_indent = 16
         self._code = []
+        self.count = 0
 
         self._enum_to_method_map = {
             Meta.CALL_PRINTF: self._call_printf,
@@ -51,6 +52,11 @@ class Emit:
         self._code.append(f".{section}")
 
     def _dispatch(self, instruction) -> None:
+        if instruction.opcode is not Op.LABEL and instruction.opcode is not Op.META:
+            for arg in instruction.args:
+                if arg.target.spec == T.REG and arg.target.val is None:
+                    return
+
         match instruction:
             case iloc.Instruction(opcode, args) if opcode in intermediate_to_x86:
                 line = intermediate_to_x86[opcode]
@@ -113,8 +119,6 @@ class Emit:
                 text = "%r14"
             case iloc.Target(spec=T.REG, val=11):
                 text = "%r15"
-            case iloc.Target(spec=T.REG, val=None):
-                raise ValueError("You are using to many registers")
             case _:
                 raise ValueError(f"Unkown target: {operand.target}")
 

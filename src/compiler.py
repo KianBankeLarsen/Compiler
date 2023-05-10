@@ -64,19 +64,22 @@ class PandaCompiler:
 
 
         code_emitter = src.phase.emit.Emit()
+        code = None
 
         if self.args.stack:
             code_generation_stack = src.phase.code_generation_stack.GenerateCodeStack()
             code_generation_stack.generate_code(desugared_IR)
             stack_program_code = code_generation_stack.get_code()
-            assembly_code = code_emitter.emit(stack_program_code)
+            code = stack_program_code
+            assembly_code = code_emitter.emit(code)
         else:
             code_generation_register = src.phase.code_generation_register.GenerateCodeRegister()
             code_generation_register.generate_code(desugared_IR)
             register_program_code = code_generation_register.get_code()
             control_flow = src.phase.liveness.Liveness()
             register_program_code = control_flow.perform_register_allocation(register_program_code)
-            assembly_code = code_emitter.emit(register_program_code)
+            code = register_program_code
+            assembly_code = code_emitter.emit(code)
 
 
         if self.args.runTests:
@@ -111,7 +114,7 @@ class PandaCompiler:
 
             with open(f"{output}.stack.iloc", 'w') as f:
                 pp = pprint.PrettyPrinter(stream=f)
-                pp.pprint(stack_program_code)
+                pp.pprint(code)
 
             # with open(f"{output}.register.iloc", 'w') as f:
             #     pp = pprint.PrettyPrinter(stream=f)

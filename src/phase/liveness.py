@@ -42,8 +42,8 @@ class Liveness:
     def _control_flow(self, code: list) -> None:
         def setup_linking(before, instruction: Instruction) -> None:
             if before:
-                instruction.succ.append(before)
-                before.pred.append(instruction)
+                instruction.pred.append(before)
+                before.succ.append(instruction)
 
         for ins in code:
             match ins:
@@ -72,8 +72,8 @@ class Liveness:
                 case Instruction(opcode=op, args=(Operand(target=Target(val=label)), )) if op in [Op.JE, Op.JNE, Op.JL, Op.JG, Op.JGE, Op.JLE, Op.JMP]:
                     node = self._labels[label]
                     if node is not None:
-                        before.pred.append(node)
-                        node.succ.append(before)
+                        before.succ.append(node)
+                        node.pred.append(before)
 
     def _live_set_changed_and_out_calc(self, ins: Instruction) -> bool:
         change = None
