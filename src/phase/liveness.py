@@ -1,13 +1,15 @@
-from src.dataclass.iloc import Instruction, Operand, Target
-from src.enums.code_generation_enum import Op, T
 import copy
 from collections import defaultdict
+
+from src.dataclass.iloc import Instruction, Operand, Target
+from src.enums.code_generation_enum import Op, T
+
 
 class Liveness:
     """
     """
-    
-    _labels : dict = {}
+
+    _labels: dict = {}
 
     def _find_labels(self, code: list) -> None:
         i = 0
@@ -100,16 +102,16 @@ class Liveness:
                         ins.in_ = ins.in_.union(ins.out - {val_def})
                     case _:
                         ins.in_ = ins.in_.union(ins.out - {val_def})
-                
+
                 matched = ins
             case Instruction(opcode=op, args=(Operand(target=Target(spec=T.REG, val=val1)),
-                                            Operand(target=Target(spec=T.REG, val=val2)))) if op in [Op.ADD, Op.SUB, Op.DIV, Op.MUL]:
+                                              Operand(target=Target(spec=T.REG, val=val2)))) if op in [Op.ADD, Op.SUB, Op.DIV, Op.MUL]:
                 ins.in_.add(val1)
                 ins.in_.add(val2)
                 ins.in_ = ins.in_.union(ins.out - {val2})
                 matched = ins
             case Instruction(args=(Operand(target=Target(spec=T.REG, val=val1)),
-                                Operand(target=Target(spec=T.REG, val=val2)))):
+                                   Operand(target=Target(spec=T.REG, val=val2)))):
                 ins.in_.add(val1)
                 ins.in_.add(val2)
                 ins.in_ = ins.in_.union(ins.out)
@@ -118,7 +120,7 @@ class Liveness:
                 ins.in_.add(val)
                 ins.in_.union(ins.out)
                 matched = ins
-            case Instruction(args=(Operand(target=Target(spec=T.REG, val=val)), )):                
+            case Instruction(args=(Operand(target=Target(spec=T.REG, val=val)), )):
                 ins.in_.add(val)
                 ins.in_ = ins.in_.union(ins.out)
                 matched = ins
@@ -129,7 +131,7 @@ class Liveness:
     def _liveness_analysis(self, code: list) -> None:
         change = True
 
-        while(change):
+        while (change):
             change = False
 
             for ins in reversed(code):
@@ -140,7 +142,7 @@ class Liveness:
         graph = {}
 
         if graphs is None:
-            graphs = [] 
+            graphs = []
 
         for ins in code:
             node = None
@@ -153,9 +155,9 @@ class Liveness:
                     node = ins
                 case Instruction(args=(Operand(target=Target(spec=T.REG)), )):
                     node = ins
-                
+
             if node:
-                #print(node, node.in_)
+                # print(node, node.in_)
                 for i in node.in_:
                     if i not in graph:
                         graph[i] = set()
@@ -179,7 +181,7 @@ class Liveness:
     def _take_graph_apart(self, graph: defaultdict) -> list:
         stack = []
 
-        while(graph):
+        while (graph):
             found = None
             for node, adj in graph.items():
                 if len(adj) < 9:
@@ -190,11 +192,11 @@ class Liveness:
                 # Pick random
                 found = list(graph.items())[0]
 
-            stack.append(found)  
+            stack.append(found)
             self._remove_node_from_graph(graph, found[0])
 
         return stack
-    
+
     def _assign_colors(self, stack: list, colors: dict) -> dict:
         graph = defaultdict(set)
 
@@ -211,9 +213,9 @@ class Liveness:
                     continue
 
                 adj_colors.add(color)
-            
+
             i = 0
-            while(i := i + 1):
+            while (i := i + 1):
                 if i in adj_colors:
                     continue
                 else:
@@ -222,13 +224,13 @@ class Liveness:
 
     def _color_graph(self, graphs: list[defaultdict]) -> dict[int, int]:
         colors = defaultdict(lambda: None)
-        
+
         for graph in graphs:
             stack = self._take_graph_apart(graph)
             self._assign_colors(stack, colors)
 
         return colors
-    
+
     def _rename_registers(self, colors: dict, code: list) -> None:
         for ins in code:
             match ins:
@@ -256,7 +258,7 @@ class Liveness:
     def perform_register_allocation(self, code: list) -> list[Instruction]:
         """
         """
-        
+
         code = copy.deepcopy(code)
 
         self._find_labels(code)

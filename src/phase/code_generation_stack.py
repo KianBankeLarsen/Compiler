@@ -322,7 +322,7 @@ class GenerateCodeStack(src.phase.code_generation_base.GenerateCodeBase):
                     Instruction(Op.ADD,
                                 Operand(Target(T.IMI, 8), Mode(M.DIR)),
                                 Operand(Target(T.RSP), Mode(M.DIR)))
-                    )
+                )
             case AST.StatementReturn(exp):
                 self._generate_code(exp)
                 func = self._function_stack[-1]
@@ -338,8 +338,8 @@ class GenerateCodeStack(src.phase.code_generation_base.GenerateCodeBase):
 
                 self._get_code_block_to_extend().extend(
                     [Instruction(Op.MOVE,
-                                    Operand(Target(T.RBP), Mode(M.IRL, -7)),
-                                    Operand(Target(T.RBP), Mode(M.DIR)))
+                                 Operand(Target(T.RBP), Mode(M.IRL, -7)),
+                                 Operand(Target(T.RBP), Mode(M.DIR)))
                         for _ in range(level_difference-1)]
                 )
 

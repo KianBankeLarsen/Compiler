@@ -3,25 +3,23 @@ import pprint
 import subprocess
 from dataclasses import dataclass
 
-import src.phase.code_generation_stack
 import src.phase.code_generation_register
+import src.phase.code_generation_stack
 import src.phase.emit
 import src.phase.lexer
+import src.phase.liveness
 import src.phase.parser
 import src.phase.symbol_collection
 import src.phase.syntactic_desugaring
-import src.phase.liveness
 import src.printer.ast_printer as ast_printer
 import src.printer.symbol_printer as Symbol_printer
 import src.utils.interfacing_parser as interfacing_parser
 
-# pp = pprint.PrettyPrinter()
-# pp.pprint(register_program_code)
 
 @dataclass
 class PandaCompiler:
     """The actual compiler. 
-    
+
     The API exposes compile.
 
     The compiler is instantiated with argparse options.
@@ -62,7 +60,6 @@ class PandaCompiler:
         desugared_AST = src.phase.syntactic_desugaring.ASTSyntacticDesugar()
         desugared_IR = desugared_AST.desugar_AST(symbol_collection_IR)
 
-
         code_emitter = src.phase.emit.Emit()
         code = None
 
@@ -77,10 +74,10 @@ class PandaCompiler:
             code_generation_register.generate_code(desugared_IR)
             register_program_code = code_generation_register.get_code()
             control_flow = src.phase.liveness.Liveness()
-            register_program_code = control_flow.perform_register_allocation(register_program_code)
+            register_program_code = control_flow.perform_register_allocation(
+                register_program_code)
             code = register_program_code
             assembly_code = code_emitter.emit(code)
-
 
         if self.args.runTests:
             output = self.args.output

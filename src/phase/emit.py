@@ -148,7 +148,7 @@ class Emit:
     def _check_reg_spill(self, instruction):
         if instructions := self._do_register_dependent_operations(instruction):
             return instructions
-        
+
         instructions.extend(self._allocate_registers_on_stack(instruction))
 
         instructions.append(

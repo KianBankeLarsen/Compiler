@@ -20,8 +20,10 @@ class GenerateCodeRegister(src.phase.code_generation_base.GenerateCodeBase):
 
     _code: list = field(default_factory=list)
     _reg_stack: list[int] = field(default_factory=list)
-    _used_symbols: list[list[dataclass_symbol.Symbol]] = field(default_factory=list)
-    _symbol_restore: list[list[dataclass_symbol.Symbol]] = field(default_factory=list)
+    _used_symbols: list[list[dataclass_symbol.Symbol]
+                        ] = field(default_factory=list)
+    _symbol_restore: list[list[dataclass_symbol.Symbol]
+                          ] = field(default_factory=list)
     _reg_count: int = 0
 
     def _push_new_reg_count(self) -> None:
@@ -401,7 +403,7 @@ class GenerateCodeRegister(src.phase.code_generation_base.GenerateCodeBase):
                     Instruction(Op.ADD,
                                 Operand(Target(T.IMI, 8), Mode(M.DIR)),
                                 Operand(Target(T.RSP), Mode(M.DIR)))
-                    )
+                )
             case AST.StatementReturn(exp):
                 self._generate_code(exp)
                 func = self._function_stack[-1]
@@ -409,7 +411,8 @@ class GenerateCodeRegister(src.phase.code_generation_base.GenerateCodeBase):
                 if exp:
                     self._append_instruction(
                         Instruction(Op.MOVE,
-                                    Operand(Target(T.REG, self._reg_stack_pop()), Mode(M.DIR)),
+                                    Operand(
+                                        Target(T.REG, self._reg_stack_pop()), Mode(M.DIR)),
                                     Operand(Target(T.RRT), Mode(M.DIR)))
                     )
 
@@ -418,8 +421,8 @@ class GenerateCodeRegister(src.phase.code_generation_base.GenerateCodeBase):
 
                 self._get_code_block_to_extend().extend(
                     [Instruction(Op.MOVE,
-                                    Operand(Target(T.RBP), Mode(M.IRL, -7)),
-                                    Operand(Target(T.RBP), Mode(M.DIR)))
+                                 Operand(Target(T.RBP), Mode(M.IRL, -7)),
+                                 Operand(Target(T.RBP), Mode(M.DIR)))
                         for _ in range(level_difference-1)]
                 )
 

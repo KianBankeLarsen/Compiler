@@ -71,7 +71,7 @@ class ASTSyntacticDesugar:
 
     def desugar_AST(self, ast_node: AST.AstNode) -> AST.AstNode:
         """Perform deep copy of provided IR before desugaring.
-        
+
         Returns new desugared IR/AST.
         """
 

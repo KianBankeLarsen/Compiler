@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import copy
+
 import src.dataclass.AST as AST
 from src.dataclass.symbol import Symbol, SymbolTable
 from src.enums.symbols_enum import NameCategory
-import copy
 
 
 class ASTSymbolIncorporator:
@@ -116,7 +117,8 @@ class ASTSymbolIncorporator:
                 self._current_scope = SymbolTable(self._current_scope)
                 ast_node.symbol_table = self._current_scope
                 ast_node.number_of_parameters = 1
-                symval = Symbol(iter.type, NameCategory.PARAMETER, 0, escaping=True)
+                symval = Symbol(
+                    iter.type, NameCategory.PARAMETER, 0, escaping=True)
                 self._current_scope.insert(iter.name, symval, lineno)
                 self._build_symbol_table(body)
                 self._current_scope = self._current_scope.parent
@@ -133,7 +135,7 @@ class ASTSymbolIncorporator:
                 self._build_symbol_table(lhs)
                 self._build_symbol_table(rhs)
             case AST.ExpressionInteger():
-                pass            
+                pass
             case None:
                 pass
             case _:
