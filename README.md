@@ -141,3 +141,5 @@ testing/test.py                             73      0   100%
 TOTAL                                     1260     29    98%
 Wrote HTML report to htmlcov/index.html
 ```
+
+Please read the report for a more in-depth review: [Report](./report/main.pdf).
