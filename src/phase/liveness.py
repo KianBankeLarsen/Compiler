@@ -3,9 +3,6 @@ from src.enums.code_generation_enum import Op, T
 import copy
 from collections import defaultdict
 
-# if(3<5){int main(){}}else{}
-# for(int i = 5; i < 6; i = i + 1){} 
-
 class Liveness:
     """
     """
@@ -185,7 +182,7 @@ class Liveness:
         while(graph):
             found = None
             for node, adj in graph.items():
-                if len(adj) < 11:
+                if len(adj) < 9:
                     found = (node, set(adj))
                     break
 
