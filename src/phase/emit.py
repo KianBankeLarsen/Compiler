@@ -1,3 +1,5 @@
+import copy
+
 import src.dataclass.iloc as iloc
 from src.enums.code_generation_enum import M, Meta, Op, T
 from src.utils.label_generator import Labels
@@ -11,13 +13,16 @@ class Emit:
     """
 
     def __init__(self):
-        self._callee_save_reg: list[str] = ["rbx", "r12", "r13", "r14", "r15", "rbp"]
-        self._calleer_save_reg: list[str] = ["rcx", "rdx", "rsi", "rdi", "r8", "r9", "r10", "r11"]
-        
+        self._callee_save_reg: list[str] = [
+            "rbx", "r12", "r13", "r14", "r15", "rbp"]
+        self._calleer_save_reg: list[str] = [
+            "rcx", "rdx", "rsi", "rdi", "r8", "r9", "r10", "r11"]
+
         self._labels = Labels()
         self._instruction_indent = 16
         self._code = []
-        self.count = 0
+        self._reg_scope = []
+        self._registers_on_stack = -1
 
         self._enum_to_method_map = {
             Meta.CALL_PRINTF: self._call_printf,
@@ -52,36 +57,41 @@ class Emit:
         self._code.append(f".{section}")
 
     def _dispatch(self, instruction) -> None:
-        if instruction.opcode is not Op.LABEL and instruction.opcode is not Op.META:
+        # Remove redundant move instructions
+        if instruction.opcode == Op.MOVE:
             for arg in instruction.args:
                 if arg.target.spec == T.REG and arg.target.val is None:
                     return
 
-        match instruction:
-            case iloc.Instruction(opcode, args) if opcode in intermediate_to_x86:
-                line = intermediate_to_x86[opcode]
-                if len(args) > 0:
-                    line += " " + self._do_operand(args[0])
-                for i in range(1, len(args)):
-                    line += ", " + self._do_operand(args[i])
-                self._append_instruction(line)
-            case iloc.Instruction(opcode=Op.DIV, args=args):
-                # prepare for division
-                self._append_instruction(
-                    f"movq {self._do_operand(args[1])}, %rax")
-                # RDX:RAX <- sign-extend of RAX
-                self._append_instruction("cqo")
-                # divide
-                self._append_instruction(f"idivq {self._do_operand(args[0])}")
-                # move to destination
-                self._append_instruction(
-                    f"movq %rax, {self._do_operand(args[1])}")
-            case iloc.Instruction(opcode=Op.LABEL, args=args):
-                self._append_label(args[0].target.val)
-            case iloc.Instruction(opcode=Op.META, args=method):
-                self._enum_to_method_map[method[0]]()
-            case _:
-                raise ValueError(f"Unknown instruction: {instruction}.")
+        instructions = self._check_reg_spill(instruction)
+
+        for ins in instructions:
+            match ins:
+                case iloc.Instruction(opcode, args) if opcode in intermediate_to_x86:
+                    line = intermediate_to_x86[opcode]
+                    if len(args) > 0:
+                        line += " " + self._do_operand(args[0])
+                    for i in range(1, len(args)):
+                        line += ", " + self._do_operand(args[i])
+                    self._append_instruction(line)
+                case iloc.Instruction(opcode=Op.DIV, args=args):
+                    # prepare for division
+                    self._append_instruction(
+                        f"movq {self._do_operand(args[1])}, %rax")
+                    # RDX:RAX <- sign-extend of RAX
+                    self._append_instruction("cqo")
+                    # divide
+                    self._append_instruction(
+                        f"idivq {self._do_operand(args[0])}")
+                    # move to destination
+                    self._append_instruction(
+                        f"movq %rax, {self._do_operand(args[1])}")
+                case iloc.Instruction(opcode=Op.LABEL, args=args):
+                    self._append_label(args[0].target.val)
+                case iloc.Instruction(opcode=Op.META, args=method):
+                    self._enum_to_method_map[method[0]]()
+                case _:
+                    raise ValueError(f"Unknown instruction: {instruction}.")
 
     def _do_operand(self, operand: iloc.Operand) -> str:
         match operand.target:
@@ -132,6 +142,101 @@ class Emit:
 
         return text
 
+
+########################### REGISTER LOGIC ######################################## REGISTER LOGIC ###########################
+
+    def _check_reg_spill(self, instruction):
+        if instructions := self._do_register_dependent_operations(instruction):
+            return instructions
+        
+        instructions.extend(self._allocate_registers_on_stack(instruction))
+
+        instructions.append(
+            self._make_reference_to_spilled_registers(instruction))
+
+        return instructions
+
+    def _do_register_dependent_operations(self, instruction):
+        instructions = []
+
+        match instruction:
+            case iloc.Instruction(opcode=op, args=(iloc.Operand(target=iloc.Target(spec=T.REG, val=val1)),
+                                                   iloc.Operand(target=iloc.Target(spec=T.REG, val=val2)))) if op in [Op.ADD, Op.SUB, Op.DIV, Op.MUL, Op.CMP]:
+                reg1 = val1
+                reg2 = val2
+
+                if val1 > 9:
+                    reg1 = 10
+                    instructions.append(
+                        iloc.Instruction(Op.MOVE,
+                                         iloc.Operand(iloc.Target(
+                                             T.RSP), iloc.Mode(M.IRL, self._reg_scope[-1][val1] - self._registers_on_stack)),
+                                         iloc.Operand(iloc.Target(T.REG, reg1), iloc.Mode(M.DIR)))
+                    )
+                if val2 > 9:
+                    reg2 = 11
+                    instructions.append(
+                        iloc.Instruction(Op.MOVE,
+                                         iloc.Operand(iloc.Target(
+                                             T.RSP), iloc.Mode(M.IRL, self._reg_scope[-1][val2] - self._registers_on_stack)),
+                                         iloc.Operand(iloc.Target(T.REG, reg2), iloc.Mode(M.DIR)))
+                    )
+
+                instructions.append(
+                    iloc.Instruction(op,
+                                     iloc.Operand(iloc.Target(
+                                         T.REG, reg1), iloc.Mode(M.DIR)),
+                                     iloc.Operand(iloc.Target(T.REG, reg2), iloc.Mode(M.DIR)))
+                )
+
+                if op is not Op.CMP and val2 > 9:
+                    instructions.append(
+                        iloc.Instruction(Op.MOVE,
+                                         iloc.Operand(iloc.Target(
+                                             T.REG, reg2), iloc.Mode(M.DIR)),
+                                         iloc.Operand(iloc.Target(T.RSP), iloc.Mode(M.IRL, self._reg_scope[-1][val2] - self._registers_on_stack)))
+                    )
+
+        return instructions
+
+    def _allocate_registers_on_stack(self, instruction):
+        instructions = []
+
+        match instruction:
+            case iloc.Instruction(opcode=Op.MOVE, args=(iloc.Operand(), iloc.Operand(target=iloc.Target(spec=T.REG, val=val)))) if val > 9:
+                if val not in self._reg_scope[-1]:
+                    self._registers_on_stack += 1
+                    self._reg_scope[-1][val] = self._registers_on_stack
+                    instructions.append(
+                        iloc.Instruction(Op.SUB,
+                                         iloc.Operand(iloc.Target(
+                                             T.IMI, 8), iloc.Mode(M.DIR)),
+                                         iloc.Operand(iloc.Target(T.RSP), iloc.Mode(M.DIR)))
+                    )
+
+        return instructions
+
+    def _make_reference_to_spilled_registers(self, instruction):
+        instruction = copy.deepcopy(instruction)
+
+        if instruction.opcode is not Op.META and instruction.opcode is not Op.LABEL:
+            for i in range(len(instruction.args)):
+                if instruction.args[i].target.spec == T.REG and instruction.args[i].target.val > 9:
+                    if len(instruction.args) == 1:
+                        val = instruction.args[0].target.val
+                        instruction.args = (iloc.Operand(
+                            iloc.Target(T.RSP), iloc.Mode(M.IRL, self._reg_scope[-1][val] - self._registers_on_stack)),)
+                    elif i == 0:
+                        val = instruction.args[0].target.val
+                        instruction.args = (iloc.Operand(iloc.Target(
+                            T.RSP), iloc.Mode(M.IRL, self._reg_scope[-1][val] - self._registers_on_stack)), instruction.args[1])
+                    else:
+                        val = instruction.args[1].target.val
+                        instruction.args = (instruction.args[0], iloc.Operand(
+                            iloc.Target(T.RSP), iloc.Mode(M.IRL, self._reg_scope[-1][val] - self._registers_on_stack)))
+
+        return instruction
+
 ########################### META ########################### META ########################### META ###########################
 
     def _save_retore_reg(self, mode: str, registers: list[str]):
@@ -141,11 +246,13 @@ class Emit:
         self._append_newline()
 
     def _prolog(self):
+        self._reg_scope.append({})
         self._save_retore_reg("pushq", self._callee_save_reg)
         self._append_instruction("movq %rsp, %rbp")
         self._append_newline()
 
     def _epilog(self):
+        self._reg_scope.pop()
         self._append_instruction("movq %rbp, %rsp")
         self._save_retore_reg("popq", reversed(self._callee_save_reg))
         self._append_newline()
@@ -170,13 +277,14 @@ class Emit:
         self._append_section("globl main")
         self._append_newline()
 
-    #* The printf function is borrowed from SCIL.
+    # * The printf function is borrowed from SCIL.
     def _call_printf(self):
         # pass 1. argument in %rdi
         self._append_instruction("leaq form(%rip), %rdi")
         # By-passing caller save values on the stack:
         # pass 2. argument in %rsi
-        self._append_instruction(f"movq {8*len(self._calleer_save_reg)}(%rsp), %rsi")
+        self._append_instruction(
+            f"movq {8*len(self._calleer_save_reg)}(%rsp), %rsi")
         # no floating point registers used
         self._append_instruction("movq $0, %rax")
         # saving stack pointer for change check

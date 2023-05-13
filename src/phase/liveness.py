@@ -92,6 +92,7 @@ class Liveness:
         return change
 
     def _do_set_calc(self, ins: Instruction or list) -> bool:
+        matched = None
         match ins:
             case list():
                 self._liveness_analysis(ins)
@@ -99,37 +100,34 @@ class Liveness:
                 match op:
                     case Operand(target=Target(spec=T.REG, val=val_use)):
                         ins.in_.add(val_use)
-                        #ins.in_.add(val_def)
                         ins.in_ = ins.in_.union(ins.out - {val_def})
                     case _:
-                        #ins.in_.add(val_def)
                         ins.in_ = ins.in_.union(ins.out - {val_def})
                 
-                return self._live_set_changed_and_out_calc(ins)
+                matched = ins
             case Instruction(opcode=op, args=(Operand(target=Target(spec=T.REG, val=val1)),
                                             Operand(target=Target(spec=T.REG, val=val2)))) if op in [Op.ADD, Op.SUB, Op.DIV, Op.MUL]:
                 ins.in_.add(val1)
                 ins.in_.add(val2)
                 ins.in_ = ins.in_.union(ins.out - {val2})
-
-                return self._live_set_changed_and_out_calc(ins)
+                matched = ins
             case Instruction(args=(Operand(target=Target(spec=T.REG, val=val1)),
                                 Operand(target=Target(spec=T.REG, val=val2)))):
                 ins.in_.add(val1)
                 ins.in_.add(val2)
                 ins.in_ = ins.in_.union(ins.out)
-
-                return self._live_set_changed_and_out_calc(ins)
+                matched = ins
             case Instruction(args=(Operand(target=Target(spec=T.REG, val=val)), Operand())):
                 ins.in_.add(val)
                 ins.in_.union(ins.out)
-
-                return self._live_set_changed_and_out_calc(ins)
+                matched = ins
             case Instruction(args=(Operand(target=Target(spec=T.REG, val=val)), )):                
                 ins.in_.add(val)
                 ins.in_ = ins.in_.union(ins.out)
+                matched = ins
 
-                return self._live_set_changed_and_out_calc(ins)
+        if matched:
+            return self._live_set_changed_and_out_calc(matched)
 
     def _liveness_analysis(self, code: list) -> None:
         change = True
@@ -188,15 +186,15 @@ class Liveness:
             found = None
             for node, adj in graph.items():
                 if len(adj) < 11:
-                    found = node
-                    stack.append((node, set(adj)))
+                    found = (node, set(adj))
                     break
 
-            if found:
-                self._remove_node_from_graph(graph, found)
-            else:
-                first_node = list(graph.keys())[0]
-                self._remove_node_from_graph(graph, first_node)
+            if not found:
+                # Pick random
+                found = list(graph.items())[0]
+
+            stack.append(found)  
+            self._remove_node_from_graph(graph, found[0])
 
         return stack
     
@@ -216,8 +214,9 @@ class Liveness:
                     continue
 
                 adj_colors.add(color)
-
-            for i in range(1, 12):
+            
+            i = 0
+            while(i := i + 1):
                 if i in adj_colors:
                     continue
                 else:
