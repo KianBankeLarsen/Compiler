@@ -80,7 +80,7 @@ In case of occurrences of ```<type><name>=<exp>```, it has been necessary to per
 
 ![](src/printer/images/AST-desugar.src/output/a.gv.png)
 
-## Symbol Table
+## 🦑 Symbol Table
 The image below is a representation of which variables are in which scopes, so that it could be checked that symbols were collected correctly.
 
 ![](src/printer/images/Symbol.src/output/a.gv.png)
