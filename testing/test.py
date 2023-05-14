@@ -69,8 +69,11 @@ class TestCase(unittest.TestCase):
             os.remove(output)
 
             if self.args.debug:
-                os.remove(f"{self.src}.stack.iloc")
-
+                if self.args.stack:
+                    os.remove(f"{self.src}.stack.iloc")
+                else:
+                    os.remove(f"{self.src}.register.iloc")
+                    
                 file_name = os.path.basename(self.src)
                 os.remove(f"src/printer/images/AST.testing/test-cases/{file_name}.gv.png")
                 os.remove(f"src/printer/images/AST.testing/test-cases/{file_name}.gv")

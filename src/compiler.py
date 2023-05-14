@@ -7,7 +7,7 @@ import src.phase.code_generation_register
 import src.phase.code_generation_stack
 import src.phase.emit
 import src.phase.lexer
-import src.phase.liveness
+import src.phase.allocator
 import src.phase.parser
 import src.phase.symbol_collection
 import src.phase.syntactic_desugaring
@@ -51,30 +51,30 @@ class PandaCompiler:
             lexer=src.phase.lexer.lexer
         )
 
-        the_program_AST = interfacing_parser.the_program
+        the_program_ast = interfacing_parser.the_program
 
         symbol_table_incorporator = src.phase.symbol_collection.ASTSymbolIncorporator()
-        symbol_collection_IR = symbol_table_incorporator.build_symbol_table(
-            the_program_AST)
+        symbol_collection_ir = symbol_table_incorporator.build_symbol_table(
+            the_program_ast)
 
-        desugared_AST = src.phase.syntactic_desugaring.ASTSyntacticDesugar()
-        desugared_IR = desugared_AST.desugar_AST(symbol_collection_IR)
+        desugared_ast = src.phase.syntactic_desugaring.ASTSyntacticDesugar()
+        desugared_ir = desugared_ast.desugar_AST(symbol_collection_ir)
 
         code_emitter = src.phase.emit.Emit()
         code = None
 
         if self.args.stack:
             code_generation_stack = src.phase.code_generation_stack.GenerateCodeStack()
-            code_generation_stack.generate_code(desugared_IR)
+            code_generation_stack.generate_code(desugared_ir)
             stack_program_code = code_generation_stack.get_code()
             code = stack_program_code
             assembly_code = code_emitter.emit(code)
         else:
             code_generation_register = src.phase.code_generation_register.GenerateCodeRegister()
-            code_generation_register.generate_code(desugared_IR)
+            code_generation_register.generate_code(desugared_ir)
             register_program_code = code_generation_register.get_code()
-            control_flow = src.phase.liveness.Liveness()
-            register_program_code = control_flow.perform_register_allocation(
+            allocator = src.phase.allocator.Allocator()
+            register_program_code = allocator.perform_register_allocation(
                 register_program_code)
             code = register_program_code
             assembly_code = code_emitter.emit(code)
@@ -96,23 +96,24 @@ class PandaCompiler:
         if self.args.debug:
             AST_pretty_printer = ast_printer.ASTTreePrinter(
                 f"AST.{output}")
-            AST_pretty_printer.build_graph(the_program_AST)
+            AST_pretty_printer.build_graph(the_program_ast)
             AST_pretty_printer.render('png')
 
             AST_pretty_printer = ast_printer.ASTTreePrinter(
                 f"AST-desugar.{output}")
-            AST_pretty_printer.build_graph(desugared_IR)
+            AST_pretty_printer.build_graph(desugared_ir)
             AST_pretty_printer.render('png')
 
             symbol_table_printer = Symbol_printer.SymbolPrinter(
                 f"Symbol.{output}")
-            symbol_table_printer.build_graph(symbol_collection_IR)
+            symbol_table_printer.build_graph(symbol_collection_ir)
             symbol_table_printer.render('png', {'rankdir': 'BT'})
 
-            with open(f"{output}.stack.iloc", 'w') as f:
-                pp = pprint.PrettyPrinter(stream=f)
-                pp.pprint(code)
-
-            # with open(f"{output}.register.iloc", 'w') as f:
-            #     pp = pprint.PrettyPrinter(stream=f)
-            #     pp.pprint(register_program_code)
+            if self.args.stack:
+                with open(f"{output}.stack.iloc", 'w') as f:
+                    pp = pprint.PrettyPrinter(stream=f)
+                    pp.pprint(code)
+            else:
+                with open(f"{output}.register.iloc", 'w') as f:
+                    pp = pprint.PrettyPrinter(stream=f)
+                    pp.pprint(register_program_code)

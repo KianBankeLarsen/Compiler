@@ -56,14 +56,14 @@ class Emit:
     def _append_section(self, section):
         self._code.append(f".{section}")
 
-    def _dispatch(self, instruction) -> None:
+    def _dispatch(self, instruction: iloc.Instruction) -> None:
         # Remove redundant move instructions
         if instruction.opcode == Op.MOVE:
             for arg in instruction.args:
                 if arg.target.spec == T.REG and arg.target.val is None:
                     return
 
-        instructions = self._check_reg_spill(instruction)
+        instructions = self._handle_reg_spill(instruction)
 
         for ins in instructions:
             match ins:
@@ -145,18 +145,21 @@ class Emit:
 
 ########################### REGISTER LOGIC ######################################## REGISTER LOGIC ###########################
 
-    def _check_reg_spill(self, instruction):
-        if instructions := self._do_register_dependent_operations(instruction):
+    def _handle_reg_spill(self, instruction: iloc.Instruction) -> list[iloc.Instruction]:
+        if instructions := self._check_register_dependent_operations(instruction):
             return instructions
 
-        instructions.extend(self._allocate_registers_on_stack(instruction))
+        instructions.extend(
+            self._check_if_spill_is_needed(instruction)
+        )
 
         instructions.append(
-            self._make_reference_to_spilled_registers(instruction))
+            self._make_reference_to_spilled_registers(instruction)
+        )
 
         return instructions
 
-    def _do_register_dependent_operations(self, instruction):
+    def _check_register_dependent_operations(self, instruction: iloc.Instruction) -> list[iloc.Instruction]:
         instructions = []
 
         match instruction:
@@ -199,7 +202,7 @@ class Emit:
 
         return instructions
 
-    def _allocate_registers_on_stack(self, instruction):
+    def _check_if_spill_is_needed(self, instruction: iloc.Instruction) -> list[iloc.Instruction]:
         instructions = []
 
         match instruction:
@@ -216,7 +219,7 @@ class Emit:
 
         return instructions
 
-    def _make_reference_to_spilled_registers(self, instruction):
+    def _make_reference_to_spilled_registers(self, instruction: iloc.Instruction) -> iloc.Instruction:
         instruction = copy.deepcopy(instruction)
 
         if instruction.opcode is not Op.META and instruction.opcode is not Op.LABEL:
@@ -239,34 +242,34 @@ class Emit:
 
 ########################### META ########################### META ########################### META ###########################
 
-    def _save_retore_reg(self, mode: str, registers: list[str]):
+    def _save_retore_reg(self, mode: str, registers: list or reversed) -> None:
         self._append_newline()
         for reg in registers:
             self._append_instruction(f"{mode} %{reg}")
         self._append_newline()
 
-    def _prolog(self):
+    def _prolog(self) -> None:
         self._reg_scope.append({})
         self._save_retore_reg("pushq", self._callee_save_reg)
         self._append_instruction("movq %rsp, %rbp")
         self._append_newline()
 
-    def _epilog(self):
+    def _epilog(self) -> None:
         self._reg_scope.pop()
         self._append_instruction("movq %rbp, %rsp")
         self._save_retore_reg("popq", reversed(self._callee_save_reg))
         self._append_newline()
 
-    def _ret(self):
+    def _ret(self) -> None:
         self._append_instruction("ret")
 
-    def _precall(self):
+    def _precall(self) -> None:
         self._save_retore_reg("pushq", self._calleer_save_reg)
 
-    def _postreturn(self):
+    def _postreturn(self) -> None:
         self._save_retore_reg("popq", reversed(self._calleer_save_reg))
 
-    def _program_prologue(self):
+    def _program_prologue(self) -> None:
         self._append_section("data")
         self._append_newline()
         self._append_label("form")
@@ -278,7 +281,7 @@ class Emit:
         self._append_newline()
 
     # * The printf function is borrowed from SCIL.
-    def _call_printf(self):
+    def _call_printf(self) -> None:
         # pass 1. argument in %rdi
         self._append_instruction("leaq form(%rip), %rdi")
         # By-passing caller save values on the stack:

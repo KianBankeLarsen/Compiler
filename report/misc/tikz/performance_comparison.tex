@@ -1,0 +1,29 @@
+\pgfplotstableread[row sep=\\,col sep=&]{
+test & stack & register \\                                         
+%sum\_recurse(30000) & 21 & 21 \\                                          
+sum\_loop(300000000) & 1461 & 858 \\                                         
+fibonacci(39) & 2159 & 1648 \\                                                                              
+for-loop & 2180 & 2160 \\                     
+}\mybardata
+\begin{tikzpicture}
+    \begin{axis}[
+        ybar,
+        ylabel=Seconds,
+        ymajorgrids=true,
+        xtick pos=lower,
+        xticklabel style={rotate=90},
+        %ytick pos=left,
+        grid style=dashed,
+        width=1\linewidth,
+        xlabel=Test,
+        title = Seconds vs Test,
+        bar width=.6cm,
+        legend style={at={(0.05,.95)},anchor=north west},
+        symbolic x coords={sum\_loop(300000000),fibonacci(39), for-loop},
+        xtick=data,
+    ]
+    \addplot+[color=blueplot] table[x=test,y=register]{\mybardata};
+    \addplot+[color=redplot] table[x=test,y=stack]{\mybardata};
+    \legend{Register, Stack}
+    \end{axis}
+\end{tikzpicture}

@@ -122,19 +122,20 @@ The main file handles the instantiation and therefore also the running of the \t
 \begin{minted}{text}
 Compiler$ python3.10 main.py --help
 
-usage: Compiler for Panda [-h] [-o OUTPUT] [-c] [-d] [-f FILE] [-t] [-r]
+usage: Compiler for Panda [-h] [-o OUTPUT] [-c] [-d] [-f FILE] [-t] [-r] [-s]
 
 Compiles source code to assembly
 
 options:
     -h, --help            show this help message and exit
     -o OUTPUT, --output OUTPUT
-                        Specify name of assembly output file
-    -c, --compile         Set this flag if the output file should be compilled with gcc
-    -d, --debug           Set this flag for debugging information, i.e., ILOC and Graphviz
-    -f FILE, --file FILE  Path to input file, otherwise stdin will be used
+                        Name of assembly output file
+    -c, --compile         Compile output with gcc
+    -d, --debug           Debugging information, i.e., ILOC and Graphviz
+    -f FILE, --file FILE  Path to input file; default is stdin.
     -t, --runTests        Run tests
     -r, --run             Run compilled program
+    -s, --stack           Use stack only; default is registers
 \end{minted}
 
 This informs the user that one can specify an input file or provide input directly in the command line. Specifying the name of the output file is optional. Furthermore, one can control whether the file should be automatically compiled with \texttt{gcc} and directly run on the system. Many of the arguments act as flags to the compiler, such as \texttt{--debug} or \texttt{--runTests}, which are flags that specify whether a certain piece of code should be executed. Much of the setup of \texttt{argparse} is omitted, in this example, but the essential part of the functionality is listed below. All pip requirements needed for running \texttt{main.py} can be installed using \texttt{pip install -r requirements.txt} -- file located in the root of the project.
@@ -623,8 +624,13 @@ case AST.ExpressionBinop(binop, lhs, rhs) if binop in [Op.ADD, Op.SUB, Op.DIV, O
 \newpage
 
 
-\subsection{Register Allocation}
+\subsection{Register Machine}
 \cite{ModernCompilerImplementation}
+\begin{minted}{py3}
+_reg_count: int = 0
+_reg_stack: list[int] = field(default_factory=list)
+\end{minted}
+
 \begin{minted}{py3}
 case AST.ExpressionBinop(binop, lhs, rhs) if binop in [Op.ADD, Op.SUB, Op.DIV, Op.MUL]:
     self._generate_code(lhs)
@@ -645,6 +651,38 @@ case AST.ExpressionBinop(binop, lhs, rhs) if binop in [Op.ADD, Op.SUB, Op.DIV, O
                     Operand(Target(T.REG, reg1), Mode(M.DIR)),
                     Operand(Target(T.REG, self._reg_count), Mode(M.DIR)))
     )
+\end{minted}
+
+\begin{minted}{text}
+[
+    instruction_1,
+    instruction_2,
+    [
+        instruction_3,
+        ..., 
+        instruction_n
+    ],
+    instruction_n+1
+]
+\end{minted}
+
+\newpage
+
+\section{Allocator}
+
+\begin{minted}{py3}
+def perform_register_allocation(self, code: list[Instruction]) -> list[Instruction]:
+    code = copy.deepcopy(code)
+
+    self._find_labels(code)
+    self._control_flow(code)
+    self._liveness_analysis(code)
+    graph = self._build_graph(code)
+    colors = self._color_graph(graph)
+    code = self._flatmap(code)
+    self._rename_registers(colors, code)
+
+    return code
 \end{minted}
 
 \begin{figure}[H]
@@ -697,7 +735,7 @@ This is the colored graph:
 \newpage
 
 \section{Emit}
-The emit phase is the last phase in the compiler's back end. It is in this phase that the internal representation introduced in the code generation is made into actual assembler instructions, which can be compiled into machine code using \texttt{gcc}.
+The emit phase is the last phase in the compiler's back end. It is in this phase that the internal representation introduced in the code generation is made into actual assembler instructions, which can be compiled into machine code using \texttt{gcc}. Luckily it has been possible to develop an interface such that this class could be used for both the stack machine and register machine.
 
 The mapping from the internal representation is almost 1:1, however there is small deviations such as the use of \texttt{\%RSL}, which is a virtual register used to calculate links, and that register does not exist nativelty on the x86 architecture. In addition, it is necessary to handle a handful of \texttt{Meta} instructions, because it made sense to assemble these into such composite instructions, and then let the emit phase handle the actual code for this, since it is the same every time -- these instructions could as well have been represented in the linear IR. The \texttt{Meta} instructions are:
 
@@ -744,21 +782,18 @@ def emit(self, iloc_ir: list[iloc.Instruction]) -> str:
 The final result of \texttt{emit} is a single string containing all the generated assembler code, including newlines. The output string can therefore just be inserted directly into any file using Python's built-in I/O library.
 
 \begin{minted}{py3}
-# How is spill code handled.
-\end{minted}
-    
+def _handle_reg_spill(self, instruction: iloc.Instruction) -> list[iloc.Instruction]:
+    if instructions := self._check_register_dependent_operations(instruction):
+        return instructions
 
-\todo{Consider output}
-\begin{minted}{asm}
-main:
-    pushq %rbx
-    pushq %r12
-    pushq %r13
-    pushq %r14
-    pushq %r15
+    instructions.extend(
+        self._check_if_spill_is_needed(instruction)
+    )
+    instructions.append(
+        self._make_reference_to_spilled_registers(instruction)
+    )
 
-    pushq %rbp
-    movq %rsp, %rbp
+    return instructions
 \end{minted}
 
 \chapter{Testing}
@@ -887,7 +922,21 @@ int main(){
 print(main());
 \end{minted}
 
-The goal has been to test all legal semantic thoroughly. This includes assignment to variables declared outside the current scope. Assignment to formal parameters, recursion, return from static nested scopes, comments, sugared declaration with assignment, binary operations (comparisons and arithmetic) and constructs like \texttt{while}, \texttt{for}, \texttt{if} and \texttt{print}.
+The goal has been to test all legal semantics thoroughly. This includes assignment to variables declared outside the current scope. Assignment to formal parameters, recursion, return from static nested scopes, comments, sugared declaration with assignment, binary operations (comparisons and arithmetic) and constructs like \texttt{while}, \texttt{for}, \texttt{if} and \texttt{print}.
+
+\newpage
+
+this is a test
+
+\begin{minted}{c}
+print(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+()))))))))))))));
+\end{minted}
+
+\begin{figure}[H]
+    \centering
+    \input{misc/graphviz/rightTree.tex}
+    \caption{Unbalanced expression.} 
+\end{figure}
 
 \newpage
 
@@ -897,40 +946,41 @@ Coverage cannot and should not be a measure of test quality, because the order i
 The code coverage measuring tool \texttt{coverage.py} is used to perform code coverage statistics on this project. Code coverage is performed in the following way:
 
 \begin{minted}{text}
-Compiler$ python3.10 -m coverage run main.py --runTests -d
+Compiler$ python3.10 -m coverage erase
+    && python3.10 -m coverage run -a main.py -td
+    && python3.10 -m coverage run -a main.py -tsd 
+    && python3.10 -m coverage report 
 
 Name                                     Stmts   Miss  Cover
 ------------------------------------------------------------
-main.py                                     21      1    95%
-src/compiler.py                             59      3    95%
+main.py                                     24      2    92%
+src/compiler.py                             70      3    96%
 src/dataclass/AST.py                       125      0   100%
 src/dataclass/iloc.py                       22      0   100%
-src/dataclass/symbol.py                     35      2    94%
-src/enums/code_generation_enum.py           39      0   100%
+src/dataclass/symbol.py                     36      2    94%
+src/enums/code_generation_enum.py           38      0   100%
 src/enums/symbols_enum.py                    5      0   100%
-src/phase/code_generation_base.py           57      3    95%
-src/phase/code_generation_register.py      232      8    97%
-src/phase/code_generation_stack.py         196      3    98%
-src/phase/emit.py                          128      6    95%
+src/phase/allocator.py                     213      5    98%
+src/phase/code_generation_base.py           58      3    95%
+src/phase/code_generation_register.py      262      9    97%
+src/phase/code_generation_stack.py         199      5    97%
+src/phase/emit.py                          199     17    91%
 src/phase/lexer.py                          44      8    82%
-src/phase/parser.py                        101      3    97%
+src/phase/parser.py                        101      2    98%
 src/phase/parsetab.py                       18      0   100%
-src/phase/symbol_collection.py              86      0   100%
+src/phase/symbol_collection.py             117      2    98%
 src/phase/syntactic_desugaring.py           65      0   100%
 src/printer/ast_printer.py                 141      3    98%
 src/printer/generic_printer.py              17      0   100%
 src/printer/symbol_printer.py               40      0   100%
 src/utils/error.py                           5      0   100%
 src/utils/interfacing_parser.py              1      0   100%
-src/utils/label_generator.py                 9      0   100%
+src/utils/label_generator.py                 7      0   100%
 src/utils/x86_instruction_enum_dict.py       2      0   100%
-testing/test.py                             73      0   100%
-... 
-... 
-... 
-...
+testing/test.py                             75      0   100%
 ------------------------------------------------------------
-TOTAL                                     1521     40    97%
+TOTAL                                     1884     61    97%
+Wrote HTML report to htmlcov/index.html
 \end{minted}
 
 Based on this output, it can be assessed that the prepared tests in the \texttt{test-cases} folder cover the code well. Note that code coverage is run with the debug flag, \texttt{-d}. This is because code in the printer files are only executed when debug is desired.
@@ -957,8 +1007,9 @@ introduction...
 
 \begin{figure}[H]
     \centering
-    \missingfigure{Performance graph}
+    \input{misc/tikz/performance_comparison.tex}
     \caption{Stack Machine vs Register Machine.}
+    \label{fig:performance_comparison}
 \end{figure}
 
 \newpage
@@ -991,7 +1042,26 @@ The approach to the project has been academically based on literature, in order 
 It has always been desired that it should be possible to declare new variables in any scope, which is why it was decided to let \texttt{body} (syntactic category from parsing) be what constituted a scope. The choice later made it clear, during code generation phase, that this imposed too many constraints on how the stack should be set up, since a simple generalized procedure linkage was wanted. This resulted in suddenly having to handle all scopes as procedure calls, though it had nothing to with a procedure call. One also encounter problems when doing local register allocation, because flow is only considered locally for a scope (normally local to functions). This consequence limits the analysis to the individual scope, making the content of a \texttt{then} block, of an \texttt{if}-statement, a black box for the surrounding scope. Thus, the analysis of control flow becomes less effective, which contributes to overall poorer performance of the register machine compiler. The easiest solution, and most likely most effective, would be to redo the scope implementation. Global register allocation would be the hard option, though it would not solve the underlying problem besides patching it.
 
 \section{Further Development}
- 
+
+\newpage
+
+\section{Single Point of Contact}
+
+\begin{minted}{yaml}
+theme: jekyll-theme-slate
+title: Panda Compiler
+description: This is a bachelor project, Southern University of Denmark
+show_downloads: true
+\end{minted}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{misc/images/GitHub_Pages.png}
+    \caption{Automatically generated Jekyll Slate webpage hosted on GitHub Pages: \url{https://kianbankelarsen.github.io/Compiler/}.}
+    \label{fig:GitHub_Pages}
+\end{figure}
+
+
 \chapter{Conclusion}
 
 \cleardoublepage

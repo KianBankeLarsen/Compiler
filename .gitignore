@@ -36,3 +36,8 @@ report/*.pdf
 report/*.dot
 report/-p
 report/main.synctex(busy)
+report/main.mw
+report/misc/preamble.aux
+report/misc/preamble.fdb_latexmk
+report/misc/preamble.fls
+report/misc/preamble.log

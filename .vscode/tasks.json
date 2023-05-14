@@ -6,7 +6,7 @@
         {
             "label": "Run tests and coverage",
             "type": "shell",
-            "command": "wsl python3.10 -m coverage run main.py --runTests -d && wsl python3.10 -m coverage report && wsl python3.10 -m coverage html",
+            "command": "wsl python3.10 -m coverage erase && wsl python3.10 -m coverage run -a main.py --runTests -d && wsl python3.10 -m coverage run -a main.py --runTests -sd  && wsl python3.10 -m coverage report && wsl python3.10 -m coverage html",
             "problemMatcher": []
         },
         {

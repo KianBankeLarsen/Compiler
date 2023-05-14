@@ -5,8 +5,12 @@ from src.dataclass.iloc import Instruction, Operand, Target
 from src.enums.code_generation_enum import Op, T
 
 
-class Liveness:
-    """
+class Allocator:
+    """ This class is responsible for performing control flow analysis, 
+        constructing an interference graph, graph coloring and assigning 
+        colors to instructions.
+
+        The API exposes `perform_register_allocation`.
     """
 
     _labels: dict = {}
@@ -146,6 +150,7 @@ class Liveness:
 
         for ins in code:
             node = None
+            
             match ins:
                 case list():
                     self._build_graph(ins, graphs)
@@ -157,7 +162,6 @@ class Liveness:
                     node = ins
 
             if node:
-                # print(node, node.in_)
                 for i in node.in_:
                     if i not in graph:
                         graph[i] = set()
@@ -255,8 +259,27 @@ class Liveness:
                 acc.append(ins)
         return acc
 
-    def perform_register_allocation(self, code: list) -> list[Instruction]:
-        """
+    def perform_register_allocation(self, code: list[Instruction]) -> list[Instruction]:
+        """ This method is responsible for orchestrating the total allocation flow. 
+            The method calls a selection of hidden methods, so that it is finally 
+            possible to return a list of instructions, with correctly assigned registers,
+            such that the rest can be handled by emit.
+
+                1. find labels
+                2. do control flow
+                3. perform liveness
+                4. build graph
+                5. color graph
+                6. flatmap code
+                7. assign colors to instructions
+            
+            Parameters
+            ----------
+            code : list[Instruction]
+
+            Returns
+            -------
+            code : list[instructions]
         """
 
         code = copy.deepcopy(code)
@@ -268,4 +291,5 @@ class Liveness:
         colors = self._color_graph(graph)
         code = self._flatmap(code)
         self._rename_registers(colors, code)
+
         return code

@@ -1,4 +1,4 @@
-\scalebox{0.65}{
+\scalebox{0.60}{
 \begin{forest}
   for tree={
     font=\ttfamily,
@@ -19,17 +19,17 @@
     fit=band,
     before computing xy={l=15pt},
   }
-[Compiler/
-    [src/
-        [phase/
-            [code\_generation\_stack.py]
-            [emit.py]
-            [lexer.py]
-            [parser.py]
-            [symbol\_collection.py]
-            [syntactic\_desugaring.py]
-        ]
-        [enums/]
+[src/
+    [phase/
+        [allocator.py]
+        [code\_generation\_base.py]
+        [code\_generation\_register.py]
+        [code\_generation\_stack.py]
+        [emit.py]
+        [lexer.py]
+        [parser.py]
+        [symbol\_collection.py]
+        [syntactic\_desugaring.py]
     ]
 ]
 \end{forest}

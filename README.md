@@ -7,7 +7,7 @@ The main file handles the instantiation and therefore also the running of the ``
 Running the follow command,
 
 ```
-$ python3.10 main.py --help
+Compiler$ python3.10 main.py --help
 
 usage: Compiler for Panda [-h] [-o OUTPUT] [-c] [-d] [-f FILE] [-t] [-r] [-s]
 
@@ -94,7 +94,7 @@ To ensure that the tests are comprehensive, coverage is a good measure. However,
 ## 🔭 Unittest
 Unit tests are run as follows:
 ```
-$ python3.10 main.py --runTests
+Compiler$ python3.10 main.py --runTests
 
 runTest (testing.test.TestCase)
 Testing testing/test-cases/assignment.panda ... ok
@@ -119,7 +119,7 @@ OK
 ## 🧐 Coverage
 Test coverage can be checked by running the following command:
 ```
-$ python3.10 -m coverage erase
+Compiler$ python3.10 -m coverage erase
     && python3.10 -m coverage run -a main.py -td
     && python3.10 -m coverage run -a main.py -tsd 
     && python3.10 -m coverage report 
