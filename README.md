@@ -156,4 +156,6 @@ TOTAL                                     1884     61    97%
 Wrote HTML report to htmlcov/index.html
 ```
 
+---
+
 Please read the [report](./report/main.pdf) for a more in-depth review.
