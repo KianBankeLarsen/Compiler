@@ -631,6 +631,7 @@ _reg_count: int = 0
 _reg_stack: list[int] = field(default_factory=list)
 \end{minted}
 
+\begin{figure}
 \begin{minted}{py3}
 case AST.ExpressionBinop(binop, lhs, rhs) if binop in [Op.ADD, Op.SUB, Op.DIV, Op.MUL]:
     self._generate_code(lhs)
@@ -652,6 +653,9 @@ case AST.ExpressionBinop(binop, lhs, rhs) if binop in [Op.ADD, Op.SUB, Op.DIV, O
                     Operand(Target(T.REG, self._reg_count), Mode(M.DIR)))
     )
 \end{minted}
+\caption{Code generation for binary operation.}
+\label{fig:binop}
+\end{figure}
 
 \begin{minted}{text}
 [
@@ -881,7 +885,7 @@ A workflow build consists of the stages stated in Figure \ref{fig:workflow_run}.
     \label{fig:workflow_run}
 \end{figure}
 
-The list of tests is too long to mention each one, instead two tests that caused particularly many problems have been chosen. The tests are representative because they have a relatively high complexity, as the input programs utilize recursion, loops and nested scopes. For this to work properly, it requires that the constructs and static link pointer works correctly. In addition, it must be possible to tear down several stack frames at once, since every scope introduces a new stack frame. Failing to remove a stack frame properly causes problems in the postreturn and epilog phase, and in worst case segmentation fault. 
+The list of tests is too long to mention each one, instead three tests that caused particularly many problems have been chosen. The tests are representative because they have a relatively high complexity, as the input programs utilize recursion, loops and nested scopes. For this to work properly, it requires that the constructs and static link pointer works correctly. In addition, it must be possible to tear down several stack frames at once, since every scope introduces a new stack frame. Failing to remove a stack frame properly causes problems in the \texttt{postreturn} and \texttt{epilog} phase, and in worst case segmentation fault. 
 
 The test below is borrowed from SCIL. The test is named summers.panda.
 
@@ -924,21 +928,23 @@ print(main());
 
 The goal has been to test all legal semantics thoroughly. This includes assignment to variables declared outside the current scope. Assignment to formal parameters, recursion, return from static nested scopes, comments, sugared declaration with assignment, binary operations (comparisons and arithmetic) and constructs like \texttt{while}, \texttt{for}, \texttt{if} and \texttt{print}.
 
-\newpage
-
-this is a test
+A test that is particularly critical for the register machine is right-unbalanced trees,\footnote{This is tested with the test cases \texttt{/testing/test-cases/unbalanced\_right\_addition.panda} and \texttt{/testing/test-cases/unbalanced\_right\_subtraction.panda}.} or complete trees, because these cause a greater register need. An example of such tree can be found in Figure \ref{fig:unbalanced_tree}. The figure is part of the syntax tree for the input program given below:
 
 \begin{minted}{c}
-print(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+()))))))))))))));
+print(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1))))))))))))));
 \end{minted}
+
+The reason is, in this case, that the left child is always visited first, after which the expression in the right child must be evaluated. This is clear in Figure \ref{fig:binop}. It is therefore necessary to preserve all left children until there are no more right children. In the case of the stack machine, this is not something one think too much about, as the stack just grows as expected. With register allocation, attention is required, because there must be a place to store values, since these must be in a register, regardless of whether this register is spilled onto the stack, it is still a ``register".
 
 \begin{figure}[H]
     \centering
     \input{misc/graphviz/rightTree.tex}
     \caption{Unbalanced expression.} 
+    \label{fig:unbalanced_tree}
 \end{figure}
 
-\newpage
+To be precise, the input program uses 27 temporary registers as a consequence of the code generation, which after preparation of the interference graph and coloring can be stored in 14 physical registers. The Emit phase only provides 9 registers for storage, meaning that 5 registers are located on the stack.
+
 
 \section{Coverage}
 Coverage cannot and should not be a measure of test quality, because the order in which functions and flow are executed has a great influence on the result. However, code coverage gives a direct warning if subsets of the code have not been tested at all. Thus, it is clear that more tests need to be written.
@@ -1045,7 +1051,10 @@ It has always been desired that it should be possible to declare new variables i
 
 \newpage
 
-\section{Single Point of Contact}
+\section{Single Point Of Contact}
+As a final rounding and summary of the project, GitHub Pages have been used as an addendum to the report, hoping to provide a brief user-friendly introduction to the code and the report. A screenshot of the website can be found in Figure \ref{fig:GitHub_Pages}.
+
+The website has been created with Jekyll, which is a tool that can automatically transform plain text into a static website. The tool only requires a small YAML file (\texttt{/\_config.yml}), listed below, and a markdown file for the page's content.
 
 \begin{minted}{yaml}
 theme: jekyll-theme-slate
@@ -1054,13 +1063,16 @@ description: This is a bachelor project, Southern University of Denmark
 show_downloads: true
 \end{minted}
 
+The website is simply a nice presentation of the \texttt{README.md} file. In addition, it is possible to download the project directly here, or follow the link to GitHub.
+
 \begin{figure}[H]
     \centering
     \includegraphics[width=1\textwidth]{misc/images/GitHub_Pages.png}
-    \caption{Automatically generated Jekyll Slate webpage hosted on GitHub Pages: \url{https://kianbankelarsen.github.io/Compiler/}.}
+    \caption{Automatically generated Jekyll Slate website hosted on GitHub Pages: \url{https://kianbankelarsen.github.io/Compiler/}.}
     \label{fig:GitHub_Pages}
 \end{figure}
 
+GitHub Pages takes care of deployment when a YAML is specified. Subsequently, the website will be automatically deployed on any push to GitHub -- at the same time as the workflow for testing runs.
 
 \chapter{Conclusion}
 

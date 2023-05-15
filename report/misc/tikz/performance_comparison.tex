@@ -8,15 +8,15 @@ for-loop & 2180 & 2160 \\
 \begin{tikzpicture}
     \begin{axis}[
         ybar,
-        ylabel=Seconds,
+        ylabel=Milliseconds,
         ymajorgrids=true,
         xtick pos=lower,
-        xticklabel style={rotate=90},
+        %xticklabel style={rotate=90},
         %ytick pos=left,
         grid style=dashed,
         width=1\linewidth,
         xlabel=Test,
-        title = Seconds vs Test,
+        title = Milliseconds vs Test,
         bar width=.6cm,
         legend style={at={(0.05,.95)},anchor=north west},
         symbolic x coords={sum\_loop(300000000),fibonacci(39), for-loop},
