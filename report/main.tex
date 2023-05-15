@@ -1048,8 +1048,18 @@ The approach to the project has been academically based on literature, in order 
 It has always been desired that it should be possible to declare new variables in any scope, which is why it was decided to let \texttt{body} (syntactic category from parsing) be what constituted a scope. The choice later made it clear, during code generation phase, that this imposed too many constraints on how the stack should be set up, since a simple generalized procedure linkage was wanted. This resulted in suddenly having to handle all scopes as procedure calls, though it had nothing to with a procedure call. One also encounter problems when doing local register allocation, because flow is only considered locally for a scope (normally local to functions). This consequence limits the analysis to the individual scope, making the content of a \texttt{then} block, of an \texttt{if}-statement, a black box for the surrounding scope. Thus, the analysis of control flow becomes less effective, which contributes to overall poorer performance of the register machine compiler. The easiest solution, and most likely most effective, would be to redo the scope implementation. Global register allocation would be the hard option, though it would not solve the underlying problem besides patching it.
 
 \section{Further Development}
+The first thing to solve is the scope implementation. This is possibly where the greatest performance is to be gained, based on the compiler's current functionality. Being able to analyze flow for entire functions will make it easier to optimize the use of registers. Especially in the case of using variables outside the current scope, the variables will then be marked as escaping, which causes them to live on the stack, which is annoying when wanting to use registers. At present, loops cannot really benefit from registers, although \texttt{sum\_loop} still managed to achieve significantly better performance.
 
-\newpage
+Another challenge is that there is no \texttt{push imm64} instruction, which can cause the error listed below. The error occurs when a number greater than $2^{31} - 1$ (two's complement) is printed, as the number to be printed will be pushed directly to the stack. This is annoying because the registers and the reserved stack space is \SI{64}{bit}, but we can efficiently only use \SI{32}{bit}.
+
+\begin{minted}{text}
+Error: operand type mismatch for `push'
+\end{minted}
+
+Similar error apply to the register machine, as \texttt{movq} cannot handle immediate source operands larger than \SI{32}{bit} two's-complement. There are workarounds to these errors, but it requires a more advanced implementation than prepared in this project. 
+
+Finally, it could be pretty cool with composite data types like arrays to make the language Turing Complete. At the present time, it is not possible to calculate anything significant, as one can only work with integers and Boolean values (0 or 1 integer). Composite data types will only further the potential of the already implemented programming constructs.
+
 
 \section{Single Point Of Contact}
 As a final rounding and summary of the project, GitHub Pages have been used as an addendum to the report, hoping to provide a brief user-friendly introduction to the code and the report. A screenshot of the website can be found in Figure \ref{fig:GitHub_Pages}.
