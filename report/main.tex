@@ -631,7 +631,7 @@ _reg_count: int = 0
 _reg_stack: list[int] = field(default_factory=list)
 \end{minted}
 
-\begin{figure}
+\begin{figure}[H]
 \begin{minted}{py3}
 case AST.ExpressionBinop(binop, lhs, rhs) if binop in [Op.ADD, Op.SUB, Op.DIV, Op.MUL]:
     self._generate_code(lhs)
@@ -662,7 +662,7 @@ case AST.ExpressionBinop(binop, lhs, rhs) if binop in [Op.ADD, Op.SUB, Op.DIV, O
     instruction_1,
     instruction_2,
     [
-        instruction_3,
+        instruction_...,
         ..., 
         instruction_n
     ],
@@ -739,9 +739,9 @@ This is the colored graph:
 \newpage
 
 \section{Emit}
-The emit phase is the last phase in the compiler's back end. It is in this phase that the internal representation introduced in the code generation is made into actual assembler instructions, which can be compiled into machine code using \texttt{gcc}. Luckily it has been possible to develop an interface such that this class could be used for both the stack machine and register machine.
+The Emit phase is the last phase in the compiler's back end. It is in this phase that the internal representation introduced in the code generation is made into actual assembler instructions, which can then be compiled into machine code using \texttt{gcc}. Luckily it has been possible to develop an interface such that this class could be used for both the stack machine and register machine.
 
-The mapping from the internal representation is almost 1:1, however there is small deviations such as the use of \texttt{\%RSL}, which is a virtual register used to calculate links, and that register does not exist nativelty on the x86 architecture. In addition, it is necessary to handle a handful of \texttt{Meta} instructions, because it made sense to assemble these into such composite instructions, and then let the emit phase handle the actual code for this, since it is the same every time -- these instructions could as well have been represented in the linear IR. The \texttt{Meta} instructions are:
+The mapping from the internal representation is almost 1:1, however there are small deviations such as the use of \texttt{\%RSL}, which is a virtual register used to calculate links, and that register does not exist natively on the x86 architecture. In addition, it is necessary to handle a handful of \texttt{Meta} instructions, because it made sense to assemble these into composite instructions, and then let the Emit phase handle the actual code for this, since it is the same every time -- these instructions could as well have been represented in the linear IR. The \texttt{Meta} instructions are:
 
 \begin{minted}{py3}
 self._enum_to_method_map = {
@@ -754,7 +754,7 @@ self._enum_to_method_map = {
 }
 \end{minted}
 
-The \texttt{Meta} instructions is thus simply mapped using a dictionary in python, mapping the Enum to a function implemented within the Emit class.
+The \texttt{Meta} instructions is thus simply mapped using a dictionary in python, mapping the \texttt{Enum} to a function implemented within the Emit class.
 
 The majority of these functions are functions used during procedure linkage, which is why it makes sense to declare exactly which registers are callee-save and caller-save registers:
 
@@ -763,9 +763,9 @@ self._callee_save_reg: list[str] = ["rbx", "r12", "r13", "r14", "r15", "rbp"]
 self._calleer_save_reg: list[str] = ["rcx", "rdx", "rsi", "rdi", "r8", "r9", "r10", "r11"]
 \end{minted}
 
-It might also have been advantageous to have specified these fields in another class, so that variable offsets did not have to be hardcoded in the code generation, but could instead have been implemented as a function on the two lists. Adding extra callee-save and caller-save would then not require futher intervention.
+It might also have been advantageous to have specified these fields in another class, so that variable offsets did not have to be hard-coded in the code generation, but could instead have been implemented as a function on the two lists. Adding extra callee-save registers and caller-save registers would then not require further intervention than adding them to the correct list.
 
-\texttt{Meta.CALL\_PRINTF} uses labels to ensure correct memory alignment, and we therefore want to reuse \texttt{Labels} instantiated during code generations. This is achieved using the property that the class is declared singleton, and Python will therefore just return the same instance as used in code generation, without manually having to pass that instance to code emition:
+\texttt{Meta.CALL\_PRINTF} uses labels to ensure correct memory alignment, and we therefore want to reuse the \texttt{Labels} object instantiated during code generation. This is achieved using the property that the class is declared singleton, and Python will therefore just return the same instance as used in code generation, without manually having to pass that instance to \texttt{Emit}:
 
 \begin{minted}{py3}
 self._labels = Labels()
@@ -773,7 +773,7 @@ self._labels = Labels()
 
 It is important that the counter within \texttt{Labels} is not reset, since this could, in the worst case, cause clashing labels, meaning that the program would be incorrect and in turn prevent \texttt{gcc} from being able to compile it, since labels are no longer ensured to be unique.
 
-The code snippet given below is responsible for ``dispatching'' any ILOC instruction to an assembly instruction. Because the ILOC instructions are provided as a list, one can simply iterate through the list and translate the individual instruction as intended. The native function \texttt{map} is used though this is not the intended use of it, as \texttt{\_dispatch} accumulates its result in a field called \texttt{\_code}. However, it is nice to think of it as a mapping, why it is done that way. Also, map is a concise way to do iteration even if the resulting list just contains None.
+The code snippet given below is responsible for ``dispatching'' any ILOC instruction to an assembly instruction. Because the ILOC instructions are provided as a list, one can simply iterate through the list and translate the individual instruction as intended. The native function \texttt{map} is used though this is not the intended use of it, as \texttt{\_dispatch} accumulates its result in a field called \texttt{\_code}. However, it is nice to think of it as a mapping, why it is done that way. Also, map is a concise way to do iteration even if the resulting list just contains \texttt{None}.
 
 \begin{minted}{py3}
 def emit(self, iloc_ir: list[iloc.Instruction]) -> str:
@@ -783,22 +783,66 @@ def emit(self, iloc_ir: list[iloc.Instruction]) -> str:
     return "\n".join(self._code)
 \end{minted}
 
-The final result of \texttt{emit} is a single string containing all the generated assembler code, including newlines. The output string can therefore just be inserted directly into any file using Python's built-in I/O library.
+The final result of \texttt{Emit} is a single string containing all the generated assembler code, including newlines. The output string can therefore just be inserted directly into any file using Python's built-in I/O library.
+
+A function called \texttt{\_do\_operand} takes care of handling targets. In order to create a common interface between the register machine and the stack machine, it has been chosen to simply expand the \texttt{match} statement, which can also be found in SCIL, so that it is possible to address several registers.
+
+\begin{minted}{py3}
+def _do_operand(self, operand: iloc.Operand) -> str:
+    match operand.target:
+        case iloc.Target(spec=T.IMI, val=val):
+            text = f"${val}"
+        ...
+        case iloc.Target(spec=T.REG, val=1):
+            text = "%rbx"
+        case iloc.Target(spec=T.REG, val=2):
+            text = "%rcx"
+        ...
+        case iloc.Target(spec=T.REG, val=11):
+            text = "%r15"
+        case _:
+            raise ValueError(f"Unkown target: {operand.target}")
+\end{minted}
+
+However, the number of registers is a limited amount, and in this case the limit is $9$ (in addition to two registers set aside for computation). The allocation phase may well risk passing on a program that requires $14$ registers, which is why it becomes necessary to handle spills. Spills can fortunately be handled locally for the individual instructions, which is why it felt natural to handle this in the \texttt{Emit} phase as well.
+
+Besides just handling spills, all the \texttt{move} instructions that operate on registers that have not been given a color (colored \texttt{None}) are removed. It can occur when, for example, assigning a value to a variable but never ever uses it afterwards. This is achieved with the following piece of code:
+
+\begin{minted}{py3}
+def _dispatch(self, instruction: iloc.Instruction) -> None:
+    if instruction.opcode == Op.MOVE:
+        for arg in instruction.args:
+            if arg.target.spec == T.REG and arg.target.val is None:
+                return
+    ...
+\end{minted}
+
+\texttt{return} in context of \texttt{\_dispatch} means that we just ignore the instruction and don't generate code for it. This operation can be legally performed because, intuitively, why preserve something that is not used. Modern Compiler Implementation states the following:
+
+\begin{displayquote}
+    \textit{``If there is no edge in the interference graph between the source and destination of a \texttt{move} instruction, then the move can be eliminated.''}
+\end{displayquote}
+\hspace*\fill{\small--- \cite[239]{ModernCompilerImplementation}}
+
+Since all nodes in the interference graph are colored, we can conclude that if a node has been colored \texttt{None}, then it not even part of the graph, thus, the \texttt{move} instruction can be safely eliminated.
+
+\texttt{\_handle\_reg\_spill} is called from \texttt{\_dispatch}. \texttt{\_handle\_reg\_spill} takes care of inserting extra instructions in case a spill register needs adjustment. The method has been inserted below:
 
 \begin{minted}{py3}
 def _handle_reg_spill(self, instruction: iloc.Instruction) -> list[iloc.Instruction]:
     if instructions := self._check_register_dependent_operations(instruction):
         return instructions
-
     instructions.extend(
         self._check_if_spill_is_needed(instruction)
     )
     instructions.append(
         self._make_reference_to_spilled_registers(instruction)
     )
-
     return instructions
 \end{minted}
+
+The method handles the logic in three phases. Because of the horrible names, we list them in order. The first method call handles binary operations on spilled registers. The method ensures that the operands are in physical registers before performing the operation, and then puts the result back into the spilled register. The second method call assigns a stack place to a spilled register. The third method call manipulates the instructions in question such that \texttt{move} instructions refer correctly to the spilled registers on the stack.
+
 
 \chapter{Testing}
 The main benefit of testing is the identification and subsequent mitigation of errors. It is to be expected to find errors in larger projects, which is why there must be a way to quickly and dynamically run tests during development. Testing helps software developers compare expected and actual output in order to improve quality. In this case, only system testing is carried out, although a higher granularity of testing would only enrich the project. There are many tools available to solve this task, which is why the big challenge lies in choosing the tool that best suits the problem. The most advanced tool is not always the best solution. The chosen tools in this project are the testing framework \texttt{unittest} and the coverage tool \texttt{coverage.py}. In addition, SonarLint is used to perform static code analysis within the IDE to provide best-practice hints, cognitive complexity metrics and more -- not important but worth mentioning.
@@ -855,7 +899,7 @@ runTest (testing.test.TestCase)
 Testing testing/test-cases/static_nested_scope.panda ... ok
 ...
 ----------------------------------------------------------------------
-Ran 21 tests in 2.261s
+Ran 25 tests in 4.972s
 
 OK 
 \end{minted}
@@ -1050,15 +1094,11 @@ It has always been desired that it should be possible to declare new variables i
 \section{Further Development}
 The first thing to solve is the scope implementation. This is possibly where the greatest performance is to be gained, based on the compiler's current functionality. Being able to analyze flow for entire functions will make it easier to optimize the use of registers. Especially in the case of using variables outside the current scope, the variables will then be marked as escaping, which causes them to live on the stack, which is annoying when wanting to use registers. At present, loops cannot really benefit from registers, although \texttt{sum\_loop} still managed to achieve significantly better performance.
 
-Another challenge is that there is no \texttt{push imm64} instruction, which can cause the error listed below. The error occurs when a number greater than $2^{31} - 1$ (two's complement) is printed, as the number to be printed will be pushed directly to the stack. This is annoying because the registers and the reserved stack space is \SI{64}{bit}, but we can efficiently only use \SI{32}{bit}.
+Another challenge is that there is no \texttt{push imm64} instruction, which can cause the error: ``\texttt{Error: operand type mismatch for `push'}". The error occurs, for example, when a number greater than \SI{32}{bit} two's complement is printed, as the number to be printed will be pushed directly to the stack. This is annoying because the registers and the reserved stack space is \SI{64}{bit}, but we can efficiently only use \SI{32}{bit} at worst. A similar error apply to the register machine, as \texttt{movq} cannot handle immediate source operands larger than \SI{32}{bit} two's complement. Workarounds are available, but they enforce a more advanced implementation than prepared in this project. 
 
-\begin{minted}{text}
-Error: operand type mismatch for `push'
-\end{minted}
+At present, all spilled registers are stored as temporary saves on the stack, but it might be desirable to move some spilled registers to the local data area and parameter area, so that the space already allocated on the stack is used efficiently.
 
-Similar error apply to the register machine, as \texttt{movq} cannot handle immediate source operands larger than \SI{32}{bit} two's-complement. There are workarounds to these errors, but it requires a more advanced implementation than prepared in this project. 
-
-Finally, it could be pretty cool with composite data types like arrays to make the language Turing Complete. At the present time, it is not possible to calculate anything significant, as one can only work with integers and Boolean values (0 or 1 integer). Composite data types will only further the potential of the already implemented programming constructs.
+Finally, it could be pretty cool with composite data types like arrays to make the language Turing Complete. At the present time, it is not possible to calculate anything significant, as one can only work with integers and Boolean values ($0$ or $1$ integer). Composite data types will only further the potential of the already implemented programming constructs.
 
 
 \section{Single Point Of Contact}
