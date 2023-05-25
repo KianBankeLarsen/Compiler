@@ -494,7 +494,7 @@ Every process running on the computer is given a virtual address space. Figure \
     \label{fig:address_space}
 \end{figure}
 
-The stack is a memory area where it is possible to \texttt{push} and \texttt{pop} elements as needed. One can also choose to statically reserve an amount of memory for data storage. The stack only brings value when used properly and judiciously. It is therefore up to the compiler-writer how the stack is to be used. The actual stack architecture does not matter as long as one decide on a way of doing things and act accordingly and consistently. However, the final stack architecture is very much controlled by procedure linkage, which limits the number of free choices, since certain things must be located on the stack, although the scheme is a free choice. The chosen stack architecture used in Panda is represented in Figure \ref{fig:stack}. The stack has been strategically divided into sections belonging to the different phases of the procedure linkage. In addition, addressing of significant pointers are shown. \texttt{RBP} (base pointer) and \texttt{RSP} (stack pointer) are used for immediate addressing of entities.
+The stack is a memory area where it is possible to \texttt{push} and \texttt{pop} elements as needed. One can also choose to statically reserve an amount of memory for data storage. The stack only brings value when used properly and judiciously. It is therefore up to the compiler-writer how the stack is to be used. The actual stack architecture does not matter as long as one decide on a protocol and act accordingly and consistently. However, the final stack architecture is very much controlled by procedure linkage, which limits the number of free choices, since certain things must be located on the stack, although the scheme is a free choice. The chosen stack architecture used in Panda is represented in Figure \ref{fig:stack}. The stack has been strategically divided into sections belonging to the different phases of the procedure linkage. In addition, addressing of significant pointers are shown. \texttt{RBP} (base pointer) and \texttt{RSP} (stack pointer) are used for immediate addressing of entities.
 
 \begin{figure}[H]
     \centering
@@ -601,7 +601,6 @@ The example below shows how to generate code for a function. The use of match st
 case AST.Function(body=body):
     ...
     self._ensure_labels(ast_node)
-
     self._append_instruction(
         Instruction(Op.LABEL,
                     Operand(Target(T.MEM, ast_node.start_label), Mode(M.DIR)))
@@ -613,18 +612,32 @@ case AST.Function(body=body):
                     Operand(Target(T.MEM, ast_node.end_label), Mode(M.DIR)))
     )
     self._epilog()
-    self._append_instruction(
-        Instruction(Op.META, Meta.RET)
-    )
+    self._append_instruction(Instruction(Op.META, Meta.RET))
     self._generate_code(body.decls)
     ...
 \end{minted}
 
 We do not care about the actual content of the function body because there are prepared other match cases that handle it recursively. We just know that whatever instructions the body contains, they must be specified there. This approach is guaranteed to work by the invariant-based code generation scheme.
 
-this is a test
+Invariants are conditions that we can rely on throughout the compiler. The benefit is that it is easier to implement new constructions when we know that we can rely on certain invariants. Invariants are established and maintained by following certain protocols such as the stack protocol. Below are stated some concrete Panda invariants:
+
+\begin{itemize}
+    \item The stack organization in the form of stack frames.
+    \item For constructions with multiple operands, the operands are processed left-to-right. Actual arguments to functions are processed right-to-left.
+    \item Function calls use the stack for all parameters.
+    \item A function's return value is stored in \texttt{RAX}.
+    \item \SI{64}{bits} are used for all types of values.
+    \item Constructions consuming a number of operands pop them from the stack; the stack top is the last argument. This invariant is mostly related to the stack machine, but a similar approach has been taken in the register machine -- we just maintain a stack of temporary register.
+    \item Constructions producing a result: The stack machine pushes the result onto the stack. The register machine moves the result into a new temporary. 
+\end{itemize}
 
 \subsection{Stack Machine}
+It is not possible to review code generation for all constructions for the stack machine, and therefore the code snippet for \texttt{ExpressionBinop} below is representatively selected. We start by noting that the piece of code perfectly complies with the presented invariants, so the content should not be surprising.
+
+A binary operation consists of a left and right child. The invariant promises to process operands left-to-right, and therefore the left child is called recursively before the right child is called recursively. The recursive calls return two values on the stack that the binary operation annotated by the node applies. Depending on the expression tree, it may be that the resulting value must be used to evaluate another node higher up the tree, and in that way the result propagates upwards.
+
+Structural pattern matching is used to extract \texttt{binop}, \texttt{lhs} and \texttt{rhs} as their own variables. To limit the matching to arithmetic binary operations (not comparisons), an \texttt{if}-guard is used to check that binary operation is one of the enumerations in the list. As said, the two recursive calls return two values on the stack. These two values are popped into register 1 and register 2, respectively, after which the binary operation (opcode) is performed with register 1 and register 2 as operands. Because the operation is destructive, the result is saved in register 2, and this value is finally pushed onto the stack. The stack machine is quite worry-free in the sense that we do not have to keep track of both registers and the stack, as everything we need is just consistently on the stack. It is only required that we push and pop in the correct order.
+
 \begin{minted}{py3}
 case AST.ExpressionBinop(binop, lhs, rhs) if binop in [Op.ADD, Op.SUB, Op.DIV, Op.MUL]:
     self._generate_code(lhs)
@@ -649,8 +662,7 @@ case AST.ExpressionBinop(binop, lhs, rhs) if binop in [Op.ADD, Op.SUB, Op.DIV, O
     )
 \end{minted}
 
-\newpage
-
+The idea behind comparison binary operations is very similar, but there is a little extra logic to handle pushing $1$ when true and $0$ otherwise.
 
 \subsection{Register Machine}
 \cite{ModernCompilerImplementation}
