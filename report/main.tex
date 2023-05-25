@@ -485,6 +485,7 @@ Reusing the input program from Figure \ref{fig:ex_program}, we can observe that 
 \newpage
 
 \section{Code Generation} \label{sec:code-gen}
+Every process running on the computer is given a virtual address space. Figure \ref{fig:address_space} shows this. Here we note that there are four sections whose significance we should consider. Executable code lives in the \textit{code} section. Static contains statically defined entities -- not used for anything other than the \texttt{form} string specified in \texttt{emit.py}. The Panda programming language does not allow the programmer to define something statically. The \textit{heap} is for dynamically allocating memory, which unfortunately is also not possible in the Panda language. Our primary concern is therefore the \textit{stack}, since the stack contains all variables and information associated with procedure linkage.  
 
 \begin{figure}[H]
     \centering
@@ -493,6 +494,8 @@ Reusing the input program from Figure \ref{fig:ex_program}, we can observe that 
     \label{fig:address_space}
 \end{figure}
 
+The stack is a memory area where it is possible to \texttt{push} and \texttt{pop} elements as needed. One can also choose to statically reserve an amount of memory for data storage. The stack only brings value when used properly and judiciously. It is therefore up to the compiler-writer how the stack is to be used. The actual stack architecture does not matter as long as one decide on a way of doing things and act accordingly and consistently. However, the final stack architecture is very much controlled by procedure linkage, which limits the number of free choices, since certain things must be located on the stack, although the scheme is a free choice. The chosen stack architecture used in Panda is represented in Figure \ref{fig:stack}. The stack has been strategically divided into sections belonging to the different phases of the procedure linkage. In addition, addressing of significant pointers are shown. \texttt{RBP} (base pointer) and \texttt{RSP} (stack pointer) are used for immediate addressing of entities.
+
 \begin{figure}[H]
     \centering
     \input{misc/tikz/stack_frame.tex}
@@ -500,12 +503,24 @@ Reusing the input program from Figure \ref{fig:ex_program}, we can observe that 
     \label{fig:stack}
 \end{figure}
 
+The first thing the operating system does when executing an assembly program is to call its main function. As mentioned earlier, the entire program's entry point is wrapped as a function, which is why it will be necessary to focus on procedure linkage already now. There are clearly defined rules for which registers caller and callee must preserve. This agreement makes it possible to utilize all registers, since we are guaranteed that callee registers are restored to the same state as when they were borrowed when the caller needs them. Figure \ref{fig:procedure} shows how procedure linkage is implemented in Panda. \texttt{Prolog} is responsible for saving callee-save registers and allocating space for local variables on the stack. \texttt{Precall} is responsible for putting arguments on the stack, if there are any, saving caller-save registers and making sure to set up static link pointer such that variables declared in other scopes can be accessed. \texttt{Postreturn} and \texttt{Epilog} are really just inverse processes of \texttt{Prolog} and \texttt{Precall} to restore registers and free allocated stack space.
+
 \begin{figure}[H]
     \centering
     \input{misc/tikz/procedure_linkage.tex}
     \caption{Procedure linkage.} 
     \label{fig:procedure}
 \end{figure}
+
+The entire procedure linkage process is quite essential for the register machine, whereas the stack machine only needs a subset of the functionality. Because the stack machine uses the stack for everything, it is not necessary to save registers other than \texttt{RBP}, however all register are saved anyway according to convention. The reason is that the final emit phase is reused for both the stack machine and the register machine.
+
+We shcematically know how things should be done, we just have to express this in code. The graphical IR is no longer sufficient, which is why we need a linear IR. The linear IR, called ILOC in \cite[19]{EnginneringACompiler}, is very similar to the assembly code we want to output. The literature describes ILOC as an instruction set designed for the RISC architecture, since it uses the three-operand format,
+
+\begin{align*}
+\mathrm{add} \quad r_1, r_2 \rightarrow r_3 \quad \text{// example instruction}
+\end{align*}
+
+where $r_1$ and $r_2$ are used for calculation and the result is stored in $r_3$. However, CISC is based primarily on two-operand format (second operand is destructive using AT\&T). Therefore, a closely related IR is used instead. The actual implementation is given below. It should be no secret that this is exactly the one used in SCIL, however it has been rewritten to use Python \texttt{dataclasses}. An instruction thus consists of an opcode and some operands:
 
 \begin{minted}{py3}
 @dataclass(init=False)
@@ -518,12 +533,16 @@ class Instruction:
         self.args = args[1:]
 \end{minted}
 
+An operand consists of a \texttt{target} and an addressing \texttt{mode}. Valid targets and modes are those specified in \texttt{Enum T} and \texttt{Enum M}, respectively. These classes are found in the file: \texttt{/src/enums/code\_generation\_enum.py}. This makes it possible to address, for example, registers directly or immediately.
+
 \begin{minted}{py3}
 @dataclass
 class Operand:
     target: Target
     addressing: Mode
 \end{minted}
+
+Translating the AST to the linear ILOC IR thus yields a list of instructions as shown below. The smart thing about this IR is that needed information is explicitly represented. It can be information such as which temporaries are used and their addressing. One can therefore easily perform analyzes on the code by iterating through the list of instructions and using structural pattern matching to extract information. The register machine will pass this IR through the allocator phase in order to assign temporaries to physical registers before emitting code. The stack machine does not require further analysis, instead the list of instructions will simply be passed on to the emit phase which will emit assembly code.
 
 \begin{minted}{py3}
 [
@@ -535,10 +554,11 @@ class Operand:
 ]
 \end{minted}
 
+It's time to provide some examples of code generation. Therefore, we consider how to access entities in external scopes. \texttt{\_follow\_static\_link}, shown below, solves this problem by repeatedly dereferencing the parent's base pointer (called ARP in Figure \ref{fig:stack}, an acronym for Activation Record Pointer). After the function has returned, \texttt{RSL} can be offset to access the desired entity. The only parameter the function requires is \texttt{symbol\_level}, and then it makes sure to follow the static link pointer the required number of times (based on the \texttt{\_current\_scope} field).
+
 \begin{minted}{py3}
 def _follow_static_link(self, symbol_level: int) -> int:
     level_difference = self._current_scope.level - symbol_level
-
     self._append_instruction(
         Instruction(Op.MOVE,
                     Operand(Target(T.RBP), Mode(M.DIR)),
@@ -553,6 +573,10 @@ def _follow_static_link(self, symbol_level: int) -> int:
 
     return level_difference
 \end{minted}
+
+\texttt{\_get\_code\_block\_to\_extend} is an auxiliary function used to solve a problem that arose in the code generation for the register machine, because it is necessary to preserve blocks of code such that liveness can be performed on one block of instructions at a time. Both \texttt{\_append\_instruction} and \texttt{\_get\_code\_block\_to\_extend} are annotated as abstract in \texttt{code\_generation\_base.py} and therefore defined individually in the classes that uses them. This is a consequence of the register machine and the stack machine not sharing the same structure of the generated code, precisely because code generated by the register machine is not completely linear, but instead a mixture of instructions and lists -- elaborated later.
+
+A similar problem is removing stack frames. In the case of returns from deeply nested scopes, it is necessary to be able to remove several stack frames simultaneously, otherwise saved register values and the return address will not be in the expected place, which will cause a segmentation fault. This is solved by iteratively generating code to tear down the individual stack frames by updating \texttt{RBP}. Now we just need to tear down the stack by moving the \texttt{RBP} into the \texttt{RSP}, and that's done as part of the epilogue. The code snippet below is an excerpt of \texttt{StatementReturn}.
 
 \begin{figure}[H]
     \centering
@@ -570,6 +594,8 @@ def _follow_static_link(self, symbol_level: int) -> int:
     \caption{Tear down multiple stack frames if needed.}
     \label{fig:remove_stack_frames}
 \end{figure}
+
+The example below shows how to generate code for a function. The use of match statements contributes to a good overview because it is possible to observe the entire function at once. The steps come in linear order, exactly as we want the internal representation. A good approach when writing code for a construction is therefore to think about the flow for the construction in question, and then simply apply the individual steps in that particular order.
 
 \begin{minted}{py3}
 case AST.Function(body=body):
@@ -594,7 +620,9 @@ case AST.Function(body=body):
     ...
 \end{minted}
 
-\newpage
+We do not care about the actual content of the function body because there are prepared other match cases that handle it recursively. We just know that whatever instructions the body contains, they must be specified there. This approach is guaranteed to work by the invariant-based code generation scheme.
+
+this is a test
 
 \subsection{Stack Machine}
 \begin{minted}{py3}
