@@ -665,11 +665,14 @@ case AST.ExpressionBinop(binop, lhs, rhs) if binop in [Op.ADD, Op.SUB, Op.DIV, O
 The idea behind comparison binary operations is very similar, but there is a little extra logic to handle pushing $1$ when true and $0$ otherwise.
 
 \subsection{Register Machine}
-\cite{ModernCompilerImplementation}
+Many of the techniques used in the stack machine can be transferred to the register machine. Instead of having a stack of values in the virtual address space used at runtime, we just maintain a stack of temporary registers at compile time. This makes it possible to keep track of which registers are included in various operations. As a starting point, we pretend that we have an infinite number of registers available, and it is therefore up to the allocation phase to map these to physical registers. This functionality is implemented by enriching the class with the two fields below. \texttt{\_reg\_count} is used to keep track of how many temporaries have been used and which unique temporary to use next. \texttt{\_reg\_stack} is just a list that we can pop and push values to. By only using push and pop we achieve a LIFO priority queue AKA. stack.
+
 \begin{minted}{py3}
 _reg_count: int = 0
 _reg_stack: list[int] = field(default_factory=list)
 \end{minted}
+
+To compare the stack machine with the register machine, we again give the example of \texttt{ExpressionBinop}. Two recursive calls are made to produce two temporaries on the stack. Next, we move the second temporary, \texttt{reg2}, into a new temporary because the binary operation is destructive. \texttt{push\_new\_reg\_count} takes care of incrementing \texttt{\_reg\_count} and pushing the temporary onto the temporary stack. When the binary operation has been performed, we know that the result is located in the new temporary and that it is at the top of the temporary stack, such that it can be used for subsequent operations.
 
 \begin{figure}[H]
 \begin{minted}{py3}
@@ -697,6 +700,10 @@ case AST.ExpressionBinop(binop, lhs, rhs) if binop in [Op.ADD, Op.SUB, Op.DIV, O
 \label{fig:binop}
 \end{figure}
 
+Instead of letting values flow through the stack, they just flow through registers. However, these are managed using a stack at compile time, so in that way the methods for the register machine and the stack machine are very similar -- at least in a programming aspect.
+
+The goal in this phase is, like in the register machine, to produce a linear IR. However, the allocation phase requires that the bracket structure be preserved, and therefore the result is a hybrid IR. The final IR therefore looks as indicated below. A hybrid IR means to combine both graphic and linear IR's to capture their strengths and avoid their weaknesses. A typical hybrid IR is a control-flow graph that uses a linear to represent blocks of code and a graph to represent the flow of control among those blocks. As a starting point, the resulting hybrid IR from this phase is not a control-flow graph, but it has all the prerequisites to become one. The final modifications will be done in the allocation phase.
+
 \begin{minted}{text}
 [
     instruction_1,
@@ -710,13 +717,30 @@ case AST.ExpressionBinop(binop, lhs, rhs) if binop in [Op.ADD, Op.SUB, Op.DIV, O
 ]
 \end{minted}
 
-\newpage
+Some things have been changed to achieve the above. \texttt{\_append\_instruction} has been modified to always append the given instruction to the last list in \texttt{\_code}. Furthermore, symbols and scopes must be handled in order to be able to reuse temporaries for identifiers. To create a new symbol scope use \texttt{\_create\_new\_symbol\_scope} and \texttt{\_remove\_symbol\_scope} to remove it again. For each scope that is opened, in addition to handling symbols, a new empty list is appended to \texttt{\_code}:
+
+\begin{minted}{py3}
+self._code.append([])
+\end{minted}
+
+As a scope is closed, in addition to processing symbols, instruction lists will be merged. The list we are working with is thus at the end as long as it is active, and when the scope is closed it becomes part of the accumulated IR.
+
+\begin{minted}{py3}
+if len(self._code) >= 2:
+    list_to_merge = self._code.pop()
+    self._code[-1].append(list_to_merge)
+\end{minted}
+
+The described IR implementation is quite simple in itself, but it is complicated by the fact that it's administration is included in another method. This is done because both methods are used in exactly the same places, however it would have been more readable to keep them separate.
 
 \section{Allocator}
+The liveness implementation is based on the literature \cite[218-223]{ModernCompilerImplementation} and the subsequent register allocation (graph coloring) is based on the literature \cite[235-238]{ModernCompilerImplementation}. 
+
+There are many steps involved in register allocation. In order to make the process clear and provide an overview, each step has its own method, which also call auxiliary methods. \texttt{perform\_register\_allocation} is the only method exposed by the \texttt{Allocator} class. The method is included below:
 
 \begin{minted}{py3}
 def perform_register_allocation(self, code: list[Instruction]) -> list[Instruction]:
-    code = copy.deepcopy(code)
+    code = copy.deepcopy(code) # input is left untouched
 
     self._find_labels(code)
     self._control_flow(code)
@@ -729,6 +753,38 @@ def perform_register_allocation(self, code: list[Instruction]) -> list[Instructi
     return code
 \end{minted}
 
+We are only interested in doing liveness analysis for instructions that use temporaries, so structural pattern matching is used to filter these out. Structural Pattern matching makes it easy to determine whether a temporary is used in the first or second operand or both. We therefore do not have to do a lot of conditional checks, because it is all given in the match case. 
+
+The first step is to create a mapping between labels and the closest instruction that uses temporaries. This information is used when performing control-flow, otherwise it is not known where the flow should go when a jump instruction is encountered.
+
+Creating control flow is about chaining instructions, so that any instruction points to the next instruction in the flow. Every instruction is given a successor and predecessor attribute, though it was later realized that the predecessor was not needed. The successor attribute is not strictly necessary, as we would be able to obtain the same information during the iteration in another way, but it makes the subsequent steps a bit nicer. Both successor and predecessor would have been strictly necessary if we had based the iteration on following these pointers, but due to the use of match statements, it was judged that it was easier to use a for each loop for the iteration. Due to the scope implementation, it has been necessary to limit the analysis to each introduced scope and not just functions, which is the ideal solution. It is not possible to ensure the flow when registers are saved and restored along the way. Consider Figure \ref{fig:flow_while} for an example of a flow graph. In panda, the scope is wrapped around the entire \texttt{while} construction. The flow is therefore as shown in the figure, apart from the fact that \texttt{body} is of course made up of multiple instructions.
+
+\begin{figure}[H]
+    \centering
+    \input{misc/tikz/loop_construction.tex}
+    \caption{Loop construction flow graph.}
+    \label{fig:flow_while}
+\end{figure}
+
+The limited flow is particularly expressed in an \texttt{if} statement. Optimally (but still locally) the flow would look like shown in Figure \ref{fig:if}, where, depending on the \texttt{if} condition, the flow continues in \texttt{then} or \texttt{else} and finally in the common final node. In this way, liveness can be calculated for the entire graph. Unfortunately, the case is as shown in Figure \ref{fig:restriected}. The flow is the same (shown with dotted lines), but in relation to the flow, we just take the direct route through the statement. \texttt{then} and \texttt{else} will be their own scopes, and therefore they will have their own local flow isolated from their surroundings. This is by no means desired, but it is a consequence of a choice made early in the process, because it standardized scopes and made it possible to declare variables in all scopes.
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.49\textwidth}
+        \centering
+        \input{misc/tikz/if_construction.tex}
+        \caption{\textit{Optimal} flow.}
+        \label{fig:if}
+    \end{subfigure}
+    \begin{subfigure}{0.49\textwidth}
+        \centering
+        \input{misc/tikz/flow_restriction.tex}
+        \caption{Restricted flow.}
+        \label{fig:restriected}
+    \end{subfigure}
+    \caption{\texttt{if} construction flow graph.}
+\end{figure}
+
 \begin{figure}[H]
     \centering
     \input{misc/tikz/abstract_flow_graph.tex}
@@ -736,22 +792,13 @@ def perform_register_allocation(self, code: list[Instruction]) -> list[Instructi
 \end{figure}
 
 \begin{figure}[H]
-    \centering
-    \input{misc/tikz/loop_construction.tex}
-    \caption{Loop construction flow graph.}
+    \begin{align*}
+        in[n] &= use[n] \cup (out[n] - def[n])\\
+        out[n] &= \bigcup\limits_{s \in succ[n]} in[n]
+    \end{align*}
+    \caption{Dataflow equations for liveness analysis.}
 \end{figure}
 
-\begin{figure}[H]
-    \centering
-    \input{misc/tikz/if_construction.tex}
-    \caption{\texttt{if} construction flow graph.}
-\end{figure}
-
-\begin{figure}[H]
-    \centering
-    \input{misc/tikz/flow_restriction.tex}
-    \caption{Flow restriction due to scope implementation.}
-\end{figure}
 
 \begin{minted}{py3}
 # Example code
@@ -799,8 +846,8 @@ The \texttt{Meta} instructions is thus simply mapped using a dictionary in pytho
 The majority of these functions are functions used during procedure linkage, which is why it makes sense to declare exactly which registers are callee-save and caller-save registers:
 
 \begin{minted}{py3}
-self._callee_save_reg: list[str] = ["rbx", "r12", "r13", "r14", "r15", "rbp"]
-self._calleer_save_reg: list[str] = ["rcx", "rdx", "rsi", "rdi", "r8", "r9", "r10", "r11"]
+self._callee_save_reg = ["rbx", "r12", "r13", "r14", "r15", "rbp"]
+self._calleer_save_reg = ["rcx", "rdx", "rsi", "rdi", "r8", "r9", "r10", "r11"]
 \end{minted}
 
 It might also have been advantageous to have specified these fields in another class, so that variable offsets did not have to be hard-coded in the code generation, but could instead have been implemented as a function on the two lists. Adding extra callee-save registers and caller-save registers would then not require further intervention than adding them to the correct list.
@@ -1129,7 +1176,7 @@ It has been a core value throughout the project to make a well-defined compiler 
 
 The approach to the project has been academically based on literature, in order to gain an overview of new as well as old knowledge. Although this has given a confident approach to the project, it must be recognized that it has dulled the process unnecessarily. When coding a project such as a compiler that consists of relatively many lines of code, and many hours of debugging, it is necessary to purposefully choose a theme and then learn as needed, otherwise many hours are lost on something that is not directly applicable. The hours are of course not wasted, but not beneficial for the project either.
 
-It has always been desired that it should be possible to declare new variables in any scope, which is why it was decided to let \texttt{body} (syntactic category from parsing) be what constituted a scope. The choice later made it clear, during code generation phase, that this imposed too many constraints on how the stack should be set up, since a simple generalized procedure linkage was wanted. This resulted in suddenly having to handle all scopes as procedure calls, though it had nothing to with a procedure call. One also encounter problems when doing local register allocation, because flow is only considered locally for a scope (normally local to functions). This consequence limits the analysis to the individual scope, making the content of a \texttt{then} block, of an \texttt{if}-statement, a black box for the surrounding scope. Thus, the analysis of control flow becomes less effective, which contributes to overall poorer performance of the register machine compiler. The easiest solution, and most likely most effective, would be to redo the scope implementation. Global register allocation would be the hard option, though it would not solve the underlying problem besides patching it.
+It has always been desired that it should be possible to declare new variables in any scope, which is why it was decided to let \texttt{body} (syntactic category from parsing) be what constituted a scope. The choice later made it clear, during code generation phase, that this imposed too many constraints on how the stack should be set up, since a simple generalized procedure linkage was wanted. This resulted in suddenly having to handle all scopes as procedure calls, though it had nothing to with a procedure call. One also encounter problems when doing local register allocation, because flow is only considered locally for a scope (normally local to functions). This consequence limits the analysis to the individual scope, making the content of a \texttt{then} block, of an \texttt{if} statement, a black box for the surrounding scope. Thus, the analysis of control flow becomes less effective, which contributes to overall poorer performance of the register machine compiler. The easiest solution, and most likely most effective, would be to redo the scope implementation. Global register allocation would be the hard option, though it would not solve the underlying problem besides patching it.
 
 \section{Further Development}
 The first thing to solve is the scope implementation. This is possibly where the greatest performance is to be gained, based on the compiler's current functionality. Being able to analyze flow for entire functions will make it easier to optimize the use of registers. Especially in the case of using variables outside the current scope, the variables will then be marked as escaping, which causes them to live on the stack, which is annoying when wanting to use registers. At present, loops cannot really benefit from registers, although \texttt{sum\_loop} still managed to achieve significantly better performance.

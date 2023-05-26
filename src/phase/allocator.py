@@ -282,7 +282,7 @@ class Allocator:
             code : list[instructions]
         """
 
-        code = copy.deepcopy(code)
+        code = copy.deepcopy(code) # input is left untouched
 
         self._find_labels(code)
         self._control_flow(code)
