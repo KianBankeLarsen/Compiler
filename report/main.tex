@@ -321,9 +321,9 @@ The resulting abstract syntax tree is given in Figure \ref{fig:AST}.
     \label{fig:AST}
 \end{figure}
 
-The input program stated in Figure \ref{fig:ex_program} is a good example because it is a small program with an associated small parse tree, although the parse tree is more verbose than it necessarily should be. Furthermore, there are two different uses of the \texttt{init\_var\_decl} node -- this node contains syntax such as \texttt{int i = 1;}. All usages of that node is syntactic sugar for a declaration and simultaneous assignment. The iterative \texttt{for} construction uses it as a parameter, so that can just be transformed directly when visited. The story is a little more complicated for other usages of this node, since code for declarations is first generated after all statements belonging to a \texttt{body} node have been visited. It has therefore been necessary to add a desugaring phase to transform the AST, as we will see later in section \ref{sec:desugar}.
+The input program stated in Figure \ref{fig:ex_program} is a good example because it is a small program with an associated small parse tree, although the parse tree is more verbose than it necessarily should be. Furthermore, there are two different uses of the \texttt{init\_var\_decl} vertex -- this vertex contains syntax such as \texttt{int i = 1;}. All usages of that vertex is syntactic sugar for a declaration and simultaneous assignment. The iterative \texttt{for} construction uses it as a parameter, so that can just be transformed directly when visited. The story is a little more complicated for other usages of this vertex, since code for declarations is first generated after all statements belonging to a \texttt{body} vertex have been visited. It has therefore been necessary to add a desugaring phase to transform the AST, as we will see later in section \ref{sec:desugar}.
 
-Panda is designed in such a way that every curly bracket enclosed environment creates a new scope. The default scope is global scope. Every scope consists of a single \texttt{body} node -- the grammar is \texttt{`new\_scope : LCURL body RCURL'}. Recall that a \texttt{body} node can contain optional declarations followed by optional statements. Just to mention boolean values, the convention used is that the integer value $0$ is \texttt{false}; otherwise \texttt{true}.
+Panda is designed in such a way that every curly bracket enclosed environment creates a new scope. The default scope is global scope. Every scope consists of a single \texttt{body} vertex -- the grammar is \texttt{`new\_scope : LCURL body RCURL'}. Recall that a \texttt{body} vertex can contain optional declarations followed by optional statements. Just to mention boolean values, the convention used is that the integer value $0$ is \texttt{false}; otherwise \texttt{true}.
 
 The syntax is very C-like, but below are some examples of the different language constructions. Starting with a \texttt{for} loop:
 
@@ -634,7 +634,7 @@ Invariants are conditions that we can rely on throughout the compiler. The benef
 \subsection{Stack Machine}
 It is not possible to review code generation for all constructions for the stack machine, and therefore the code snippet for \texttt{ExpressionBinop} below is representatively selected. We start by noting that the piece of code perfectly complies with the presented invariants, so the content should not be surprising.
 
-A binary operation consists of a left and right child. The invariant promises to process operands left-to-right, and therefore the left child is called recursively before the right child is called recursively. The recursive calls return two values on the stack that the binary operation annotated by the node applies. Depending on the expression tree, it may be that the resulting value must be used to evaluate another node higher up the tree, and in that way the result propagates upwards.
+A binary operation consists of a left and right child. The invariant promises to process operands left-to-right, and therefore the left child is called recursively before the right child is called recursively. The recursive calls return two values on the stack that the binary operation annotated by the vertex applies. Depending on the AST, it may be that the resulting value must be used to evaluate another vertex higher up the tree, and in that way the result propagates upwards.
 
 Structural pattern matching is used to extract \texttt{binop}, \texttt{lhs} and \texttt{rhs} as their own variables. To limit the matching to arithmetic binary operations (not comparisons), an \texttt{if}-guard is used to check that binary operation is one of the enumerations in the list. As said, the two recursive calls return two values on the stack. These two values are popped into register 1 and register 2, respectively, after which the binary operation (opcode) is performed with register 1 and register 2 as operands. Because the operation is destructive, the result is saved in register 2, and this value is finally pushed onto the stack. The stack machine is quite worry-free in the sense that we do not have to keep track of both registers and the stack, as everything we need is just consistently on the stack. It is only required that we push and pop in the correct order.
 
@@ -785,45 +785,110 @@ The limited flow is particularly expressed in an \texttt{if} statement. Optimall
     \caption{\texttt{if} construction flow graph.}
 \end{figure}
 
+Liveness analysis is about determining which temporaries are live at the same time. It is crucial in register allocation, because if two variables are not live at the same time, then they can share a register, otherwise they must necessarily claim their own register. We say a temporary is live if it holds a value that may be needed in the future, so this analysis is called \textit{liveness} analysis. We obtain this information using the fixed point algorithm given in \cite[221]{ModernCompilerImplementation}. The implementation of this algorithm is given below:
+
+\begin{minted}{py3}
+def _liveness_analysis(self, code: list) -> None:
+    change = True
+
+    while (change):
+        change = False
+
+        for ins in reversed(code):
+            if self._do_set_calc(ins):
+                change = True
+\end{minted}
+
+Note that the instructions are parsed in reverse order. This is because the uses of a temporary come after its declaration. It's just a way to achieve fixed point faster. The algorithm works by preparing an \texttt{in} and \texttt{out} set for each instruction in the flow. The \texttt{in} set contains all the temporaries that are live for the instruction in question. \texttt{out} contains all the temporaries that must be taken care of for the next instruction. The algorithm keeps repeating the analysis of the flow until there are no changes to the \texttt{in} set. Worst-case run time of this algorithm is $O(N^4)$, \cite[224]{ModernCompilerImplementation}. 
+
+To give intuition for the calculation of in and out sets, consider Figure \ref{fig:in-out-flow}. In the figure, an arbitrary vertex from the flow is considered, where it is indicated how the \texttt{in} and \texttt{out} sets follow the flow. Two \texttt{out} edges are specified because it may be that there is a conditional jump.
+
 \begin{figure}[H]
     \centering
     \input{misc/tikz/abstract_flow_graph.tex}
     \caption{Abstract flow graph.}
+    \label{fig:in-out-flow}
 \end{figure}
+
+In and out sets must be calculated for every vertex in the flow. This is done by using the dataflow equations in Figure \ref{fig:dataflow-eq} -- utilized in the \texttt{\_do\_set\_calc} method. Also note how the definition of a temporary kills its liveliness. This is expected behavior because if there are no uses of a definition, then we can simply remove those instructions. Executing useless instructions is useless. 
 
 \begin{figure}[H]
     \begin{align*}
         in[n] &= use[n] \cup (out[n] - def[n])\\
-        out[n] &= \bigcup\limits_{s \in succ[n]} in[n]
+        out[n] &= \bigcup\limits_{s \in succ[n]} in[s]
     \end{align*}
     \caption{Dataflow equations for liveness analysis.}
+    \label{fig:dataflow-eq}
 \end{figure}
 
+To take a concrete example, consider the register allocation process for the input program below.
 
-\begin{minted}{py3}
-# Example code
+\begin{minted}{c}
+int a = 5; int b = 7; print(a + b);
 \end{minted}
 
-\begin{minted}{py3}
-# Show in sets
+We skip control-flow because the phase does not provide any information to display. The liveness analysis produces the \texttt{in} sets below. We only consider instructions that use temporaries, and these instructions are extracted (left) and associated with their in set (right).
+
+\begin{minted}{text}
+movq $1, r1:    {}
+movq r1, r2:    {1}   
+movq $7, reg3:  {2}   
+movq r3, r4:    {2, 3}
+movq r2, r5:    {2, 4}
+addq r4, r5:    {4, 5}
+push r5:        {5}
 \end{minted}
 
-\begin{minted}{py3}
-# Show graph
-\end{minted}
+Based on all these \texttt{in} sets, an interference graph is created. The graph is made by adding an edge between any pair of temporaries that share an \texttt{in} set. The implementation in Panda makes use of a dictionary to create a mapping (temporary: adjacency set) to represent a graph. The literature suggests making an interference matrix, but it immediately seemed easier to implement the graph with adjacency sets, as the graph have to be strangulated and assembled again during coloring.
 
 \begin{minted}{py3}
-# Show colors
+[{1: set(), 2: {3, 4}, 3: {2}, 4: {2, 5}, 5: {4}}]
 \end{minted}
 
-This is the colored graph:
+The graph is drawn in Figure \ref{fig:interference-graph}.
+
 \begin{figure}[H]
     \centering
     \input{misc/tikz/interference_graph.tex}
-    \caption{Interference graph (TODO: do real example).}
+    \caption{Interference graph.}
+    \label{fig:interference-graph}
 \end{figure}
 
-\newpage
+Graph coloring is done using a simple heuristic, called Coloring by Simplification, in the following way:
+
+\begin{enumerate}
+    \item Suppose the graph $G$ has a vertex $m$ with fewer than $K$ neighbors, where $K$ is the number of registers on the machine.
+    \item Let $G'$ be the graph obtained by removing $m$ from $G$.
+    \item When a new vertex $m$ is added to the colored graph $G'$, it is assigned the lowest numbered color that is not assigned to any of its neighbors. If the neighbors of $m$ have at most $K-1$ colors among them, then a free color can always be found for $m$.
+\end{enumerate}
+
+This leads to a stack-based algorithm for coloring: we repeatedly remove (and push on a stack) nodes of degree less than $K$. Each such simplification leads to more opportunity for simplification. If it is not the case that there is a node with degree less than or equal to $K$, then a random vertex is chosen in the graph -- vertex marked for spilling. There are different heuristics: highest degree first, adaptive degree counts or lowest degree last. The implementation in Panda just randomly pick a vertex with degree lower than $K$, and if there is no such vertex, then a random vertex with degree $K$ or higher. The coloring implementation is provided below.
+
+\begin{minted}{py3}
+def _color_graph(self, graphs: list[defaultdict]) -> dict[int, int]:
+    colors = defaultdict(lambda: None)
+
+    for graph in graphs:
+        stack = self._take_graph_apart(graph)
+        self._assign_colors(stack, colors)
+
+    return colors
+\end{minted}
+
+Running the algorithm on the input yields the color mapping (temporary: color) given below. 
+
+\begin{minted}{py3}
+{5: 1, 4: 2, 3: 1, 2: 3, 1: 1}
+\end{minted}
+
+The graph in Figure \ref{fig:interference-graph} has been colored with the calculated colors in Figure \ref{fig:colored-interference-graph}.
+
+\begin{figure}[H]
+    \centering
+    \input{misc/tikz/colored_interference_graph.tex}
+    \caption{Colored interference graph.}
+    \label{fig:colored-interference-graph}
+\end{figure}
 
 \section{Emit}
 The Emit phase is the last phase in the compiler's back end. It is in this phase that the internal representation introduced in the code generation is made into actual assembler instructions, which can then be compiled into machine code using \texttt{gcc}. Luckily it has been possible to develop an interface such that this class could be used for both the stack machine and register machine.
@@ -911,7 +976,7 @@ def _dispatch(self, instruction: iloc.Instruction) -> None:
 \end{displayquote}
 \hspace*\fill{\small--- \cite[239]{ModernCompilerImplementation}}
 
-Since all nodes in the interference graph are colored, we can conclude that if a node has been colored \texttt{None}, then it not even part of the graph, thus, the \texttt{move} instruction can be safely eliminated.
+Since all nodes in the interference graph are colored, we can conclude that if a vertex has been colored \texttt{None}, then it not even part of the graph, thus, the \texttt{move} instruction can be safely eliminated.
 
 \texttt{\_handle\_reg\_spill} is called from \texttt{\_dispatch}. \texttt{\_handle\_reg\_spill} takes care of inserting extra instructions in case a spill register needs adjustment. The method has been inserted below:
 

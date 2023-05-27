@@ -162,6 +162,7 @@ class Allocator:
                     node = ins
 
             if node:
+                print(ins, node.in_)
                 for i in node.in_:
                     if i not in graph:
                         graph[i] = set()
@@ -248,7 +249,7 @@ class Allocator:
                 case Instruction(args=(Operand(target=Target(spec=T.REG, val=val)), )):
                     ins.args[0].target.val = colors[val]
 
-    def _flatmap(self, code, acc: list = None):
+    def _flatmap(self, code, acc: list = None) -> list[Instruction]:
         if acc is None:
             acc = []
 
