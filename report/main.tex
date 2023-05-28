@@ -875,7 +875,7 @@ def _color_graph(self, graphs: list[defaultdict]) -> dict[int, int]:
     return colors
 \end{minted}
 
-Running the algorithm on the input yields the color mapping (temporary: color) given below. 
+Running the algorithm on the input yields the color mapping (temporary: color) given below. Better heuristic would have colored the graph using only two colors.
 
 \begin{minted}{py3}
 {5: 1, 4: 2, 3: 1, 2: 3, 1: 1}
@@ -1205,19 +1205,48 @@ It is possible to convert the coverage data to an HTML report with the command \
 The HTML report also makes it possible to carry out filtering etc. in the file overview table, and thus get a nicer and more user-friendly interface.
 
 \chapter{Performance Comparison}
-introduction...
+It is now time to compare the performance of the stack machine and the register machine. Only the three tests indicated in Figure \ref{fig:performance_comparison} have been made, as it is limited how many tests can be made without composite types. The tests are:
 
-\begin{figure}[H]
+\begin{itemize}
+    \item \texttt{sum\_loop} from \texttt{test-cases/summers.panda} called with actual parameter $300000000$.
+    \item \texttt{fib} from \texttt{test-cases/fibonacci\_classic.panda} called with actual parameter $39$.
+    \item \texttt{for}-loop performing $2147483647$ iterations of adding numbers.
+\end{itemize}
+
+All tests are calculated as an average of 10 independent measurements. The program executions have been performed on an Intel x86 Core i9-8950HK Processor (Coffee Lake CPU), and timed using the native tool \texttt{time} in Ubuntu (based on \texttt{real} time).
+
+As described, the register allocation is rather limited, which is why we did not expect to achieve better performance using the register machine versus the stack machine. On the other hand, one could have actually expected worse runtimes because the values flow between more physical registers than necessary (peep-hole optimization required). However, there is no performance gain given the \texttt{for}-loop test, but otherwise the speed is significantly better for the register machine than the stack machine.
+
+The reason for the increased speed of the register machine is supposed to be due to the use of move instructions despite push and pop instructions. Based on a scientific paper written by Agner Fog from DTU, \cite[314-315]{instruction}, the assumption is not without authority. Figure \ref{tab:instruction_table} presents a table comparing reciprocal throughput. Without getting too technical and analytical about the compiled programs, we achieve approximately 50\% better performance by replacing push and pop instructions with move instructions. It agrees very well with the performance gain we see in \texttt{sum\_loop}. Fibonacci is expected to be dominated by the handling of stack frames, and does therefore not gain as much performance.\todo{fix loop test}
+
+% python3.10 main.py -f ../performance/for-loop.panda -cs
+% time ./src/output/a.out
+
+\begin{figure}[h]
     \centering
     \input{misc/tikz/performance_comparison.tex}
     \caption{Stack Machine vs Register Machine.}
     \label{fig:performance_comparison}
 \end{figure}
 
-\newpage
-
-second page...
-
+\begin{table}[h]
+    \centering
+    \begin{tabular}{l|c|c}
+        Instruction  & Operands &  Reciprocal throughput \\ \hline
+        MOV & r,i & 0.25 \\\hline
+        MOV & r32/64,r32/64 & 0.25\\ \hline
+        MOV & r32/64, m & 0.5 \\\hline
+        PUSH & r & 1 \\\hline
+        PUSH & i & 1 \\\hline
+        PUSH & m & 1 \\\hline
+        PUSH & stack pointer & 1 \\\hline
+        POP & r & 0.5 \\\hline
+        POP & stack pointer & 3 \\\hline
+        POP & m & 1
+    \end{tabular}
+    \caption{Coffee Lake integer instructions.}
+    \label{tab:instruction_table}
+\end{table}
 
 \chapter{Evaluation}
 This chapter is devoted to reflecting on the learning through the project, as well as describing some issues that could be interesting to work on if the project had had a longer duration.
