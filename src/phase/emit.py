@@ -22,7 +22,7 @@ class Emit:
         self._instruction_indent = 16
         self._code = []
         self._reg_scope = []
-        self._registers_on_stack = -1
+        self._registers_on_stack = []
 
         self._enum_to_method_map = {
             Meta.CALL_PRINTF: self._call_printf,
@@ -173,7 +173,7 @@ class Emit:
                     instructions.append(
                         iloc.Instruction(Op.MOVE,
                                          iloc.Operand(iloc.Target(
-                                             T.RSP), iloc.Mode(M.IRL, self._reg_scope[-1][val1] - self._registers_on_stack)),
+                                             T.RSP), iloc.Mode(M.IRL, self._reg_scope[-1][val1] - self._registers_on_stack[-1])),
                                          iloc.Operand(iloc.Target(T.REG, reg1), iloc.Mode(M.DIR)))
                     )
                 if val2 > 9:
@@ -181,7 +181,7 @@ class Emit:
                     instructions.append(
                         iloc.Instruction(Op.MOVE,
                                          iloc.Operand(iloc.Target(
-                                             T.RSP), iloc.Mode(M.IRL, self._reg_scope[-1][val2] - self._registers_on_stack)),
+                                             T.RSP), iloc.Mode(M.IRL, self._reg_scope[-1][val2] - self._registers_on_stack[-1])),
                                          iloc.Operand(iloc.Target(T.REG, reg2), iloc.Mode(M.DIR)))
                     )
 
@@ -197,8 +197,26 @@ class Emit:
                         iloc.Instruction(Op.MOVE,
                                          iloc.Operand(iloc.Target(
                                              T.REG, reg2), iloc.Mode(M.DIR)),
-                                         iloc.Operand(iloc.Target(T.RSP), iloc.Mode(M.IRL, self._reg_scope[-1][val2] - self._registers_on_stack)))
+                                         iloc.Operand(iloc.Target(T.RSP), iloc.Mode(M.IRL, self._reg_scope[-1][val2] - self._registers_on_stack[-1])))
                     )
+
+            # Solution to: Error: too many memory references for `movq'
+            case iloc.Instruction(opcode=Op.MOVE, args=(iloc.Operand(target=iloc.Target(spec=T.RSL)),
+                                                   iloc.Operand(target=iloc.Target(spec=T.REG, val=val)))) if val > 9:
+                
+                instructions.extend(self._check_if_spill_is_needed(instruction))
+
+                instructions.append(
+                    iloc.Instruction(Op.MOVE,
+                        instruction.args[0],
+                        iloc.Operand(iloc.Target(T.REG, 10), iloc.Mode(M.DIR)))
+                )
+
+                instructions.append(
+                    iloc.Instruction(Op.MOVE,
+                        iloc.Operand(iloc.Target(T.REG, 10), iloc.Mode(M.DIR)),
+                        iloc.Operand(iloc.Target(T.RSP), iloc.Mode(M.IRL, self._reg_scope[-1][val] - self._registers_on_stack[-1])))
+                )
 
         return instructions
 
@@ -208,8 +226,8 @@ class Emit:
         match instruction:
             case iloc.Instruction(opcode=Op.MOVE, args=(iloc.Operand(), iloc.Operand(target=iloc.Target(spec=T.REG, val=val)))) if val > 9:
                 if val not in self._reg_scope[-1]:
-                    self._registers_on_stack += 1
-                    self._reg_scope[-1][val] = self._registers_on_stack
+                    self._registers_on_stack[-1] += 1
+                    self._reg_scope[-1][val] = self._registers_on_stack[-1]
                     instructions.append(
                         iloc.Instruction(Op.SUB,
                                          iloc.Operand(iloc.Target(
@@ -228,15 +246,15 @@ class Emit:
                     if len(instruction.args) == 1:
                         val = instruction.args[0].target.val
                         instruction.args = (iloc.Operand(
-                            iloc.Target(T.RSP), iloc.Mode(M.IRL, self._reg_scope[-1][val] - self._registers_on_stack)),)
+                            iloc.Target(T.RSP), iloc.Mode(M.IRL, self._reg_scope[-1][val] - self._registers_on_stack[-1])),)
                     elif i == 0:
                         val = instruction.args[0].target.val
                         instruction.args = (iloc.Operand(iloc.Target(
-                            T.RSP), iloc.Mode(M.IRL, self._reg_scope[-1][val] - self._registers_on_stack)), instruction.args[1])
+                            T.RSP), iloc.Mode(M.IRL, self._reg_scope[-1][val] - self._registers_on_stack[-1])), instruction.args[1])
                     else:
                         val = instruction.args[1].target.val
                         instruction.args = (instruction.args[0], iloc.Operand(
-                            iloc.Target(T.RSP), iloc.Mode(M.IRL, self._reg_scope[-1][val] - self._registers_on_stack)))
+                            iloc.Target(T.RSP), iloc.Mode(M.IRL, self._reg_scope[-1][val] - self._registers_on_stack[-1])))
 
         return instruction
 
@@ -250,12 +268,14 @@ class Emit:
 
     def _prolog(self) -> None:
         self._reg_scope.append({})
+        self._registers_on_stack.append(-1)
         self._save_retore_reg("pushq", self._callee_save_reg)
         self._append_instruction("movq %rsp, %rbp")
         self._append_newline()
 
     def _epilog(self) -> None:
         self._reg_scope.pop()
+        self._registers_on_stack.pop()
         self._append_instruction("movq %rbp, %rsp")
         self._save_retore_reg("popq", reversed(self._callee_save_reg))
         self._append_newline()
