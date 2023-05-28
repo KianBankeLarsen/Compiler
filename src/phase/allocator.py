@@ -162,7 +162,6 @@ class Allocator:
                     node = ins
 
             if node:
-                print(ins, node.in_)
                 for i in node.in_:
                     if i not in graph:
                         graph[i] = set()
