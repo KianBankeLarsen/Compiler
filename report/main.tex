@@ -241,7 +241,7 @@ def t_IDENT(t):
 
 This approach is recommended as it greatly reduces the number of regular expression rules.
 
-\section{Parsing}
+\section{Parser}
 Parsing is the second phase of the compilers front end. The parser's task is to determine whether a stream of tokenized words produced by the scanner constitutes a valid sentence in the programming language. The parser uses a context-free grammar to derive a syntactic structure for the program, fitting the tokenized words into the grammatical model. If the parser determines that the tokenized program is a valid program, it builds an intermediate representation (shortened IR). The resulting IR of this phase is a graphical IR, acyclic parse tree, because it encodes the program structure well.\footnote{We will consider the properties of a linear IR in section \ref{sec:code-gen}.} Choosing the correct IR has major consequences on what information that can be encoded. It is necessary to have information encoded explicitly, as it is not possible to modify the implicit meaning of some structure.
 
 The Yacc part of PLY uses a LALR(1) parser, which is a bottom up parser, meaning that the parser will attempt to build a derivation bottom up. Though we do not have to deal with the parser implementation, it is worth mentioning that top-down parsers are usually more intuitive, but bottom up parsing is more practical and efficient for complex languages. 
@@ -1205,19 +1205,19 @@ It is possible to convert the coverage data to an HTML report with the command \
 The HTML report also makes it possible to carry out filtering etc. in the file overview table, and thus get a nicer and more user-friendly interface.
 
 \chapter{Performance Comparison}
-It is now time to compare the performance of the stack machine and the register machine. Only the three tests indicated in Figure \ref{fig:performance_comparison} have been made, as it is limited how many tests can be made without composite types. The tests are:
+It is time to compare the performance of the stack machine and the register machine. Only the three tests indicated in Figure \ref{fig:performance_comparison} have been made, as it is limited how many tests can be made without composite types. The tests are:
 
 \begin{itemize}
     \item \texttt{sum\_loop} from \texttt{test-cases/summers.panda} called with actual parameter $300000000$.
     \item \texttt{fib} from \texttt{test-cases/fibonacci\_classic.panda} called with actual parameter $39$.
-    \item \texttt{for}-loop performing $2147483647$ iterations of adding numbers.
+    \item \texttt{for}-loop performing $500000000$ iterations of adding two numbers.
 \end{itemize}
 
-All tests are calculated as an average of 10 independent measurements. The program executions have been performed on an Intel x86 Core i9-8950HK Processor (Coffee Lake CPU), and timed using the native tool \texttt{time} in Ubuntu (based on \texttt{real} time).
+All test results are calculated as an average of 10 measurements. The tests have been performed on an Intel x86 Core i9-8950HK Coffee Lake Processor, and timed using the native tool \texttt{time} in Ubuntu (based on \texttt{real} time).
 
-As described, the register allocation is rather limited, which is why we did not expect to achieve better performance using the register machine versus the stack machine. On the other hand, one could have actually expected worse runtimes because the values flow between more physical registers than necessary (peep-hole optimization required). However, there is no performance gain given the \texttt{for}-loop test, but otherwise the speed is significantly better for the register machine than the stack machine.
+We did not expect much performance gain by using the register machine versus the stack machine, since the register allocation is rather limited. One might even have expected slower executions because values move between more physical registers than necessary (peep-hole optimization required). A remarkable performance gain is observed for all tests when using the register machine.
 
-The reason for the increased speed of the register machine is supposed to be due to the use of move instructions despite push and pop instructions. Based on a scientific paper written by Agner Fog from DTU, \cite[314-315]{instruction}, the assumption is not without authority. Figure \ref{tab:instruction_table} presents a table comparing reciprocal throughput. Without getting too technical and analytical about the compiled programs, we achieve approximately 50\% better performance by replacing push and pop instructions with move instructions. It agrees very well with the performance gain we see in \texttt{sum\_loop}. Fibonacci is expected to be dominated by the handling of stack frames, and does therefore not gain as much performance.\todo{fix loop test}
+The reason for the increased performance of the register machine is, by hypothesis, due to the use of move instructions despite push and pop instructions. Based on a scientific paper written by Agner Fog from DTU, \cite[314-315]{instruction}, the hypothesis is not without authority. Figure \ref{tab:instruction_table} presents a table comparing reciprocal throughput. Without getting too technical and analytical about the compiled programs, we achieve approximately 50\% better performance by replacing push and pop instructions with move instructions. It agrees very well with the performance gain we see in \texttt{sum\_loop}. It is expected that Fibonacci is dominated by the complexity associated with handling stack frames, and therefore we do not achieve the same performance gain. The result in the \texttt{for}-loop test is crazy, but the primary work is also optimized from a reciprocal throughput of almost $1$ to around $0.25$. The tests are satisfactory, and we conclude that the hypothesis holds.
 
 % python3.10 main.py -f ../performance/for-loop.panda -cs
 % time ./src/output/a.out
