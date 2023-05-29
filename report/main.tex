@@ -862,7 +862,7 @@ Graph coloring is done using a simple heuristic, called Coloring by Simplificati
     \item When a new vertex $m$ is added to the colored graph $G'$, it is assigned the lowest numbered color that is not assigned to any of its neighbors. If the neighbors of $m$ have at most $K-1$ colors among them, then a free color can always be found for $m$.
 \end{enumerate}
 
-This leads to a stack-based algorithm for coloring: we repeatedly remove (and push on a stack) nodes of degree less than $K$. Each such simplification leads to more opportunity for simplification. If it is not the case that there is a node with degree less than or equal to $K$, then a random vertex is chosen in the graph -- vertex marked for spilling. There are different heuristics: highest degree first, adaptive degree counts or lowest degree last. The implementation in Panda just randomly pick a vertex with degree lower than $K$, and if there is no such vertex, then a random vertex with degree $K$ or higher. The coloring implementation is provided below.
+This leads to a stack-based algorithm for coloring: we repeatedly remove (and push on a stack) nodes of degree less than $K$. Each such simplification leads to more opportunity for simplification. If it is not the case that there is a node with degree less than $K$, then a random vertex is chosen in the graph. There are many heuristics that can be used, and one of them is the highest degree first heuristic because they are more likely to require a new color. The implementation in Panda just randomly pick a vertex with degree lower than $K$, and if there is no such vertex, then a random vertex with degree $K$ or higher. The coloring implementation is provided below. $K = 10$ in Panda.
 
 \begin{minted}{py3}
 def _color_graph(self, graphs: list[defaultdict]) -> dict[int, int]:
@@ -875,7 +875,7 @@ def _color_graph(self, graphs: list[defaultdict]) -> dict[int, int]:
     return colors
 \end{minted}
 
-Running the algorithm on the input yields the color mapping (temporary: color) given below. Better heuristic would have colored the graph using only two colors.
+Running the algorithm on the input yields the color mapping (temporary: color) given below. The highest degree first heuristic would have colored the graph using only two colors.
 
 \begin{minted}{py3}
 {5: 1, 4: 2, 3: 1, 2: 3, 1: 1}
@@ -1072,7 +1072,7 @@ That way, one know exactly which push or pull request caused the tests to fail, 
     \caption{Workflow history.}
 \end{figure}
 
-A workflow build consists of the stages stated in Figure \ref{fig:workflow_run}.  Note that, in this example, the stack machine test passed, but the register version did not. Upon build failure, an email is sent to whom introduced the issue.
+A workflow build consists of the stages stated in Figure \ref{fig:workflow_run}.  Note that, in this example, the stack machine test passed, but the register version did not. Upon build failure, an email is sent to whom introduced the issue (me).
 
 \begin{figure}[H]
     \centering
@@ -1306,6 +1306,17 @@ The website is simply a nice presentation of the \texttt{README.md} file. In add
 GitHub Pages takes care of deployment when a YAML is specified. Subsequently, the website will be automatically deployed on any push to GitHub -- at the same time as the workflow for testing runs.
 
 \chapter{Conclusion}
+In this bachelor project, a compiler has been successfully implemented, which can be used both as a stack machine and a register machine. The compiler consists of a scanner, parser, symbol collector, desugar, code generator, allocator and a code emitter. The compiler consists of approximately 3500 lines of Python code.
+
+The implemented language is named Panda, and resembles a subset of C. The implemented types are Boolean and Integer (actually both are integers). Constructions such as if-else statements, while-loops and for-loops have also been implemented. \SI{64}{bit} are used for all types of values. It had been well regarded with composite types, such as arrays, but unfortunately it was not achieved in the time frame.
+
+The performance of the stack machine and the register machine have been compared, and it turns out that the register machine runs remarkably faster, which is a very satisfactory result. Depending on the given test, a performance gain of up to a factor of three is observed.
+
+Correctness of the compiler has been tested using 25 test cases and all tests run successfully. Furthermore, a workflow has been set up to carry out these tests via GitHub Actions, which ensures that all code pushed to production is tested. In the event of an error, the person responsible will receive a notification accordingly. Although the 25 tests do not provoke an error, this does not mean that the compiler does not contain any errors, just that they have not been discovered yet. The 25 tests achieve a code coverage of 97\%, which is sufficient.
+
+Every project has a README. In addition to providing a light introduction to the project, a static website has been generated on the file, from which the code is publicly available: \url{https://kianbankelarsen.github.io/Compiler/}
+
+The implementation of scopes is not optimal, which is why it could be interesting to refactor, given that there was more time to work on the project. Only when this is done will it be possible to fully utilize the register allocation, and in that way, hopefully, achieve an even greater performance gain.
 
 \cleardoublepage
 \phantomsection

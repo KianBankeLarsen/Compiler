@@ -188,7 +188,7 @@ class Allocator:
         while (graph):
             found = None
             for node, adj in graph.items():
-                if len(adj) < 9:
+                if len(adj) < 10:
                     found = (node, set(adj))
                     break
 
