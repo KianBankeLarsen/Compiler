@@ -55,11 +55,23 @@
 \pagenumbering{roman}
 
 \begin{abstract}
-    \paragraph{English}
-    This is my very good abstract
+\paragraph{English}
+This paper examines the development of a simple compiler that makes use of several phases: scanner, parser, symbol collector, desugar, code generator, allocator and code emitter. The scanner and parser are based on Python Lex-Yacc.
 
-    \paragraph{Danish}
-    Et fantastisk abstract
+The main focus of the compiler implementation is register allocation, but the compiler has first been developed as a stack machine. It is therefore interesting to compare the performance of the two versions. It is concluded that the register machine achieves better performance than the stack machine, although it is unclear whether this is due to the liveness analysis and not just the use of faster instructions.
+
+Choices and considerations have been made when necessary, which is why it will be realized in retrospect that few things should have been done differently. The compiler implementation is based mainly on theory given in accompanying literature: \cite{ModernCompilerImplementation}, \cite{EnginneringACompiler} and SCIL known from DM565.
+
+The compiler is publicly available here: \url{https://kianbankelarsen.github.io/Compiler/}.
+
+\paragraph{Danish}
+Dette papir undersøger udviklingen af en simpel compiler, der gør brug af flere faser: scanner, parser, symbol collector, desugar, code generator, allocator and code emiter. Scanneren og parseren er baseret på Python Lex-Yacc. 
+
+Hovedfokuset for compiler implementationen er registerallokering, men først er compileren blevet udviklet som en stakmaskine. Det er herfor interessant at sammenligne performance af de to versioner. Det konkluderes at registermaskinen opnår bedre performance end stakmaskinen, dog er dog uklart hvorvidt det skyldes liveness analysen og ikke bare brugen af hurtigere instruktioner.
+
+Valg og overvejeler er gjort når det har været nødvendigt, hvorfor det vil blive indset i reprospekt, at få ting bør have blevet gjort anderledes. Compiler implementationen er baseret hovedsagligt på teori givet i føglende litteratur: \cite{ModernCompilerImplementation}, \cite{EnginneringACompiler} og SCIL kendt fra DM565. 
+
+Compileren er offentlig tilgængelig her: \url{https://kianbankelarsen.github.io/Compiler/}.
 \end{abstract}
 
 { \hypersetup{hidelinks} \tableofcontents }
@@ -73,9 +85,9 @@ This report examines how to make a simple compiler in Python, named Panda for no
 
 The language to be compiled is a subset of the imperative language C. This has been chosen because of its simpler syntax and easy to read curly bracket enclosed static scopes. In this project, we are interested in making a language having integers, Booleans and preferably some kind of floats. The language must have control flow constructs in form of \texttt{if}-\texttt{else} statements and functions, and iterative constructs such as \texttt{for}- and \texttt{while}-loops. 
 
-A modern compiler is, as is well-known, divided into phases. These phases relate to lexical and syntactic analysis, resulting in an abstract syntax tree. Subsequent phases analyze and adorn the abstract syntax tree, building a symbol table and finally generating assembler code.
+A modern compiler is, as is well known, divided into phases. These phases relate to lexical and syntactic analysis, resulting in an abstract syntax tree. Subsequent phases analyze and adorn the abstract syntax tree, building a symbol table and finally generating assembler code.
 
-The main focus in regard to advanced techniques will be local register allocation, using techniques described in \cite{EnginneringACompiler}. Handling this efficiently requires data flow analysis via control flow-graph, construction of interference graph, graph coloring and translation back to instructions using a combination of the registers and the stack, when the available registers do not suffice.
+The main focus in regard to advanced techniques will be local register allocation, using techniques described in \cite{ModernCompilerImplementation}. Handling this efficiently requires data flow analysis via control flow-graph, construction of interference graph, graph coloring and translation back to instructions using a combination of the registers and the stack, when the available registers do not suffice.
 
 Initially, a stack machine will be prepared, which will form the basis for developing a compiler that uses CPU registers. We will take advantage of the split phases property when replacing the stack code generation phase in benefit for one that uses register allocation. This allows us to only worry about ensuring that subsequent phases cope with the changes made in the former phases.
 
@@ -112,9 +124,9 @@ PLY is a native Python tool, relying on reflection, used to automatically genera
 \section{Design Principles \& Patterns}
 When starting a new project, it is important to make some basic thoughts about the architecture. Sensible choices at the beginning can increase code readability and make maintainability easier. It is particularly important to consider design principles and design patterns, as this will have a big effect on, i.e., how data structures are traversed and code testability. In this context, design principles refer to SOLID, and design patterns refer to Gang of Four's 23 design patterns.
 
-We will start by considering design principles. SOLID is a mnemonic acronym for at set of design principles concerning software development in object-oriented languages: \textbf{S}ingle Responsibility, \textbf{O}pen Closed, \textbf{L}iskov's Substitution, \textbf{I}nterface Segregation and \textbf{D}ependency Inversion. The principles are in many ways obvious when rehearsed, but not necessarily followed, as it requires active consideration. Single responsibility is particularly expressed in the project by the sharp division of phases and their interfaces between them. Open/closed is not particularly used in the project, as inheritance cases sparsely appear, though crucial in the printer package. It will never be necessary to edit the generic printer because functionality to print a specific data structure is first implemented upon extension. Liskov's substitution principle is accommodated in the AST data class, since any subtree is a valid tree and all nodes are AST nodes. Dependency inversion principle simply means that you must program against an interface and not an implementation. There is actually an incident where the project does not live up to this principle, and that is when using the hidden method \texttt{\_value2member\_map\_} on \texttt{Enum} in the parsing phase. Other examples apply, of course, as every class must accommodate every principle. This was just a quick review.
+We will start by considering design principles. SOLID is a mnemonic acronym for a set of design principles concerning software development in object-oriented languages: \textbf{S}ingle Responsibility, \textbf{O}pen Closed, \textbf{L}iskov's Substitution, \textbf{I}nterface Segregation and \textbf{D}ependency Inversion. The principles are in many ways obvious when rehearsed, but not necessarily followed, as it requires active consideration. Single responsibility is particularly expressed in the project by the sharp division of phases and their interfaces between them. Open/closed is not particularly used in the project, as inheritance cases sparsely appear, though crucial in the printer package. It will never be necessary to edit the generic printer because functionality to print a specific data structure is first implemented upon extension. Liskov's substitution principle is accommodated in the AST data class, since any subtree is a valid tree and all nodes are AST nodes. Dependency inversion principle simply means that you must program against an interface and not an implementation. There is actually an incident where the project does not live up to this principle, and that is when using the hidden method \texttt{\_value2member\_map\_} on \texttt{Enum} in the parsing phase. Other examples apply, of course, as every class must accommodate every principle. This was just a quick review.
 
-One of the big decisions regarding behavioral design patterns has been whether to use Visitors, just like in the well-known SCIL compiler from the DM565 course. It was decided not to use visitors, because Python 3.10 comes with a new cool feature, namely match statements, which makes it possible to exploit the benefits of structural pattern matching. Although it is nice to let the data structure decide its iteration, I still prefer having everything written explicitly when learning to write a compiler. Using match statements requires one to repeat the iteration logic for every new operation, but that somewhat also makes it easier to implement new logic, as one does not have to remember the visitor pattern. Another useful creational design pattern is the Singleton pattern used in \texttt{label\_generator.py}. This makes it possible to retrieve the label generator in any class, while preserving the state on \texttt{count}, without having to pass the object through all the phases manually.
+One of the big decisions regarding behavioral design patterns has been whether to use Visitors, just like in the well known SCIL compiler from the DM565 course. It was decided not to use visitors, because Python 3.10 comes with a new cool feature, namely match statements, which makes it possible to exploit the benefits of structural pattern matching. Although it is nice to let the data structure decide its iteration, I still prefer having everything written explicitly when learning to write a compiler. Using match statements requires one to repeat the iteration logic for every new operation, but that somewhat also makes it easier to implement new logic, as one does not have to remember the visitor pattern. Another useful creational design pattern is the Singleton pattern used in \texttt{label\_generator.py}. This makes it possible to retrieve the label generator in any class, while preserving the state on \texttt{count}, without having to pass the object through all the phases manually.
 
 \section{Compiler Usage}
 The main file handles the instantiation and therefore also the running of the \texttt{PandaCompiler} class. Python \texttt{argparse} is used to take command line arguments because it adds a lot of user-friendliness to the compiler. \texttt{argparse} provides the opportunity to query the compiler usage in the terminal, thus showing what options are available. Doing so yields the result stated below:
@@ -415,7 +427,7 @@ class SymbolTable:
 
 The symbol table itself takes care of keeping track of its lexical \texttt{level}, its parent, and the actual symbol table named \texttt{\_tab}. The \texttt{parent} field makes it possible to search upwards in the structure towards the global scope, if the symbol searched for is not at the current level.
 
-Scopes create a tree structure, but where the leafs point to the root and not the other way around. Considering the input program stated in Figure \ref{fig:ex_program} again, we see, in Figure \ref{fig:symbol_collection}, that \texttt{j} is declared in the global scope (root, level $0$) and \texttt{i} is declared at level $1$ immediately incident to global scope. 
+Scopes create a tree structure, but where leafs point to the root and not the other way around. Considering the input program stated in Figure \ref{fig:ex_program} again, we see, in Figure \ref{fig:symbol_collection}, that \texttt{j} is declared in the global scope (root, level $0$) and \texttt{i} is declared at level $1$ immediately incident to global scope. 
 
 \begin{figure}[H]
     \centering
@@ -542,7 +554,7 @@ class Operand:
     addressing: Mode
 \end{minted}
 
-Translating the AST to the linear ILOC IR thus yields a list of instructions as shown below. The smart thing about this IR is that needed information is explicitly represented. It can be information such as which temporaries are used and their addressing. One can therefore easily perform analyzes on the code by iterating through the list of instructions and using structural pattern matching to extract information. The register machine will pass this IR through the allocator phase in order to assign temporaries to physical registers before emitting code. The stack machine does not require further analysis, instead the list of instructions will simply be passed on to the emit phase which will emit assembly code.
+Translating the AST to the linear ILOC IR thus yields a list of instructions as shown below. The smart thing about this IR is that needed information is explicitly represented -- it can be information such as which temporaries are used and their addressing. One can therefore easily perform analyzes on the code by iterating through the list of instructions and using structural pattern matching to extract information. The register machine will pass this IR through the allocator phase in order to assign temporaries to physical registers before emitting code. The stack machine does not require further analysis, instead the list of instructions will simply be passed on to the emit phase which will emit assembly code.
 
 \begin{minted}{py3}
 [
@@ -554,7 +566,7 @@ Translating the AST to the linear ILOC IR thus yields a list of instructions as 
 ]
 \end{minted}
 
-It's time to provide some examples of code generation. Therefore, we consider how to access entities in external scopes. \texttt{\_follow\_static\_link}, shown below, solves this problem by repeatedly dereferencing the parent's base pointer (called ARP in Figure \ref{fig:stack}, an acronym for Activation Record Pointer). After the function has returned, \texttt{RSL} can be offset to access the desired entity. The only parameter the function requires is \texttt{symbol\_level}, and then it makes sure to follow the static link pointer the required number of times (based on the \texttt{\_current\_scope} field).
+It is time to provide some examples of code generation. Therefore, we consider how to access entities in external scopes. \texttt{\_follow\_static\_link}, shown below, solves this problem by repeatedly dereferencing the parent's base pointer (called ARP in Figure \ref{fig:stack}, an acronym for Activation Record Pointer). After the function has returned, \texttt{RSL} can be offset to access the desired entity. The only parameter the function requires is \texttt{symbol\_level}, and then it makes sure to follow the static link pointer the required number of times (based on the \texttt{\_current\_scope} field).
 
 \begin{minted}{py3}
 def _follow_static_link(self, symbol_level: int) -> int:
@@ -576,7 +588,7 @@ def _follow_static_link(self, symbol_level: int) -> int:
 
 \texttt{\_get\_code\_block\_to\_extend} is an auxiliary function used to solve a problem that arose in the code generation for the register machine, because it is necessary to preserve blocks of code such that liveness can be performed on one block of instructions at a time. Both \texttt{\_append\_instruction} and \texttt{\_get\_code\_block\_to\_extend} are annotated as abstract in \texttt{code\_generation\_base.py} and therefore defined individually in the classes that uses them. This is a consequence of the register machine and the stack machine not sharing the same structure of the generated code, precisely because code generated by the register machine is not completely linear, but instead a mixture of instructions and lists -- elaborated later.
 
-A similar problem is removing stack frames. In the case of returns from deeply nested scopes, it is necessary to be able to remove several stack frames simultaneously, otherwise saved register values and the return address will not be in the expected place, which will cause a segmentation fault. This is solved by iteratively generating code to tear down the individual stack frames by updating \texttt{RBP}. Now we just need to tear down the stack by moving the \texttt{RBP} into the \texttt{RSP}, and that's done as part of the epilogue. The code snippet below is an excerpt of \texttt{StatementReturn}.
+A similar problem is removing stack frames. In the case of returns from deeply nested scopes, it is necessary to be able to remove several stack frames simultaneously; otherwise saved register values and the return address will not be in the expected place, which will cause a segmentation fault. This is solved by iteratively generating code to tear down the individual stack frames by updating \texttt{RBP}. Now we just need to tear down the stack by moving the \texttt{RBP} into the \texttt{RSP}, and that is done as part of the epilogue. The code snippet below is an excerpt of \texttt{StatementReturn}.
 
 \begin{figure}[H]
     \centering
@@ -702,7 +714,7 @@ case AST.ExpressionBinop(binop, lhs, rhs) if binop in [Op.ADD, Op.SUB, Op.DIV, O
 
 Instead of letting values flow through the stack, they just flow through registers. However, these are managed using a stack at compile time, so in that way the methods for the register machine and the stack machine are very similar -- at least in a programming aspect.
 
-The goal in this phase is, like in the register machine, to produce a linear IR. However, the allocation phase requires that the bracket structure be preserved, and therefore the result is a hybrid IR. The final IR therefore looks as indicated below. A hybrid IR means to combine both graphic and linear IR's to capture their strengths and avoid their weaknesses. A typical hybrid IR is a control-flow graph that uses a linear to represent blocks of code and a graph to represent the flow of control among those blocks. As a starting point, the resulting hybrid IR from this phase is not a control-flow graph, but it has all the prerequisites to become one. The final modifications will be done in the allocation phase.
+The goal in this phase is, like in the register machine, to produce a linear IR. However, the allocation phase requires that the bracket structure be preserved, and therefore the result is a hybrid IR. The final IR therefore looks as indicated below. A hybrid IR means to combine both graphic and linear IRs to capture their strengths and avoid their weaknesses. A typical hybrid IR is a control-flow graph that uses a linear to represent blocks of code and a graph to represent the flow of control among those blocks. As a starting point, the resulting hybrid IR from this phase is not a control-flow graph, but it has all the prerequisites to become one. The final modifications will be done in the allocation phase.
 
 \begin{minted}{text}
 [
@@ -731,7 +743,7 @@ if len(self._code) >= 2:
     self._code[-1].append(list_to_merge)
 \end{minted}
 
-The described IR implementation is quite simple in itself, but it is complicated by the fact that it's administration is included in another method. This is done because both methods are used in exactly the same places, however it would have been more readable to keep them separate.
+The described IR implementation is quite simple in itself, but it is complicated by the fact that its administration is included in another method. This is done because both methods are used in exactly the same places; however, it would have been more readable to keep them separate.
 
 \section{Allocator}
 The liveness implementation is based on the literature \cite[218-223]{ModernCompilerImplementation} and the subsequent register allocation (graph coloring) is based on the literature \cite[235-238]{ModernCompilerImplementation}. 
@@ -753,9 +765,9 @@ def perform_register_allocation(self, code: list[Instruction]) -> list[Instructi
     return code
 \end{minted}
 
-We are only interested in doing liveness analysis for instructions that use temporaries, so structural pattern matching is used to filter these out. Structural Pattern matching makes it easy to determine whether a temporary is used in the first or second operand or both. We therefore do not have to do a lot of conditional checks, because it is all given in the match case. 
+We are only interested in doing liveness analysis for instructions that use temporaries, so structural pattern matching is used to filter these out. Structural Pattern matching makes it easy to determine whether a temporary is used in the first or second operand or both. We therefore do not have to do many conditional checks, because it is all given in the match case. 
 
-The first step is to create a mapping between labels and the closest instruction that uses temporaries. This information is used when performing control-flow, otherwise it is not known where the flow should go when a jump instruction is encountered.
+The first step is to create a mapping between labels and the closest instruction that uses temporaries. This information is used when performing control-flow; otherwise, it is not known where the flow should go when a jump instruction is encountered.
 
 Creating control flow is about chaining instructions, so that any instruction points to the next instruction in the flow. Every instruction is given a successor and predecessor attribute, though it was later realized that the predecessor was not needed. The successor attribute is not strictly necessary, as we would be able to obtain the same information during the iteration in another way, but it makes the subsequent steps a bit nicer. Both successor and predecessor would have been strictly necessary if we had based the iteration on following these pointers, but due to the use of match statements, it was judged that it was easier to use a for each loop for the iteration. Due to the scope implementation, it has been necessary to limit the analysis to each introduced scope and not just functions, which is the ideal solution. It is not possible to ensure the flow when registers are saved and restored along the way. Consider Figure \ref{fig:flow_while} for an example of a flow graph. In panda, the scope is wrapped around the entire \texttt{while} construction. The flow is therefore as shown in the figure, apart from the fact that \texttt{body} is of course made up of multiple instructions.
 
@@ -785,7 +797,7 @@ The limited flow is particularly expressed in an \texttt{if} statement. Optimall
     \caption{\texttt{if} construction flow graph.}
 \end{figure}
 
-Liveness analysis is about determining which temporaries are live at the same time. It is crucial in register allocation, because if two variables are not live at the same time, then they can share a register, otherwise they must necessarily claim their own register. We say a temporary is live if it holds a value that may be needed in the future, so this analysis is called \textit{liveness} analysis. We obtain this information using the fixed point algorithm given in \cite[221]{ModernCompilerImplementation}. The implementation of this algorithm is given below:
+Liveness analysis is about determining which temporaries are live at the same time. It is crucial in register allocation, because if two variables are not live at the same time, then they can share a register; otherwise, they must necessarily claim their own register. We say a temporary is live if it holds a value that may be needed in the future, so this analysis is called \textit{liveness} analysis. We obtain this information using the fixed point algorithm given in \cite[221]{ModernCompilerImplementation}. The implementation of this algorithm is given below:
 
 \begin{minted}{py3}
 def _liveness_analysis(self, code: list) -> None:
@@ -810,7 +822,7 @@ To give intuition for the calculation of in and out sets, consider Figure \ref{f
     \label{fig:in-out-flow}
 \end{figure}
 
-In and out sets must be calculated for every vertex in the flow. This is done by using the dataflow equations in Figure \ref{fig:dataflow-eq} -- utilized in the \texttt{\_do\_set\_calc} method. Also note how the definition of a temporary kills its liveliness. This is expected behavior because if there are no uses of a definition, then we can simply remove those instructions. Executing useless instructions is useless. 
+In and out sets must be calculated for every vertex in the flow. This is done by using the dataflow equations in Figure \ref{fig:dataflow-eq} -- utilized in the \texttt{\_do\_set\_calc} method. Also, note how the definition of a temporary kills its liveliness. This is expected behavior because if there are no uses of a definition, then we can simply remove those instructions. Executing useless instructions is useless. 
 
 \begin{figure}[H]
     \begin{align*}
@@ -915,7 +927,7 @@ self._callee_save_reg = ["rbx", "r12", "r13", "r14", "r15", "rbp"]
 self._calleer_save_reg = ["rcx", "rdx", "rsi", "rdi", "r8", "r9", "r10", "r11"]
 \end{minted}
 
-It might also have been advantageous to have specified these fields in another class, so that variable offsets did not have to be hard-coded in the code generation, but could instead have been implemented as a function on the two lists. Adding extra callee-save registers and caller-save registers would then not require further intervention than adding them to the correct list.
+It might also have been advantageous to specify these fields in another class, so that variable offsets did not have to be hard-coded in the code generation, but could instead have been implemented as a function on the two lists. Adding extra callee-save registers and caller-save registers would then not require further intervention than adding them to the correct list.
 
 \texttt{Meta.CALL\_PRINTF} uses labels to ensure correct memory alignment, and we therefore want to reuse the \texttt{Labels} object instantiated during code generation. This is achieved using the property that the class is declared singleton, and Python will therefore just return the same instance as used in code generation, without manually having to pass that instance to \texttt{Emit}:
 
@@ -969,7 +981,7 @@ def _dispatch(self, instruction: iloc.Instruction) -> None:
     ...
 \end{minted}
 
-\texttt{return} in context of \texttt{\_dispatch} means that we just ignore the instruction and don't generate code for it. This operation can be legally performed because, intuitively, why preserve something that is not used. Modern Compiler Implementation states the following:
+\texttt{return} in context of \texttt{\_dispatch} means that we just ignore the instruction and do not generate code for it. This operation can be legally performed because, intuitively, why preserve something that is not used. Modern Compiler Implementation states the following:
 
 \begin{displayquote}
     \textit{``If there is no edge in the interference graph between the source and destination of a \texttt{move} instruction, then the move can be eliminated.''}
@@ -1000,9 +1012,9 @@ The method handles the logic in three phases. Because of the horrible names, we 
 The main benefit of testing is the identification and subsequent mitigation of errors. It is to be expected to find errors in larger projects, which is why there must be a way to quickly and dynamically run tests during development. Testing helps software developers compare expected and actual output in order to improve quality. In this case, only system testing is carried out, although a higher granularity of testing would only enrich the project. There are many tools available to solve this task, which is why the big challenge lies in choosing the tool that best suits the problem. The most advanced tool is not always the best solution. The chosen tools in this project are the testing framework \texttt{unittest} and the coverage tool \texttt{coverage.py}. In addition, SonarLint is used to perform static code analysis within the IDE to provide best-practice hints, cognitive complexity metrics and more -- not important but worth mentioning.
 
 \section{System Testing}
-The most common choice would have been to use \texttt{pytest} because it is significantly more popular than \texttt{unittest}, but for the task \texttt{unittest} seemed like the right choice. I am not able to judge whether the same could have been achieved using \texttt{pytest} with parametrized tests, but setting up \texttt{unittest} was straight forward.
+The most common choice would have been to use \texttt{pytest} because it is significantly more popular than \texttt{unittest}, but for the task \texttt{unittest} seemed like the right choice. I am not able to judge whether the same could have been achieved using \texttt{pytest} with parametrized tests, but setting up \texttt{unittest} was straightforward.
 
-I wanted a solution where it is possible to load tests dynamically, based on test files in a given folder. Hence, it would not be necessary to write more code just because tests are added to the test suite -- writing test cases must not be a burden; otherwise it will not be done. The idea is as follows (in pseudo Python):
+I wanted a solution where it is possible to load tests dynamically, based on test files in a given folder. Hence, it would not be necessary to write more code just because tests are added to the test suite -- writing test cases must not be a burden; otherwise, it will not be done. The idea is as follows (in pseudo Python):
 
 \begin{minted}{py3}
 class TestCase(unittest.TestCase):
@@ -1081,7 +1093,7 @@ A workflow build consists of the stages stated in Figure \ref{fig:workflow_run}.
     \label{fig:workflow_run}
 \end{figure}
 
-The list of tests is too long to mention each one, instead three tests that caused particularly many problems have been chosen. The tests are representative because they have a relatively high complexity, as the input programs utilize recursion, loops and nested scopes. For this to work properly, it requires that the constructs and static link pointer works correctly. In addition, it must be possible to tear down several stack frames at once, since every scope introduces a new stack frame. Failing to remove a stack frame properly causes problems in the \texttt{postreturn} and \texttt{epilog} phase, and in worst case segmentation fault. 
+The list of tests is too long to mention each one, instead three tests that caused particularly many problems have been chosen. The tests are representative because they have a relatively high complexity, as the input programs utilize recursion, loops and nested scopes. For this to work properly, it requires that the constructs and static link pointer works correctly. In addition, it must be possible to tear down several stack frames at once, since every scope introduces a new stack frame. Failing to remove a stack frame properly causes problems in the \texttt{postreturn} and \texttt{epilog} phase, and in worst-case segmentation fault. 
 
 The test below is borrowed from SCIL. The test is named summers.panda.
 
@@ -1130,7 +1142,7 @@ A test that is particularly critical for the register machine is right-unbalance
 print(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1))))))))))))));
 \end{minted}
 
-The reason is, in this case, that the left child is always visited first, after which the expression in the right child must be evaluated. This is clear in Figure \ref{fig:binop}. It is therefore necessary to preserve all left children until there are no more right children. In the case of the stack machine, this is not something one think too much about, as the stack just grows as expected. With register allocation, attention is required, because there must be a place to store values, since these must be in a register, regardless of whether this register is spilled onto the stack, it is still a ``register".
+The reason is, in this case, that the left child is always visited first, after which the expression in the right child must be evaluated. This is clear in Figure \ref{fig:binop}. It is therefore necessary to preserve all left children until there are no more right children. This is not a concern applicable to the stack machine, as the stack just grows as expected. With register allocation, attention is required, because there must be a place to store values, since these must be in a register, regardless of whether this register is spilled onto the stack, it is still a ``register".
 
 \begin{figure}[H]
     \centering
@@ -1279,7 +1291,7 @@ Another challenge is that there is no \texttt{push imm64} instruction, which can
 
 At present, all spilled registers are stored as temporary saves on the stack, but it might be desirable to move some spilled registers to the local data area and parameter area, so that the space already allocated on the stack is used efficiently.
 
-Finally, it could be pretty cool with composite data types like arrays to make the language Turing Complete. At the present time, it is not possible to calculate anything significant, as one can only work with integers and Boolean values ($0$ or $1$ integer). Composite data types will only further the potential of the already implemented programming constructs.
+Finally, it could be cool with composite data types like arrays to make the language Turing Complete. At the present time, it is not possible to calculate anything significant, as one can only work with integers and Boolean values ($0$ or $1$ integer). Composite data types will only further the potential of the already implemented programming constructs. Besides adding more types, it would be nice with a type-checking phase in the front end too.
 
 
 \section{Single Point Of Contact}
@@ -1306,15 +1318,15 @@ The website is simply a nice presentation of the \texttt{README.md} file. In add
 GitHub Pages takes care of deployment when a YAML is specified. Subsequently, the website will be automatically deployed on any push to GitHub -- at the same time as the workflow for testing runs.
 
 \chapter{Conclusion}
-In this bachelor project, a compiler has been successfully implemented, which can be used both as a stack machine and a register machine. The compiler consists of a scanner, parser, symbol collector, desugar, code generator, allocator and a code emitter. The compiler consists of approximately 3500 lines of Python code.
+In this bachelor project, a compiler has been successfully implemented, which can be used both as a stack machine and as a register machine. The compiler consists of a scanner, parser, symbol collector, desugar, code generator, allocator and a code emitter. The compiler consists of approximately 3500 lines of Python code.
 
-The implemented language is named Panda, and resembles a subset of C. The implemented types are Boolean and Integer (actually both are integers). Constructions such as if-else statements, while-loops and for-loops have also been implemented. \SI{64}{bit} are used for all types of values. It had been well regarded with composite types, such as arrays, but unfortunately it was not achieved in the time frame.
+The implemented language is named Panda, and resembles a subset of C. The implemented types are Boolean and Integer (actually both are integers). Constructions such as if-else statements, while-loops and for-loops have also been implemented. \SI{64}{bit} are used for all types of values. It had been well regarded with composite types, such as arrays, but unfortunately, it was not achieved in the time frame.
 
 The performance of the stack machine and the register machine have been compared, and it turns out that the register machine runs remarkably faster, which is a very satisfactory result. Depending on the given test, a performance gain of up to a factor of three is observed.
 
 Correctness of the compiler has been tested using 25 test cases and all tests run successfully. Furthermore, a workflow has been set up to carry out these tests via GitHub Actions, which ensures that all code pushed to production is tested. In the event of an error, the person responsible will receive a notification accordingly. Although the 25 tests do not provoke an error, this does not mean that the compiler does not contain any errors, just that they have not been discovered yet. The 25 tests achieve a code coverage of 97\%, which is sufficient.
 
-Every project has a README. In addition to providing a light introduction to the project, a static website has been generated on the file, from which the code is publicly available: \url{https://kianbankelarsen.github.io/Compiler/}
+Every project has a README. In addition to introducing the project, a static website has been generated on the file, from which the code is publicly available: \url{https://kianbankelarsen.github.io/Compiler/}
 
 The implementation of scopes is not optimal, which is why it could be interesting to refactor, given that there was more time to work on the project. Only when this is done will it be possible to fully utilize the register allocation, and in that way, hopefully, achieve an even greater performance gain.
 
