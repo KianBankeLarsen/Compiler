@@ -94,7 +94,7 @@ The image below is a representation of which variables are in which scopes, so t
 
 
 # 👷‍♂️ Testing
-```Unittest```, which is a python module, has been actively used to test whether the compiler works correctly. It is particularly useful when one want to further develop the compiler, or for some other reason have to make changes. By running the tests, one can ensure that no bugs were introduced by the changes before merging.
+```Unittest``` has been actively used to test whether the compiler works correctly. It is particularly useful when one want to further develop the compiler, or for some other reason have to make changes. By running the tests, one can ensure that no bugs were introduced by the changes before merging.
 
 To ensure that the tests are comprehensive, coverage is a good measure. However, it is important to remember that one can easily achieve 100% coverage without good tests if one is not careful.
 

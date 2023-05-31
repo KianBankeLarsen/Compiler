@@ -56,48 +56,48 @@
 
 \begin{abstract}
 \paragraph{English}
-This paper examines the development of a simple compiler that makes use of several phases: scanner, parser, symbol collector, desugar, code generator, allocator and code emitter. The scanner and parser are based on Python Lex-Yacc.
+This paper examines the development of a simple compiler that makes use of several phases: scanning, parsing, symbol collection, desugaring, code generation, allocation and code emission. The scanner and parser are based on Python Lex-Yacc.
 
 The main focus of the compiler implementation is register allocation, but the compiler has first been developed as a stack machine. It is therefore interesting to compare the performance of the two versions. It is concluded that the register machine achieves better performance than the stack machine, although it is unclear whether this is due to the liveness analysis and not just the use of faster instructions.
 
-Choices and considerations have been made when necessary, which is why it will be realized in retrospect that few things should have been done differently. The compiler implementation is based mainly on theory given in accompanying literature: \cite{ModernCompilerImplementation}, \cite{EnginneringACompiler} and SCIL known from DM565.
+Choices and considerations have been made when necessary, which is why it is realized in retrospect that few things should have been done differently. The compiler implementation is based mainly on theory given in accompanying literature: \cite{ModernCompilerImplementation}, \cite{EnginneringACompiler} and SCIL known from DM565.
 
 The compiler is publicly available here: \url{https://kianbankelarsen.github.io/Compiler/}.
 
 \paragraph{Danish}
-Dette papir undersøger udviklingen af en simpel compiler, der gør brug af flere faser: scanner, parser, symbol collector, desugar, code generator, allocator and code emiter. Scanneren og parseren er baseret på Python Lex-Yacc. 
+Rapporten undersøger udviklingen af en simpel compiler, der gør brug af flere faser: scanning, parsing, symbol collection, desugaring, code generation, allocation og code emission. Scanneren og parseren er baseret på Python Lex-Yacc. 
 
-Hovedfokuset for compiler implementationen er registerallokering, men først er compileren blevet udviklet som en stakmaskine. Det er herfor interessant at sammenligne performance af de to versioner. Det konkluderes at registermaskinen opnår bedre performance end stakmaskinen, dog er dog uklart hvorvidt det skyldes liveness analysen og ikke bare brugen af hurtigere instruktioner.
+Hovedfokuset for compiler-implementationen er registerallokering, men først er compileren blevet udviklet som en stakmaskine. Det er herfor interessant at sammenligne performance af de to versioner. Det konkluderes at registermaskinen opnår bedre performance end stakmaskinen, dog er det uklart hvorvidt det skyldes liveness analysen og ikke bare brugen af hurtigere instruktioner.
 
-Valg og overvejeler er gjort når det har været nødvendigt, hvorfor det vil blive indset i reprospekt, at få ting bør have blevet gjort anderledes. Compiler implementationen er baseret hovedsagligt på teori givet i føglende litteratur: \cite{ModernCompilerImplementation}, \cite{EnginneringACompiler} og SCIL kendt fra DM565. 
+Valg og overvejeler er gjort når det har været nødvendigt, hvorfor det er indset i retrospekt, at få ting bør have blevet gjort anderledes. Compiler-implementationen er baseret hovedsageligt på teori givet i følgende litteratur: \cite{ModernCompilerImplementation}, \cite{EnginneringACompiler} og SCIL kendt fra DM565. 
 
 Compileren er offentlig tilgængelig her: \url{https://kianbankelarsen.github.io/Compiler/}.
 \end{abstract}
 
-{ \hypersetup{hidelinks} \tableofcontents }
+{ \hypersetup{hidelinks} \tableofcontents \addtocontents{toc}{\vskip-40pt}}
 
 \newpage
 \pagenumbering{arabic}
 \setcounter{page}{1}
 
 \chapter{Introduction}
-This paper examines how to make a simple compiler in Python, named Panda for no particular reason. The compiler is simple in the sense that some decisions have been made to ease the process, although the decisions are not necessarily optimal. The aim is to learn different compiler techniques and get a hands-on feel for the different compiler phases by actually implementing a working compiler, targeting X86 assembler, from scratch, using a Flex/Bison equivalent package such as \texttt{PLY} for scanning and parsing. 
+This paper examines how to make a simple compiler in Python, named Panda for no particular reason. The compiler is simple in the sense that some decisions have been made to ease the process, although the decisions are not necessarily optimal. The aim is to learn different compiler techniques and get a hands-on feel for the different compiler phases by actually implementing a working compiler, targeting X86 assembly. This is done using a Flex/Bison equivalent package such as \texttt{PLY} for scanning and parsing. 
 
-The language to be compiled is a subset of the imperative language C. This has been chosen because of its simpler syntax and easy to read curly bracket enclosed static scopes. In this project, we are interested in making a language having integers, Booleans and preferably some kind of floats. The language must have control flow constructs in form of \texttt{if}-\texttt{else} statements and functions, and iterative constructs such as \texttt{for}- and \texttt{while}-loops. 
+The language to be compiled is a subset of the imperative language C. This has been chosen because of its simpler syntax and easy to read curly bracket enclosed static scopes. In this project, we are interested in making a language that supports integers and Booleans. The language must have control flow constructs in form of \texttt{if}-\texttt{else} statements and functions, and iterative constructs such as \texttt{for}- and \texttt{while}-loops. 
 
-A modern compiler is, as is well known, divided into phases. These phases relate to lexical and syntactic analysis, resulting in an abstract syntax tree. Subsequent phases analyze and adorn the abstract syntax tree, building a symbol table and finally generating assembler code.
+A modern compiler is, as is well known, divided into phases. These phases relate to lexical and syntactic analysis, resulting in an abstract syntax tree. Subsequent phases analyze and adorn the abstract syntax tree, building a symbol table and finally generating assembly code.
 
 The main focus in regard to advanced techniques will be local register allocation, using techniques described in \cite{ModernCompilerImplementation}. Handling this efficiently requires data flow analysis via control-flow graph, construction of interference graph, graph coloring and translation back to instructions using a combination of the registers and the stack, when the available registers do not suffice.
 
-Initially, a stack machine will be prepared, which will form the basis for developing a compiler that uses CPU registers. We will take advantage of the split phases property when replacing the stack code generation phase in benefit for one that uses register allocation. This allows us to only worry about ensuring that subsequent phases cope with the changes made in the former phases.
+Initially, a stack machine will be prepared, which will form the basis for developing a compiler that uses CPU registers. We will take advantage of the split phases property when replacing the stack code generation phase in favor of one that uses register allocation. This allows us to only worry about ensuring that subsequent phases are compatible with the changes made in the former phases.
 
 When adding extra complexity such as register allocation, it is important to document the benefit of this choice. Performance of the stack machine and the register machine will therefore be constructively compared.
 
 \chapter{Project Basics}
-This section is reserved for articulating some choices made at the very beginning of the project that defined the framework for how to develop and use the compiler.
+This section is reserved for articulating some choices made at the very beginning of the project that defines the framework for how to develop and use the compiler.
 
 \section{Project Structure}
-The Compiler module uses different python packages -- things that belong together must be together. It has been desired to make a clear division between the different phases, and this has been achieved by creating the Python package \texttt{phase}. Likewise, \texttt{dataclass} is a package that contains internal data structures, in other words, classes used to hold data. \texttt{Printer} is a package that is used primarily for debugging, but sometimes it is just nice to consider data structures graphically. \texttt{Testing} is placed on the same level as \texttt{src} because it has nothing to do with the compiler's implementation, it is just a QA tool that makes it easier to verify correctness. \texttt{compiler.py} takes care of summarizing all functionality, but the module requires arguments from the command line, and those arguments (as well as testing) are handled in \texttt{main.py} (the project's main file). Moreover, a \texttt{README.md} has been written as a quick-start guide.
+The \texttt{Compiler} module uses different Python packages -- things that belong together must be together. It has been desired to make a clear division between the different phases, and this has been achieved by creating the Python package \texttt{phase}. Likewise, \texttt{dataclass} is a package that contains internal data structures, in other words, classes used to hold data. \texttt{Printer} is a package that is used primarily for debugging, but sometimes it is just nice to consider data structures graphically. \texttt{Testing} is placed on the same level as \texttt{src} because it has nothing to do with the compiler's implementation, it is just a QA tool that makes it easier to verify correctness. \texttt{compiler.py} takes care of summarizing all functionality, but the module requires arguments from the command line, and those arguments (as well as testing) are handled in \texttt{main.py} (the project's main file). Moreover, a \texttt{README.md} has been written as a quick-start guide.
 
 \begin{figure}[H]
     \centering
@@ -124,9 +124,9 @@ PLY is a native Python tool, relying on reflection, used to automatically genera
 \section{Design Principles \& Patterns}
 When starting a new project, it is important to make some basic thoughts about the architecture. Sensible choices at the beginning can increase code readability and make maintainability easier. It is particularly important to consider design principles and design patterns, as this will have a big effect on, i.e., how data structures are traversed and code testability. In this context, design principles refer to SOLID, and design patterns refer to Gang of Four's 23 design patterns.
 
-We will start by considering design principles. SOLID is a mnemonic acronym for a set of design principles concerning software development in object-oriented languages: \textbf{S}ingle Responsibility, \textbf{O}pen Closed, \textbf{L}iskov's Substitution, \textbf{I}nterface Segregation and \textbf{D}ependency Inversion. The principles are in many ways obvious when rehearsed, but not necessarily followed, as it requires active consideration. Single responsibility is particularly expressed in the project by the sharp division of phases and their interfaces between them. Open/closed is not particularly used in the project, as inheritance sparsely appear, though crucial in the printer package. It will never be necessary to edit the generic printer because functionality to print a specific data structure is first implemented upon extension. Liskov's substitution principle is accommodated in the AST data class, since any subtree is a valid tree and all nodes are AST nodes. Dependency inversion principle simply means that we must program against an interface and not an implementation. There is actually an incident where the project does not live up to this principle, and that is when using the hidden method \texttt{\_value2member\_map\_} on \texttt{Enum} in the parsing phase. Other examples apply, of course, as every class must accommodate every principle. This was just a quick review.
+We will start by considering design principles. SOLID is a mnemonic acronym for a set of design principles concerning software development in object-oriented languages: \textbf{S}ingle Responsibility, \textbf{O}pen Closed, \textbf{L}iskov's Substitution, \textbf{I}nterface Segregation and \textbf{D}ependency Inversion. The principles are in many ways obvious when rehearsed, but not necessarily followed, as it requires active consideration. Single responsibility is particularly expressed in the project by the sharp division of phases and their interfaces between them. Open/closed is not particularly used in the project, as inheritance sparsely appears, though crucial in the \texttt{printer} package. It will never be necessary to edit the generic printer because functionality to print a specific data structure is first implemented upon extension. Liskov's substitution principle is accommodated in the AST data class, since any subtree is a valid tree and all nodes are AST nodes. Dependency inversion principle simply means that we must program against an interface and not an implementation. There is actually an incident where the project does not live up to this principle, and that is when using the hidden method \texttt{\_value2member\_map\_} on \texttt{Enum} in the parsing phase. Other examples apply, of course, as every class must accommodate every principle. This was just a quick review.
 
-One of the big decisions regarding behavioral design patterns has been whether to use Visitors, just like in the well known SCIL compiler from the DM565 course. It was decided not to use visitors, because Python 3.10 comes with a new cool feature, namely match statements, which makes it possible to exploit the benefits of structural pattern matching. Although it is nice to let the data structure decide its iteration, I still prefer having everything written explicitly when learning to write a compiler. Using match statements requires one to repeat the iteration logic for every new operation, but that somewhat also makes it easier to implement new logic, as one does not have to remember the visitor pattern. Another useful creational design pattern is the Singleton pattern used in \texttt{label\_generator.py}. This makes it possible to retrieve the label generator in any class, while preserving the state on \texttt{count}, without having to pass the object through all the phases manually.
+One of the big decisions regarding behavioral design patterns has been whether to use visitors, just like in the well known SCIL compiler from the DM565 course. It was decided not to use visitors because Python 3.10 comes with a new cool feature, namely the match statement, which makes it possible to exploit the benefits of structural pattern matching. Although it is nice to let the data structure decide its iteration, I still prefer having everything written explicitly when learning to write a compiler. Using match statements requires one to repeat the iteration logic for every new operation, but that somewhat also makes it easier to implement new logic, as one does not have to remember the visitor pattern. Another useful creational design pattern is the Singleton pattern used in \texttt{label\_generator.py}. This makes it possible to retrieve the label generator in any class, while preserving the state on \texttt{count}, without having to pass the object through all the phases manually.
 
 \section{Compiler Usage}
 The main file handles the instantiation and therefore also the running of the \texttt{PandaCompiler} class. Python \texttt{argparse} is used to take command line arguments because it adds a lot of user-friendliness to the compiler. \texttt{argparse} provides the opportunity to query the compiler usage in the terminal, thus showing what options are available. Doing so yields the result stated below:
@@ -172,7 +172,7 @@ One aspect that is important to consider is time. Keeping track of when various 
 \end{displayquote}
 \hspace*\fill{\small--- \cite[8]{EnginneringACompiler}}
 
-Clearly most time is spent on design time, because it is at design time the compiler has been created in the development environment. This includes time spent on designing an interface and writing the code. Compile time is equally important, as it can be coded using more or less efficient algorithms. Perhaps the compiler depends on certain packages being available on the machine, just as various python packages are used in this project. Some code has a very short lifetime in compile time before spending the rest of its life in runtime. It is therefore worth spending substantially more time during compile time in order to perform code analysis and subsequent optimization, such that the code running can be more efficient in some metric. The code could for example be optimized to run faster or save power. Fast programs are wanted when analyzing big data or fast response is needed. Focusing on power saving programs is key when targeting portable devices. 
+Clearly most time is spent on design time because it is at design time the compiler has been created in the development environment. This includes time spent on designing an interface and writing the code. Compile time is equally important, as it can be coded using more or less efficient algorithms. Perhaps the compiler depends on certain packages being available on the machine, just as various Python packages are used in this project. Some code has a very short lifetime in compile time before spending the rest of its life in runtime. It is therefore worth spending substantially more time during compile time in order to perform code analysis and subsequent optimization, such that the code running can be more efficient in some metric. The code could for example be optimized to run faster or save power. Fast programs are wanted when analyzing big data or fast response is needed. Focusing on power saving programs is key when targeting portable devices. 
 
 A typical three-phase compiler is designed as shown in Figure \ref{fig:three-phase}.
 
@@ -198,18 +198,18 @@ Type checking has been colored red because it has not been implemented yet, thou
 int a; int main(){} a = main;
 \end{minted}
 
-This error will cause the compiler to raise a value error during code generation, as the match statement for case \texttt{AST.StatementAssignment} is designed to do exactly that for any symbol with \texttt{NameCategory} not parameter or variable -- function is neither. It is wanted that the compiler stops compiling on such error, but it should never crash because of an uncaught exception. The user must always be informed properly about what went wrong, without having to deal with an indifferent stack trace.
+This error will cause the compiler to raise a value error during code generation, as the match statement for case \texttt{AST.StatementAssignment} is designed to do exactly that for any symbol with \texttt{NameCategory} parameter or variable -- function is neither. It is wanted that the compiler stops compiling on such error, but it should never crash because of an uncaught exception. The user must always be informed properly about what went wrong, without having to deal with an indifferent stack trace.
 
 Optimizations like instruction selection, instruction scheduling and peephole etc. could have been interesting to implement, but this is unfortunately beyond the scope of this project, since time did not allow. The stage is therefore skipped.
 
-Panda can either produce stack machine code or register machine code. The allocator phase is colored blue because it is clearly only used upon compiling source code to assembler code utilizing CPU registers. 
+Panda can either produce stack machine code or register machine code. The allocator phase is colored blue because it is clearly only used upon compiling source code to assembly code utilizing CPU registers. 
 
 The individual phases presented in Figure \ref{fig:panda-structure} will be reviewed in detail in the subsequent sections of this chapter. As a consequence of having studied the SCIL compiler, it will be clear that several things are done similarly, or at least inspired by SCIL to some extent. 
 
-\section{Scanner}
+\section{Scanning}
 The scanner, or lexical analyzer, is the first phase of the compiler's front end. The scanner reads a stream of characters and produces a stream of words by aggregating the characters. For each word, it determines if the word is valid in the source language, and each valid word is assigned a syntactic category (corresponding to terminal symbols in the language's grammar) used by the parser. 
 
-The scanner is the only phase in the compiler that touches every character of the source program. Because grouping characters is a simple task, scanners lend themselves to fast implementations. The Lex part of PLY is an automatic scanner generator tool. Lex requires a token list and specification of token values in order to produce a recognizer. The recognizer is based on a mathematical description of the language's lexical syntax in form of regular expressions and finite automatons. What method Lex use to produce the scanner is unknown, but it can be achieved using Kleene's construction as presented in \cite[45]{EnginneringACompiler}.
+The scanner is the only phase in the compiler that touches every character of the source program. Because grouping characters is a simple task, scanners lend themselves to fast implementations. The Lex part of PLY is an automatic scanner generator tool. Lex requires a token list and specification of token values in order to produce a recognizer. The recognizer is based on a mathematical description of the language's lexical syntax in form of regular expressions and finite automatons. What method Lex uses to produce the scanner is unknown, but it can be achieved using Kleene's construction as presented in \cite[45]{EnginneringACompiler}.
 
 The documentation for Lex can be found in \cite[section 4][]{ply}, and the guide is almost identical to the steps implemented in SCIL. The author of the tool tried to stay faithful to the way in which traditional Lex/Yacc tools work, so there was nothing surprising about how it should be done.
 
@@ -253,10 +253,10 @@ def t_IDENT(t):
 
 This approach is recommended as it greatly reduces the number of regular expression rules.
 
-\section{Parser}
-Parsing is the second phase of the compilers front end. The parser's task is to determine whether a stream of tokenized words produced by the scanner constitutes a valid sentence in the programming language. The parser uses a context-free grammar to derive a syntactic structure for the program, fitting the tokenized words into the grammatical model. If the parser determines that the tokenized program is a valid program, it builds an intermediate representation (shortened IR). The resulting IR of this phase is a graphical IR, acyclic parse tree, because it encodes the program structure well.\footnote{We will consider the properties of a linear IR in section \ref{sec:code-gen}.} Choosing the correct IR has major consequences on what information that can be encoded. It is necessary to have information encoded explicitly, as it is not possible to modify the implicit meaning of some structure.
+\section{Parsing}
+Parsing is the second phase of the compiler's front end. The parser's task is to determine whether a stream of tokenized words produced by the scanner constitutes a valid sentence in the programming language. The parser uses a context-free grammar to derive a syntactic structure for the program, fitting the tokenized words into the grammatical model. If the parser determines that the tokenized program is a valid program, it builds an intermediate representation (shortened IR). The resulting IR of this phase is a graphical IR, acyclic parse tree, because it encodes the program structure well.\footnote{We will consider the properties of a linear IR in section \ref{sec:code-gen}.} Choosing the correct IR has major consequences on what information can be encoded. It is necessary to have information encoded explicitly, as it is not possible to modify the implicit meaning of a structure.
 
-The Yacc part of PLY uses a LALR(1) parser, which is a bottom up parser, meaning that the parser will attempt to build a derivation bottom up. Though we do not have to deal with the parser implementation, it is worth mentioning that top-down parsers are usually more intuitive, but bottom up parsing is more practical and efficient for complex languages. 
+The Yacc part of PLY uses a LALR(1) parser, which is a bottom-up parser, meaning that the parser will attempt to build a derivation bottom-up. Though we do not have to deal with the parser implementation, it is worth mentioning that top-down parsers are usually more intuitive, but bottom-up parsing is more practical and efficient for complex languages. 
 
 The parser is used as a pull parser, meaning that the parser will request a new token whenever it is ready for more input. This is set up by letting the parser control both the input program and the lexer. 
 
@@ -290,7 +290,7 @@ class Body(AstNode):
     lineno: int    
 \end{minted}
 
-The \texttt{Body} class is annotated with \texttt{dataclass}. Python data classes are specially structured class optimized for storage and representation, and it allows for concise class declaration since the constructor is generated automatically.
+The \texttt{Body} class is annotated with \texttt{dataclass}. Python data classes are specially structured classes optimized for storage and representation, and it allows for concise class declaration since the constructor is generated automatically.
 
 To make the language semantics easy to understand, it has been decided to constraint that declarations of variables must come before any usage. Declarations and statements are both optional (body can be empty), though useless without statements. Mixing declarations and statements can be confusing to handle, and it will be elaborated in section \ref{sec:symbol_collection} why it encourages trouble.
 
@@ -300,7 +300,7 @@ def p_body(t):
     t[0] = AST.Body(t[1], t[2], t.lexer.lineno)
 \end{minted}
 
-Associativity of tokens can be encoded directly in the grammar, but can also be specified as precedence directives for the parser. It makes the grammar simpler when one can ignore this kind of trouble. The precedence directives stated below specify that the parser must reduce when encountering \texttt{TIMES}, \texttt{DIVIDE} etc. and shift when encountering \texttt{EQ}. The directives go from lowest to highest precedence. The \texttt{nonassoc} directive used on comparison based operators are very useful, because it refrains the user from specifying some like \texttt{3 < x < 7}. The semantic of this statement is powerful, although difficult to express directly in code, as it is syntactic sugar for two subsequent statements. The \texttt{nonassoc} directive will cause the parser to throw an error whenever it encounters such case. 
+Associativity of tokens can be encoded directly in the grammar, but can also be specified as precedence directives for the parser. It makes the grammar simpler when one can ignore this kind of trouble. The precedence directives stated below specify that the parser must reduce when encountering \texttt{TIMES}, \texttt{DIVIDE} etc. and shift when encountering \texttt{EQ}. The directives go from lowest to highest precedence. The \texttt{nonassoc} directive used on comparison based operators are very useful, because it refrains the user from specifying some like \texttt{3 < x < 7}. The semantic of this statement is powerful, although difficult to express directly in code, as it is syntactic sugar for two subsequent statements. The \texttt{nonassoc} directive will cause the parser to throw an error whenever it encounters such a case. 
 
 \begin{minted}{py3}
 precedence = (
@@ -313,7 +313,7 @@ precedence = (
 
 Parsing is a relatively large operation, but it was a representative sample.
 
-To gain better insight into the resulting IR of the parsing phase, one can advantageously use the printer class to create a graphical representation of the AST data structure. We will consider the input program stated in Figure \ref{fig:ex_program}.
+To gain better insight into the resulting IR of the parsing phase, one can advantageously use the \texttt{printer} class to create a graphical representation of the AST data structure. We will consider the input program stated in Figure \ref{fig:ex_program}.
 
 \begin{figure}[H]
 \begin{minted}{c}
@@ -333,9 +333,9 @@ The resulting abstract syntax tree is given in Figure \ref{fig:AST}.
     \label{fig:AST}
 \end{figure}
 
-The input program stated in Figure \ref{fig:ex_program} is a good example because it is a small program with an associated small parse tree, although the parse tree is more verbose than it necessarily should be. Furthermore, there are two different uses of the \texttt{init\_var\_decl} vertex -- this vertex contains syntax such as \texttt{int i = 1;}. All usages of that vertex is syntactic sugar for a declaration and simultaneous assignment. The iterative \texttt{for} construction uses it as a parameter, so that can just be transformed directly when visited. The story is a little more complicated for other usages of this vertex, since code for declarations is first generated after all statements belonging to a \texttt{body} vertex have been visited. It has therefore been necessary to add a desugaring phase to transform the AST, as we will see later in section \ref{sec:desugar}.
+The input program stated in Figure \ref{fig:ex_program} is a good example because it is a small program with an associated small parse tree, although the parse tree is more verbose than it necessarily should be. Furthermore, there are two different uses of the \texttt{init\_var\_decl} vertex -- this vertex contains syntax such as \texttt{int i = 1;}. All usages of that vertex is syntactic sugar for a declaration and simultaneous assignment. The iterative \texttt{for} construction uses it as a parameter, so that it can just be transformed directly when visited. The story is a little more complicated for other usages of this vertex, since code for declarations is first generated after all statements belonging to a \texttt{body} vertex have been visited. It has therefore been necessary to add a desugaring phase to transform the AST, as we will see later in section \ref{sec:desugar}.
 
-Panda is designed in such a way that every curly bracket enclosed environment creates a new scope. The default scope is global scope. Every scope consists of a single \texttt{body} vertex -- the grammar is \texttt{`new\_scope : LCURL body RCURL'}. Recall that a \texttt{body} vertex can contain optional declarations followed by optional statements. Just to mention boolean values, the convention used is that the integer value $0$ is \texttt{false}; otherwise \texttt{true}.
+Panda is designed in such a way that every curly bracket enclosed environment creates a new scope. The default scope is global scope. Every scope consists of a single \texttt{body} vertex -- the grammar is \texttt{`new\_scope : LCURL body RCURL'}. Recall that a \texttt{body} vertex can contain optional declarations followed by optional statements. Just to mention Boolean values, the convention used is that the integer value $0$ is \texttt{false}; otherwise \texttt{true}.
 
 The syntax is very C-like, but below are some examples of the different language constructions. Starting with a \texttt{for} loop:
 
@@ -377,11 +377,11 @@ More examples can be found in the \texttt{/testing/test-cases/} folder.
 \newpage
 
 \section{Symbol Collection}\label{sec:symbol_collection}
-Symbol collection is the third phase of the compilers front end. The compiler discovers the names and properties of many entities during parsing. For each name used in the program, the compiler needs a variety of information before it can generate code to manipulate that entity. The Symbol Collection phase implements a recursive traversal of the AST in order to collect symbols into symbol tables.
+Symbol collection is the third phase of the compiler's front end. The compiler discovers the names and properties of many entities during parsing. For each name used in the program, the compiler needs a variety of information before it can generate code to manipulate that entity. The Symbol Collection phase implements a recursive traversal of the AST in order to collect symbols into symbol tables.
 
-Each scope has its own symbol table and each symbol within that scope is stored in that symbol table. The sole purpose of scopes is to encapsulate symbols so that logically separate parts of the program do not interfere. The introduction of scopes makes it possible to reuse symbol names, which is convenient, and a necessity when using recursion. The scoping mechanism implemented in Panda is static nested scoping. ``Static" because it can be determined where a symbol is accessible and visible by reasoning about the lexical structure of the source program -- this is often a cognitive comprehensive task when reading programs based on dynamic scoping. ``Nested" refer to the hierarchical separation of scopes. The primary purpose of a symbol table is to resolve names. When the compiler finds a symbol, it needs a mechanism that maps that symbol back to its declaration; otherwise we would not be able to locate the entity in memory.
+Each scope has its own symbol table and each symbol within that scope is stored in that symbol table. The sole purpose of scopes is to encapsulate symbols so that logically separate parts of the program do not interfere. The introduction of scopes makes it possible to reuse symbol names, which is convenient, and a necessity when using recursion. The scoping mechanism implemented in Panda is static nested scoping. ``Static" because it can be determined where a symbol is accessible and visible by reasoning about the lexical structure of the source program -- this is often a cognitive comprehensive task when reading programs based on dynamic scoping. ``Nested" refers to the hierarchical separation of scopes. The primary purpose of a symbol table is to resolve names. When the compiler finds a symbol, it needs a mechanism that maps that symbol back to its declaration; otherwise we would not be able to locate the entity in memory.
 
-The compiler for Panda only supports simple \SI{64}{bit} scalar variables and functions, and some additional information such as source register (\texttt{SR}) and \texttt{escaping} which will be elaborated in the code generation phase (section \ref{sec:register_machine}). The \texttt{Symbol} class is defined as stated in Figure \ref{fig:symbol}.
+The compiler for Panda only supports simple \SI{64}{bit} scalar variables and functions, and some additional information such as source register (\texttt{SR}) and \texttt{escaping} which will be elaborated in the Code Generation phase (section \ref{sec:register_machine}). The \texttt{Symbol} class is defined as stated in Figure \ref{fig:symbol}.
 
 \begin{figure}[H]
 \begin{minted}{py}
@@ -425,7 +425,7 @@ class SymbolTable:
         self.parent = parent
 \end{minted}
 
-The symbol table itself takes care of keeping track of its lexical \texttt{level}, its parent, and the actual symbol table named \texttt{\_tab}. The \texttt{parent} field makes it possible to search upwards in the structure towards the global scope, if the symbol searched for is not at the current level.
+The symbol table itself keeps track of its lexical \texttt{level}, its parent, and the actual symbol table named \texttt{\_tab}. The \texttt{parent} field makes it possible to search upwards in the structure towards the global scope, if the symbol searched for is not at the current level.
 
 Scopes create a tree structure, but where leafs point to the root and not the other way around. Considering the input program stated in Figure \ref{fig:ex_program} again, we see, in Figure \ref{fig:symbol_collection}, that \texttt{j} is declared in the global scope (root, level $0$) and \texttt{i} is declared at level $1$ immediately incident to global scope. 
 
@@ -444,7 +444,7 @@ if(3<4){int b;} else{int c; if(3){int c;} else{int d;}}
 while(4){int d;}
 \end{minted}
 
-It is here clearly shown how to quickly introduce some scopes by using \texttt{if}-\texttt{else} statements, since all curly bracket enclosed environments constitute a new scope. Furthermore, it is also noted that two versions of $d$ are accessible in two respective scopes. 
+It is here clearly shown how to quickly introduce some scopes by using \texttt{if}-\texttt{else} statements, since all curly bracket enclosed environments constitute a new scope. Furthermore, it is also noted that two versions of \texttt{d} are accessible in two respective scopes. 
 
 \begin{figure}[H]
     \centering
@@ -456,7 +456,7 @@ The symbol collection figures are automatically generated using \texttt{printer/
 
 To return to the issue of mixing declarations and statements, it is quickly realized that this places greater demands on parser flexibility, since it will no longer be possible to make a discrete segregation of these groups. As such, it makes no difference to the symbol collection phase, as we already have to recurse through both declarations and statements. It will make code generation more complicated, because code for functions declared within the scope will be generated simultaneously with statements, if this is not handled with some special case logic. Besides, the mixing also makes it confusing to know which variable is accessed when, since some declaration can appear near the end of the scope -- the declaration is valid for the entire scope and not just after the line it appears. This is a hypothetical implementation, open for discussion, of course.
 
-To give an example of what problems may arise with this implementation, please consider the code fragment below. The code fragment is a valid program using the hypothetical implementation, but it is difficult to determine which \texttt{a} is being referenced. This would have been harder to spot if the distance between the use and the declaration of $a$ spanned multiple lines.
+To give an example of what problems may arise with this implementation, please consider the code fragment below. The code fragment is a valid program using the hypothetical implementation, but it is difficult to determine which \texttt{a} is being referenced. This would have been harder to spot if the distance between the use and the declaration of \texttt{a} spanned multiple lines.
 
 \begin{minted}{c}
 void main(){print(a); int a = 8;}
@@ -465,8 +465,8 @@ main();
 int a;
 \end{minted}
 
-\section{Desugar}\label{sec:desugar}
-Desugar is the fourth, and last, phase of the compiler's front end. Desugar is a phase that has been included because it was realized that the way nodes were visited during code generation was inexpedient, although necessary. The problem is only associated with the grammar:
+\section{Desugaring}\label{sec:desugar}
+Desugaring is the fourth, and last, phase of the compiler's front end. Desugaring is a phase that has been included because it was realized that the way nodes were visited during code generation was inexpedient, although necessary. The problem is only associated with the grammar:
 
 \begin{center}
 \texttt{variable\_init\_declaration : type IDENT ASSIGN expression SEMICOL}
@@ -506,7 +506,7 @@ Every process running on the computer is given a virtual address space. Figure \
     \label{fig:address_space}
 \end{figure}
 
-The stack is a memory area where it is possible to \texttt{push} and \texttt{pop} elements as needed. One can also choose to statically reserve an amount of memory for data storage. The stack only brings value when used properly and judiciously. It is therefore up to the compiler-writer how the stack is to be used. The actual stack architecture does not matter as long as one decide on a protocol and act accordingly and consistently. However, the final stack architecture is very much controlled by procedure linkage, which limits the number of free choices, since certain things must be located on the stack, although the scheme is a free choice. The chosen stack architecture used in Panda is represented in Figure \ref{fig:stack}. The stack has been strategically divided into sections belonging to the different phases of the procedure linkage. In addition, addressing of significant pointers are shown. \texttt{RBP} (base pointer) and \texttt{RSP} (stack pointer) are used for immediate addressing of entities.
+The stack is a memory area where it is possible to \texttt{push} and \texttt{pop} elements as needed. One can also choose to statically reserve an amount of memory for data storage. The stack only brings value when used properly and judiciously. It is therefore up to the compiler-writer how the stack is to be used. The actual stack architecture does not matter as long as one decides on a protocol and acts accordingly and consistently. However, the final stack architecture is very much controlled by procedure linkage, which limits the number of free choices, since certain things must be located on the stack, although the scheme is a free choice. The chosen stack architecture used in Panda is represented in Figure \ref{fig:stack}. The stack has been strategically divided into sections belonging to the different phases of the procedure linkage. In addition, addressing of significant pointers are shown. \texttt{RBP} (base pointer) and \texttt{RSP} (stack pointer) are used for immediate addressing of entities.
 
 \begin{figure}[H]
     \centering
@@ -554,7 +554,7 @@ class Operand:
     addressing: Mode
 \end{minted}
 
-Translating the AST to the linear ILOC IR thus yields a list of instructions as shown below. The smart thing about this IR is that needed information is explicitly represented -- it can be information such as which temporaries are used and their addressing. One can therefore easily perform analyzes on the code by iterating through the list of instructions and using structural pattern matching to extract information. The register machine will pass this IR through the allocator phase in order to assign temporaries to physical registers before emitting code. The stack machine does not require further analysis, instead the list of instructions will simply be passed on to the emit phase which will emit assembly code.
+Translating the AST to the linear ILOC IR thus yields a list of instructions as shown below. The smart thing about this IR is that needed information is explicitly represented -- it can be information such as which temporaries are used and their addressing. One can therefore easily perform analyses on the code by iterating through the list of instructions and using structural pattern matching to extract information. The register machine will pass this IR through the allocator phase in order to assign temporaries to physical registers before emitting code. The stack machine does not require further analysis, instead the list of instructions will simply be passed on to the emit phase which will emit assembly code.
 
 \begin{minted}{py3}
 [
@@ -629,7 +629,7 @@ case AST.Function(body=body):
     ...
 \end{minted}
 
-We do not care about the actual content of the function body because there are prepared other match cases that handle those cases recursively. We just know that whatever instructions the body contains, they must be specified there. This approach is guaranteed to work by the invariant-based code generation scheme.
+We do not care about the actual content of the function body because other match cases that handle those cases recursively are prepared. We just know that whatever instructions the body contains must be specified there. This approach is guaranteed to work by the invariant-based code generation scheme.
 
 Invariants are conditions that we can rely on throughout the compiler. The benefit is that it is easier to implement new constructions when we know that we can rely on certain invariants. Invariants are established and maintained by following certain protocols such as the stack protocol. Below are stated some concrete Panda invariants:
 
@@ -677,7 +677,7 @@ case AST.ExpressionBinop(binop, lhs, rhs) if binop in [Op.ADD, Op.SUB, Op.DIV, O
 The idea behind comparison binary operations is very similar, but there is a little extra logic to handle pushing $1$ when true and $0$ otherwise.
 
 \subsection{Register Machine}\label{sec:register_machine}
-Many of the techniques used in the stack machine can be transferred to the register machine. Instead of having a stack of values in the virtual address space used at runtime, we just maintain a stack of temporary registers at compile time. This makes it possible to keep track of which registers are included in various operations. As a starting point, we pretend that we have an infinite number of registers available, and it is therefore up to the allocation phase to map these to physical registers. This functionality is implemented by enriching the class with the two fields below. \texttt{\_reg\_count} is used to keep track of how many temporaries have been used and which unique temporary to use next. \texttt{\_reg\_stack} is just a list that we can pop and push values to. By only using push and pop we achieve a LIFO priority queue AKA. stack.
+Many of the techniques used in the stack machine can be transferred to the register machine. Instead of having a stack of values in the virtual address space used at runtime, we just maintain a stack of temporary registers at compile time. This makes it possible to keep track of which registers are included in various operations. As a starting point, we pretend that we have an infinite number of registers available, and it is therefore up to the allocation phase to map these to physical registers. This functionality is implemented by enriching the class with the two fields below. \texttt{\_reg\_count} is used to keep track of how many temporaries have been used and which unique temporary to use next. \texttt{\_reg\_stack} is just a list that we can pop and push values to. By only using push and pop we achieve a LIFO priority queue, also known as a stack.
 
 \begin{minted}{py3}
 _reg_count: int = 0
@@ -749,7 +749,7 @@ A symbol is adorned with \texttt{SR} (acronym for source register) and \texttt{e
 
 \texttt{SR} is stored on the symbol to keep track of which temporary any symbol belongs to. It becomes particularly relevant in \texttt{StatementAssignment}, because we want to keep all the values in registers, and it is therefore necessary to be able to lookup which temporary a value must be assigned to.
 
-\texttt{Escaping} is because we have to keep track of whether the values assigned to belong to another scope. This is critical because if we choose to store the value in a register, but then return from the scope, then the value is lost. It therefore becomes necessary to keep track of which values must be written back to memory when a scope is removed. To keep the implementation simple, it is chosen, as a starting point, to always assign values that are not declared in the current scope back to memory immediately.
+\texttt{Escaping} is used because we have to keep track of whether the values being assigned to belong to another scope. This is critical because if we choose to store the value in a register, but then return from the scope, then the value is lost. It therefore becomes necessary to keep track of which values must be written back to memory when a scope is removed. To keep the implementation simple, it is chosen, as a starting point, to always assign values that are not declared in the current scope back to memory immediately.
 
 To put it in perspective, consider the example below. If a symbol is marked as \texttt{escaping} then the value is just written directly back to memory as in the stack machine. If the value is not marked \texttt{escaping}, then one of two cases applies. Either it is the first time the value is assigned, which is why it will have \texttt{SR=None}, and therefore a new temporary is created to hold the value. If the symbol already has been given a temporary, then we just assign directly to this.
 
@@ -759,7 +759,7 @@ case AST.StatementAssignment(lhs, rhs):
     reg = self._reg_stack_pop()
 
     if symbol.escaping:
-        # Assignment to memory
+        # Assign to memory
         ...
     else:
         # Assign to temporary
@@ -784,10 +784,10 @@ case AST.StatementAssignment(lhs, rhs):
                 )
 \end{minted}
 
-\section{Allocator}
+\section{Allocation}
 The liveness implementation is based on the literature \cite[218-223]{ModernCompilerImplementation} and the subsequent register allocation (graph coloring) is based on the literature \cite[235-238]{ModernCompilerImplementation}. 
 
-There are many steps involved in register allocation. In order to make the process clear and provide an overview, each step has its own method, which also call auxiliary methods. \texttt{perform\_register\_allocation} is the only method exposed by the \texttt{Allocator} class. The method is included below:
+There are many steps involved in register allocation. In order to make the process clear and provide an overview, each step has its own method, which also calls auxiliary methods. \texttt{perform\_register\_allocation} is the only method exposed by the \texttt{Allocator} class. The method is included below:
 
 \begin{minted}{py3}
 def perform_register_allocation(self, code: list[Instruction]) -> list[Instruction]:
@@ -808,7 +808,7 @@ We are only interested in doing liveness analysis for instructions that use temp
 
 The first step is to create a mapping between labels and the closest instruction that uses temporaries. This information is used when performing control-flow; otherwise, it is not known where the flow should continue when a jump instruction is encountered.
 
-Creating control flow is about chaining instructions, so that any instruction points to the next instruction in the flow. Every instruction is given a successor and predecessor attribute, though it was later realized that the predecessor was not needed. The successor attribute is not strictly necessary, as we would be able to obtain the same information during the iteration in another way, but it makes the subsequent steps a bit nicer. Both successor and predecessor would have been strictly necessary if we had based the iteration on following these pointers, but due to the use of match statements, it was judged that it was easier to use a for each loop for the iteration. Due to the scope implementation, it has been necessary to limit the analysis to each introduced scope and not just functions, which is the ideal solution. It is not possible to ensure the flow when registers are saved and restored along the way. Consider Figure \ref{fig:flow_while} for an example of a flow graph. In panda, the scope is wrapped around the entire \texttt{while} construction. The flow is therefore as shown in the figure, apart from the fact that \texttt{body} is of course made up of multiple instructions.
+Creating control flow is about chaining instructions, so that any instruction points to the next instruction in the flow. Every instruction is given a successor and predecessor attribute, though it was later realized that the predecessor was not needed. The successor attribute is not strictly necessary, as we would be able to obtain the same information during the iteration in another way, but it makes the subsequent steps a bit nicer. Both successor and predecessor would have been strictly necessary if we had based the iteration on following these pointers, but due to the use of match statements, it was judged that it was easier to use a for each loop for the iteration. Due to the scope implementation, it has been necessary to limit the analysis to each introduced scope and not just functions, which is the ideal solution. It is not possible to ensure the flow when registers are saved and restored along the way. Consider Figure \ref{fig:flow_while} for an example of a flow graph. In Panda, the scope is wrapped around the entire \texttt{while} construction. The flow is therefore as shown in the figure, apart from the fact that \texttt{body} is of course made up of multiple instructions.
 
 \begin{figure}[H]
     \centering
@@ -852,7 +852,7 @@ def _liveness_analysis(self, code: list) -> None:
 
 Note that the instructions are parsed in reverse order. This is because the uses of a temporary come after its declaration. It's just a way to achieve fixed point faster. The algorithm works by preparing an \texttt{in} and \texttt{out} set for each instruction in the flow. The \texttt{in} set contains all the temporaries that are live for the instruction in question. \texttt{out} contains all the temporaries that must be taken care of for the next instruction. The algorithm keeps repeating the analysis of the flow until there are no changes to the \texttt{in} set. Worst-case run time of this algorithm is $O(N^4)$, \cite[224]{ModernCompilerImplementation}. 
 
-To give intuition for the calculation of in and out sets, consider Figure \ref{fig:in-out-flow}. In the figure, an arbitrary vertex from the flow is considered, where it is indicated how the \texttt{in} and \texttt{out} sets follow the flow. Two \texttt{out} edges are specified because it may be that there is a conditional jump.
+To give intuition for the calculation of \texttt{in} and \texttt{out} sets, consider Figure \ref{fig:in-out-flow}. In the figure, an arbitrary vertex from the flow is considered, where it is indicated how the \texttt{in} and \texttt{out} sets follow the flow. Two \texttt{out} edges are specified because it may be that there is a conditional jump.
 
 \begin{figure}[H]
     \centering
@@ -861,12 +861,12 @@ To give intuition for the calculation of in and out sets, consider Figure \ref{f
     \label{fig:in-out-flow}
 \end{figure}
 
-In and out sets must be calculated for every vertex in the flow. This is done by using the dataflow equations in Figure \ref{fig:dataflow-eq} -- utilized in the \texttt{\_do\_set\_calc} method. Also, note how the definition of a temporary kills its liveliness. This is expected behavior because if there are no uses of a definition, then we can simply remove those instructions. Executing useless instructions is useless. 
+\texttt{in} and \texttt{out} sets must be calculated for every vertex in the flow. This is done by using the dataflow equations in Figure \ref{fig:dataflow-eq} -- utilized in the \texttt{\_do\_set\_calc} method. Also, note how the definition of a temporary kills its liveliness. This is expected behavior because if there are no uses of a definition, then we can simply remove those instructions. Executing useless instructions is useless. 
 
 \begin{figure}[H]
     \begin{align*}
-        in[n] &= use[n] \cup (out[n] - def[n])\\
-        out[n] &= \bigcup\limits_{s \in succ[n]} in[s]
+        \mathrm{in}[n] &= \mathrm{use}[n] \cup (\mathrm{out}[n] - \mathrm{def}[n])\\
+        \mathrm{out}[n] &= \bigcup\limits_{s \in \mathrm{succ}[n]} \mathrm{in}[s]
     \end{align*}
     \caption{Dataflow equations for liveness analysis.}
     \label{fig:dataflow-eq}
@@ -890,7 +890,7 @@ addq r4, r5:    {4, 5}
 push r5:        {5}
 \end{minted}
 
-Based on all these \texttt{in} sets, an interference graph is created. The graph is made by adding an edge between any pair of temporaries that share an \texttt{in} set. The implementation in Panda makes use of a dictionary to create a mapping (temporary: adjacency set) to represent a graph. The literature suggests making an interference matrix, but it immediately seemed easier to implement the graph with adjacency sets, as the graph have to be strangulated and assembled again during coloring.
+Based on all these \texttt{in} sets, an interference graph is created. The graph is made by adding an edge between any pair of temporaries that share an \texttt{in} set. The implementation in Panda makes use of a dictionary to create a mapping (temporary: adjacency set) to represent a graph. The literature suggests making an interference matrix, but it immediately seemed easier to implement the graph with adjacency sets, as the graph has to be strangulated and assembled again during coloring.
 
 \begin{minted}{py3}
 [{1: set(), 2: {3, 4}, 3: {2}, 4: {2, 5}, 5: {4}}]
@@ -913,7 +913,7 @@ Graph coloring is done using a simple heuristic, called Coloring by Simplificati
     \item When a new vertex $m$ is added to the colored graph $G'$, it is assigned the lowest numbered color that is not assigned to any of its neighbors. If the neighbors of $m$ have at most $K-1$ colors among them, then a free color can always be found for $m$.
 \end{enumerate}
 
-This leads to a stack-based algorithm for coloring: we repeatedly remove (and push on a stack) nodes of degree less than $K$. Each such simplification leads to more opportunity for simplification. If it is not the case that there is a node with degree less than $K$, then a random vertex is chosen in the graph. There are many heuristics that can be used, and one of them is the highest degree first heuristic because they are more likely to require a new color. The implementation in Panda just randomly pick a vertex with degree lower than $K$, and if there is no such vertex, then a random vertex with degree $K$ or higher. The coloring implementation is provided below. $K = 10$ in Panda.
+This leads to a stack-based algorithm for coloring: we repeatedly remove (and push on a stack) nodes of degree less than $K$. Each such simplification leads to more opportunity for simplification. If it is not the case that there is a node with degree less than $K$, then a random vertex is chosen in the graph. There are many heuristics that can be used, and one of them is the highest degree first heuristic because they are more likely to require a new color. The implementation in Panda just randomly picks a vertex with degree lower than $K$, and if there is no such vertex, then a random vertex with degree $K$ or higher. The coloring implementation is provided below. $K = 10$ in Panda.
 
 \begin{minted}{py3}
 def _color_graph(self, graphs: list[defaultdict]) -> dict[int, int]:
@@ -941,10 +941,10 @@ The graph in Figure \ref{fig:interference-graph} has been colored with the calcu
     \label{fig:colored-interference-graph}
 \end{figure}
 
-\section{Emit}
-The Emit phase is the last phase in the compiler's back end. It is in this phase that the internal representation introduced in the code generation is made into actual assembler instructions, which can then be compiled into machine code using \texttt{gcc}. Luckily it has been possible to develop an interface such that this class could be used for both the stack machine and register machine.
+\section{Emission}
+The Emit phase is the last phase in the compiler's back end. It is in this phase that the internal representation introduced in the code generation is made into actual assembly instructions, which can then be compiled into machine code using \texttt{gcc}. Luckily it has been possible to develop an interface such that this class could be used for both the stack machine and register machine.
 
-The mapping from the internal representation is almost 1:1, however there are small deviations such as the use of \texttt{\%RSL}, which is a virtual register used to calculate links, and that register does not exist natively on the x86 architecture. In addition, it is necessary to handle a handful of \texttt{Meta} instructions, because it made sense to assemble these into composite instructions, and then let the Emit phase handle the actual code for this, since it is the same every time -- these instructions could as well have been represented in the linear IR. The \texttt{Meta} instructions are:
+The mapping from the internal representation is almost 1:1. There are small deviations such as the use of \texttt{\%RSL}, which is a virtual register used to calculate links, but \texttt{RSL} does not exist natively on the x86 architecture. In addition, it is necessary to handle a handful of \texttt{Meta} instructions, because it made sense to assemble these into composite instructions, and then let the Emit phase handle the actual code for this, since it is the same every time -- these instructions could as well have been represented in the linear IR. The \texttt{Meta} instructions are:
 
 \begin{minted}{py3}
 self._enum_to_method_map = {
@@ -957,9 +957,9 @@ self._enum_to_method_map = {
 }
 \end{minted}
 
-The \texttt{Meta} instructions is thus simply mapped using a dictionary in python, mapping the \texttt{Enum} to a function implemented within the Emit class.
+The \texttt{Meta} instructions are thus simply mapped using a dictionary in Python, mapping the \texttt{Enum} to a function implemented within the Emit class.
 
-The majority of these functions are functions used during procedure linkage, which is why it makes sense to declare exactly which registers are callee-save and caller-save registers:
+The majority of these functions are used during procedure linkage, which is why it makes sense to declare exactly which registers are callee-save and caller-save registers:
 
 \begin{minted}{py3}
 self._callee_save_reg = ["rbx", "r12", "r13", "r14", "r15", "rbp"]
@@ -986,7 +986,7 @@ def emit(self, iloc_ir: list[iloc.Instruction]) -> str:
     return "\n".join(self._code)
 \end{minted}
 
-The final result of \texttt{Emit} is a single string containing all the generated assembler code, including newlines. The output string can therefore just be inserted directly into any file using Python's built-in I/O library.
+The final result of \texttt{Emit} is a single string containing all the generated assembly code, including newlines. The output string can therefore just be inserted directly into any file using Python's built-in I/O library.
 
 A function called \texttt{\_do\_operand} takes care of handling targets. In order to create a common interface between the register machine and the stack machine, it has been chosen to simply expand the \texttt{match} statement, which can also be found in SCIL, so that it is possible to address several registers.
 
@@ -1009,7 +1009,7 @@ def _do_operand(self, operand: iloc.Operand) -> str:
 
 However, the number of registers is a limited amount, and in this case the limit is $9$ (in addition to two registers set aside for computation). The allocation phase may well risk passing on a program that requires $14$ registers, which is why it becomes necessary to handle spills. Spills can fortunately be handled locally for the individual instructions, which is why it felt natural to handle this in the \texttt{Emit} phase as well.
 
-Besides just handling spills, all the \texttt{move} instructions that operate on registers that have not been given a color (colored \texttt{None}) are removed. It can occur when, for example, assigning a value to a variable but never ever uses it afterwards. This is achieved with the following piece of code:
+Besides just handling spills, all the \texttt{move} instructions that operate on registers that have not been given a color (colored \texttt{None}) are removed. It can occur when, for example, assigning a value to a variable but never uses it afterwards. This is achieved with the following piece of code:
 
 \begin{minted}{py3}
 def _dispatch(self, instruction: iloc.Instruction) -> None:
@@ -1027,7 +1027,7 @@ def _dispatch(self, instruction: iloc.Instruction) -> None:
 \end{displayquote}
 \hspace*\fill{\small--- \cite[239]{ModernCompilerImplementation}}
 
-Since all nodes in the interference graph are colored, we can conclude that if a vertex has been colored \texttt{None}, then it not even part of the graph, thus, the \texttt{move} instruction can be safely eliminated.
+Since all nodes in the interference graph are colored, we can conclude that if a vertex has been colored \texttt{None}, then it is not part of the graph, thus, the \texttt{move} instruction can be safely eliminated.
 
 \texttt{\_handle\_reg\_spill} is called from \texttt{\_dispatch}. \texttt{\_handle\_reg\_spill} takes care of inserting extra instructions in case a spill register needs adjustment. The method has been inserted below:
 
@@ -1074,7 +1074,7 @@ def load_tests(args: argparse.Namespace) -> unittest.TestSuite:
         test_cases.addTest(TestCase(src, res))
 \end{minted}
 
-The method named \texttt{runTest} will be executed when running the test, unless otherwise specified. \texttt{runTest} has the responsibility to report whether an individual test succeeds or fails. My \texttt{runTest} does the following:
+The method named \texttt{runTest} will be executed when running the test, unless otherwise specified. \texttt{runTest} has the responsibility to report whether an individual test succeeds or fails. \texttt{runTest} does the following:
 
 \begin{enumerate}
     \item Compile source code;
@@ -1082,7 +1082,7 @@ The method named \texttt{runTest} will be executed when running the test, unless
     \item Assert whether output and expected output is identical.
 \end{enumerate}
 
-Of course, some exception handling needs to be done, but that is the basics. An interesting exception handling is when running a test developed to fail, as the exception handling in the compiler will execute \texttt{os.exit(1)} (it does not make sense to continue), so that exception must be caught in the running test in order to retrieve whatever is printed to \texttt{std:err}.
+Of course, some exception handling needs to be done, but that is the basics. An interesting exception handling is when running a test developed to fail, as the exception handling in the compiler will execute \texttt{os.exit(1)} (it does not make sense to continue). This exception must be caught in the running test in order to retrieve whatever is printed to \texttt{std:err}.
 
 The test suite can be run as follows when the desired tests have been added:
 
@@ -1115,7 +1115,7 @@ The test suite is automatically run on every pull request or push to GitHub as p
     \caption{GitHub Actions for system testing.}
 \end{figure}
 
-That way, one know exactly which push or pull request caused the test to fail, and associated code is directly available from the workflow via commit ID. History for workflow is available too.
+That way, one knows exactly which push or pull request caused the test to fail, and associated code is directly available from the workflow via commit ID. History for workflow is available too.
 
 \begin{figure}[H]
     \centering
@@ -1273,9 +1273,9 @@ It is time to compare the performance of the stack machine and the register mach
 
 All test results are calculated as an average of 10 measurements. The tests have been performed on an Intel x86 Core i9-8950HK Coffee Lake Processor, and timed using the native tool \texttt{time} in Ubuntu (based on \texttt{real} time).
 
-We did not expect much performance gain by using the register machine versus the stack machine, since the register allocation is rather limited. One might even have expected slower executions because values move between more physical registers than necessary (peep-hole optimization required). A remarkable performance gain is observed for all tests when using the register machine.
+Not much performance gain was expected by using the register machine versus the stack machine, since the register allocation is rather limited. One might even have expected slower executions because values move between more physical registers than necessary (peep-hole optimization required). A remarkable performance gain is observed for all tests when using the register machine.
 
-The reason for the increased performance of the register machine is, by hypothesis, due to the use of move instructions despite push and pop instructions. Based on a scientific paper written by Agner Fog from DTU, \cite[314-315]{instruction}, the hypothesis is not without authority. Figure \ref{tab:instruction_table} presents a table comparing reciprocal throughput. Without getting too technical and analytical about the compiled programs, we achieve approximately 50\% better performance by replacing push and pop instructions with move instructions. It agrees very well with the performance gain we see in \texttt{sum\_loop}. It is expected that Fibonacci is dominated by the complexity associated with handling stack frames, and therefore we do not achieve the same performance gain. The result in the \texttt{for}-loop test is crazy, but the primary work is also optimized from a reciprocal throughput of almost $1$ to around $0.25$. The tests are satisfactory, and we conclude that the hypothesis holds.
+The reason for the increased performance of the register machine is, by hypothesis, due to the use of move instructions despite push and pop instructions. Based on a scientific paper written by Agner Fog from DTU, \cite[314-315]{instruction}, the hypothesis is not without authority. Figure \ref{tab:instruction_table} presents a table comparing reciprocal throughput. Without getting too technical and analytical about the compiled programs, we achieve approximately 50\% better performance by replacing push and pop instructions with move instructions. It agrees very well with the performance gain we see in \texttt{sum\_loop}. It is expected that Fibonacci is dominated by the complexity associated with handling stack frames, and therefore we do not achieve the same performance gain. The result in the \texttt{for}-loop test is remarkable, but the primary work is also optimized from a reciprocal throughput of almost $1$ to around $0.25$. The tests are satisfactory, and we conclude that the hypothesis holds.
 
 % python3.10 main.py -f ../performance/for-loop.panda -cs
 % time ./src/output/a.out
@@ -1328,20 +1328,20 @@ It has been a core value throughout the project to make a well-defined compiler 
 
 The approach to the project has been academically based on literature, in order to gain an overview of new as well as old knowledge. Although this has given a confident approach to the project, it must be recognized that it has dulled the process unnecessarily. When coding a project such as a compiler that consists of relatively many lines of code, and many hours of debugging, it is necessary to purposefully choose a theme and then learn as needed, otherwise many hours are lost on something that is not directly applicable. The hours are of course not wasted, but not beneficial for the project either.
 
-It has always been desired that it should be possible to declare new variables in any scope, which is why it was decided to let \texttt{body} (syntactic category from parsing) be what constituted a scope. The choice later made it clear, during code generation phase, that this imposed too many constraints on how the stack should be set up, since a simple generalized procedure linkage was wanted. This resulted in suddenly having to handle all scopes as procedure calls, though it had nothing to with a procedure call. One also encounter problems when doing local register allocation, because flow is only considered locally for a scope (normally local to functions). This consequence limits the analysis to the individual scope, making the content of a \texttt{then} block, of an \texttt{if} statement, a black box for the surrounding scope. Thus, the analysis of control flow becomes less effective, which contributes to overall poorer performance of the register machine. The easiest solution, and most likely most effective, would be to redo the scope implementation. Global register allocation would be the hard option, though it would not solve the underlying problem besides patching it.
+It has always been desired that it should be possible to declare new variables in any scope, which is why it was decided to let \texttt{body} (syntactic category from parsing) be what constituted a scope. The choice later made it clear, during Code Generation phase, that this imposed too many constraints on how the stack should be set up, since a simple generalized procedure linkage was wanted. This resulted in suddenly having to handle all scopes as procedure calls, though it had nothing to with a procedure call. One also encounters problems when doing local register allocation, because flow is only considered locally for a scope (normally local to functions). This consequence limits the analysis to the individual scope, making the content of a \texttt{then} block, of an \texttt{if} statement, a black box for the surrounding scope. Thus, the analysis of control flow becomes less effective, which contributes to overall poorer performance of the register machine. The easiest solution, and most likely most effective, would be to redo the scope implementation. Global register allocation would be the hard option, though it would not solve the underlying problem besides patching it.
 
 \section{Further Development}
-The first thing to solve is the scope implementation. This is possibly where the greatest performance is to be gained, based on the compiler's current functionality. Being able to analyze flow for entire functions will make it easier to optimize the use of registers. Especially in the case of using variables outside the current scope, the variables will then be marked as escaping, which causes them to live on the stack, which is annoying when wanting to use registers. At present, loops cannot really benefit from registers, since we are unable to effectively reference variables located in external scopes.
+The first thing to solve is the scope implementation. This is possibly where the greatest performance is to be gained, based on the compiler's current functionality. Being able to analyze flow for entire functions will make it easier to optimize the use of registers. Especially in the case of using variables outside the current scope, the variables will then be marked as \texttt{escaping}, which causes them to live on the stack, which is suboptimal when wanting to use registers. At present, loops cannot really benefit from registers, since we are unable to effectively reference variables located in external scopes.
 
-Another challenge is that there is no \texttt{push imm64} instruction, which can cause the error: ``\texttt{Error: operand type mismatch for `push'}". The error occurs, for example, when a number greater than \SI{32}{bit} two's complement is printed, as the number to be printed will be pushed directly to the stack. This is annoying because the registers and the reserved stack space is \SI{64}{bit}, but we can efficiently only use \SI{32}{bit} at worst. A similar error apply to the register machine, as \texttt{movq} cannot handle immediate source operands larger than \SI{32}{bit} two's complement. Workarounds are available, but they enforce a more advanced implementation than prepared in this project. 
+Another challenge is that there is no \texttt{push imm64} instruction, which can cause the error: ``\texttt{Error: operand type mismatch for `push'}". The error occurs, for example, when a number greater than \SI{32}{bit} two's complement is printed, as the number to be printed will be pushed directly to the stack. This is suboptimal because the registers and the reserved stack space is \SI{64}{bit}, but we can efficiently only use \SI{32}{bit} at worst. A similar error apply to the register machine, as \texttt{movq} cannot handle immediate source operands larger than \SI{32}{bit} two's complement. Workarounds are available, but they enforce a more advanced implementation than prepared in this project. 
 
 At present, all spilled registers are stored as temporary saves on the stack, but it might be desirable to move some spilled registers to the local data area and parameter area, so that the space already allocated on the stack is used efficiently.
 
-Finally, it could be cool with composite data types like arrays to make the language Turing Complete -- it is not possible to calculate anything significant, as one can only work with integers and Boolean values ($0$ or $1$ integer). Composite data types will only further the potential of the already implemented programming constructs. Besides adding more types, it would be nice with a type-checking phase in the front end too.
+Finally, it could be advantageous with composite data types like arrays to make the language Turing Complete -- it is not possible to calculate anything significant, as one can only work with integers and Boolean values ($0$ or $1$ integer). Composite data types will only further the potential of the already implemented programming constructs. Besides adding more types, it would be nice with a type-checking phase in the front end too.
 
 
-\section{Single Point Of Contact}
-As a final rounding and summary of the project, GitHub Pages have been used as an addendum to the report, hoping to provide a brief user-friendly introduction to the code and the report. A screenshot of the website can be found in Figure \ref{fig:GitHub_Pages}.
+\section{Single Point of Contact}
+As a final rounding and summary of the project, GitHub Pages has been used as an addendum to the report, hoping to provide a brief user-friendly introduction to the code and the report. A screenshot of the website can be found in Figure \ref{fig:GitHub_Pages}.
 
 The website has been created with Jekyll, which is a tool that can automatically transform plain text into a static website. The tool only requires a small YAML file (\texttt{/\_config.yml}), listed below, and a markdown file for the page's content.
 
@@ -1364,9 +1364,9 @@ The website is simply a nice presentation of the \texttt{README.md} file. In add
 GitHub Pages takes care of deployment when a YAML is specified. Subsequently, the website will be automatically deployed on any push to GitHub -- at the same time as the workflow for testing runs.
 
 \chapter{Conclusion}
-In this bachelor project, a compiler has been successfully implemented, which can be used both as a stack machine and as a register machine. The compiler consists of a scanner, parser, symbol collector, desugar, code generator, allocator and a code emitter. The compiler consists of approximately 3500 lines of Python code.
+In this bachelor project, a compiler has been successfully implemented, which can be used both as a stack machine and as a register machine. The compiler consists of a scanner, parser, symbol collector, desugar-class, code generator, allocator and a code emitter. The compiler consists of approximately 3500 lines of Python code.
 
-The implemented language is named Panda, and resembles a subset of C. The implemented types are Boolean and Integer (actually both are integers). Constructions such as \texttt{if}-\texttt{else} statements, \texttt{while}-loops and \texttt{for}-loops have also been implemented. \SI{64}{bit} are used for all types of values. It had been well regarded with composite types, such as arrays, but unfortunately, it was not achieved in the time frame.
+The implemented language is named Panda, and resembles a subset of C. The implemented types are Boolean and integer (actually both are integers). Constructions such as \texttt{if}-\texttt{else} statements, \texttt{while}-loops and \texttt{for}-loops have also been implemented. \SI{64}{bit} are used for all types of values. It had been well regarded with composite types, such as arrays, but unfortunately, it was not achieved in the time frame.
 
 The performance of the stack machine and the register machine have been compared, and it turns out that the register machine runs remarkably faster, which is a very satisfactory result. Depending on the given test, a performance gain of up to a factor of three is observed.
 
@@ -1374,7 +1374,7 @@ Correctness of the compiler has been tested using 25 test cases and all tests ru
 
 Every project has a README. In addition to introducing the project, a static website has been generated on the file, from which the code is publicly available: \url{https://kianbankelarsen.github.io/Compiler/}
 
-The implementation of scopes is not optimal, which is why it could be interesting to refactor, given that there was more time to work on the project. Only when this is done will it be possible to fully utilize the register allocation, and in that way, hopefully, achieve an even greater performance gain.
+The implementation of scopes is not optimal, which is why it could be interesting to refactor, given that there was more time to work on the project. Only when this is done will it be possible to fully utilize the register allocation, and in that way, achieve an even greater performance gain.
 
 \cleardoublepage
 \phantomsection
