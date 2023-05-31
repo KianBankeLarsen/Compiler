@@ -75,7 +75,9 @@ A picture of the raw AST is inserted below.
 
 ```c
 int j = 5; 
-for(int i = 1; i < 5; i = i + 1){}   
+for(int i = 1; i < 5; i = i + 1){
+    print(i + j);
+}   
 ```
 
 ![](src/printer/images/AST.src/output/a.gv.png)
