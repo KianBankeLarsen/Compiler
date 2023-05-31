@@ -262,7 +262,7 @@ class Allocator:
     def perform_register_allocation(self, code: list[Instruction]) -> list[Instruction]:
         """ This method is responsible for orchestrating the total allocation flow. 
             The method calls a selection of hidden methods, so that it is finally 
-            possible to return a list of instructions, with correctly assigned registers,
+            possible to return a list of instructions with correctly assigned registers,
             such that the rest can be handled by emit.
 
                 1. find labels

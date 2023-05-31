@@ -7,7 +7,7 @@ from src.utils.x86_instruction_enum_dict import intermediate_to_x86
 
 
 class Emit:
-    """Functionality to translate from linear ILOC IR to x86-64 assembly
+    """Functionality to translate linear ILOC IR to x86-64 assembler code
 
     The API exposes emit.
     """

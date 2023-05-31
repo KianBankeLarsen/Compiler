@@ -73,6 +73,11 @@ $ python3.10 main.py --debug
 ## 🌲 Abstract Syntax Tree
 A picture of the raw AST is inserted below.
 
+```c
+int j = 5; 
+for(int i = 1; i < 5; i = i + 1){}   
+```
+
 ![](src/printer/images/AST.src/output/a.gv.png)
 
 ## 🎄 Desugared Abstract Syntax Tree
@@ -137,7 +142,7 @@ src/phase/allocator.py                     213      5    98%
 src/phase/code_generation_base.py           58      3    95%
 src/phase/code_generation_register.py      262      9    97%
 src/phase/code_generation_stack.py         199      5    97%
-src/phase/emit.py                          199     17    91%
+src/phase/emit.py                          205     20    90%
 src/phase/lexer.py                          44      8    82%
 src/phase/parser.py                        101      2    98%
 src/phase/parsetab.py                       18      0   100%
@@ -152,7 +157,7 @@ src/utils/label_generator.py                 7      0   100%
 src/utils/x86_instruction_enum_dict.py       2      0   100%
 testing/test.py                             75      0   100%
 ------------------------------------------------------------
-TOTAL                                     1884     61    97%
+TOTAL                                     1890     64    97%
 Wrote HTML report to htmlcov/index.html
 ```
 

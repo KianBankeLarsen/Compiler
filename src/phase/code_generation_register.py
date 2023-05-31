@@ -129,11 +129,11 @@ class GenerateCodeRegister(src.phase.code_generation_base.GenerateCodeBase):
                 self._generate_code(rhs)
 
                 symbol, symbol_level = self._current_scope.lookup(lhs)
-                level_difference = self._follow_static_link(symbol_level)
+                self._follow_static_link(symbol_level)
 
                 reg = self._reg_stack_pop()
 
-                if level_difference or symbol.escaping:
+                if symbol.escaping:
                     match symbol:
                         case dataclass_symbol.Symbol(kind=NameCategory.PARAMETER, info=info):
                             self._append_instruction(
